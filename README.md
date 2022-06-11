@@ -18,6 +18,9 @@ available for the masses to download. CDN-sourcing support?
 - proxyServer - WebSocket and SOCKSv5 proxy server and reverse proxy 
 for creating game servers within a corporate network.
 
+- [quake3-discord-bot](https://github.com/briancullinan/quake3-proxy-server) - 
+For more communication and live chatting with
+discord servers, launching and connecting to games from discord.
 
 ## Background
 
@@ -51,7 +54,7 @@ listed in master, and subsequently, content from those
 game servers, then my proxy server also needs to be aware of
 content. Ugh. A wheel that has been reinvented over and over
 and very few of those wheels are open-source. The best example
-is probably (Q3Panel)[https://github.com/JannoEsko/q3panel].
+is probably [Q3Panel](https://github.com/JannoEsko/q3panel).
 It is a general process runner, with some FTP EXEC complexity.
 
 I'm not going to reinvent the process running wheel. But I 

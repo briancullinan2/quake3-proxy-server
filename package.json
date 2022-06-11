@@ -1,0 +1,29 @@
+{
+  "name": "quake3e-wasm",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node ./proxyServer/serve-proxy.js",
+    "proxy": "node ./proxyServer/serve-proxy.js"
+  },
+  "bin": {
+    "quakejs-content": "bin/content.js",
+    "quakejs-master": "bin/master.js",
+    "quakejs-repak": "bin/repak.js",
+    "quakejs-proxy": "bin/proxy.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/briancullinan/quake3e.git"
+  },
+  "author": "Brian Cullinan",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "express": "^4.18.1",
+    "ip6addr": "^0.2.5",
+    "mime": "^3.0.0",
+    "node-stream-zip": "^1.15.0",
+    "ws": "^8.6.0"
+  },
+  "devDependencies": {}
+}
