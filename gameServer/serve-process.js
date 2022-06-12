@@ -1,6 +1,6 @@
 
 const {EXE_NAME} = require('../utilities/env.js')
-const {findFile} = require('../contentServer/content.js')
+const {findFile} = require('../contentServer/virtual.js')
 const RESOLVE_DEDICATED = []
 
 function execDed(dedicated) {

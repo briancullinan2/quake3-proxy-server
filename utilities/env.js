@@ -3,39 +3,71 @@
 const path = require('path')
 const os = require('os')
 
-const EXE_NAME = 'quake3e.ded' 
-    + (os.platform() == 'win32' ? '.exe' : '')
+const EXE_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
-let masters = ['ws://master.quakejs.com:27950', '207.246.91.235:27950', 'master.quake3arena.com']
 let forward = 'http://local.games:8080'
-let basegame = 'baseq3a'
-let basepath = ''
-let steampath = ''
-let repackedCache = path.join(BUILD_DIRECTORY, basegame + '-converted')
-let downloadCache = path.join(BUILD_DIRECTORY)
+let FS_BASEGAME = 'baseq3a'
+let FS_BASEPATH = ''
+let STEAMPATH = ''
 
 const WEB_DIRECTORY = path.resolve(__dirname)
 const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../build/')
-
-const HOMEPATH = process.env.HOME || process.env.HOMEPATH 
-  || process.env.USERPROFILE
+const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
-const os = require('os')
+
+let REPACK_CACHE = path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')
+let DOWNLOAD_CACHE = path.join(BUILD_DIRECTORY)
+
+function setRepack(directory) {
+  REPACK_CACHE = directory
+}
+function setDownload(directory) {
+  DOWNLOAD_CACHE = directory
+}
+
+function setGame(game) {
+  FS_BASEGAME = game
+}
+
+function getGame() {
+  return FS_BASEGAME
+}
+
+function repackedCache() {
+  return REPACK_CACHE
+}
+
+function downloadCache() {
+  return DOWNLOAD_CACHE
+}
+
+
 if(os.platform == 'win32') {
-  basepath = 'C:/Program\ Files/Quake\ III\ Arena'
-  steampath = path.join(PROGRAMPATH, '\/Steam\/steamapps\/common')
+  FS_BASEPATH = 'C:/Program\ Files/Quake\ III\ Arena'
+  STEAMPATH = path.join(PROGRAMPATH, '\/Steam\/steamapps\/common')
 } else
 if(os.platform == 'darwin') {
-  basepath = '/Applications/ioquake3'
-  steampath = path.join(HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common/Quake\ III\ Arena')
+  FS_BASEPATH = '/Applications/ioquake3'
+  STEAMPATH = path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common/Quake\ III\ Arena')
 } else
 if(os.platform == 'linux') {
-  basepath = '/usr/local/games/quake3'
-  steampath = path.join(HOMEPATH, '/.steam/steam/SteamApps/common/quake3')
+  FS_BASEPATH = '/usr/local/games/quake3'
+  STEAMPATH = path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common/quake3')
 }
 
 module.exports = {
   EXE_NAME,
+  WEB_DIRECTORY,
+  ASSETS_DIRECTORY,
+  BUILD_DIRECTORY,
+  FS_BASEPATH,
+  STEAMPATH,
+  setGame,
+  getGame,
+  repackedCache,
+  downloadCache,
+  setRepack,
+  setDownload,
 
 }

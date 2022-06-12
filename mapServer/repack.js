@@ -25,7 +25,7 @@ async function repackPk3(pk3Path) {
   //   (e.g. menus, cfgs, shaders)
   //   and very small images from shaders/gfx/sfx
   // generate new palette
-  let index = await getZipIndex(pk3Path)
+  let index = await getIndex(pk3Path)
   let directory = []
   for(let i = 0; i < index.length; i++) {
     if(index[i].isDirectory) 
@@ -65,6 +65,9 @@ async function repackPk3(pk3Path) {
 }
 
 
+async function repackBasegame()
+
+
 async function serveRepacked(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
   if(filename.includes('maps/download/')) {
@@ -72,8 +75,8 @@ async function serveRepacked(request, response, next) {
       // TODO: repack mod directory pk3s into 1 overlapping 
       //   (i.e. do the same virtual combination the 
       //      engine does and recompile)
-      //   pak0.pk3 and deliver
-
+      // TODO: get index of all pk3 in non-cache game directories,
+      //   make a new pak with combined file-system
     } else {
       // download pk3 and repack
       let newFile = await sourcePk3Download(filename)

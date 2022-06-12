@@ -7,6 +7,7 @@
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
 const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
+const {serveDedicated} = require('./gameServer/serve-process.js')
 const {HTTP_PORTS} = require('./proxyServer/serve-web.js')
 
 const SUPPORTED_SERVICES = [
@@ -54,22 +55,22 @@ function parseAguments() {
       noFS = true
       break
     case '--game':
-      basegame = process.argv[i+1]
-      console.log('Basegame: ', basegame)
+      console.log('Basegame: ', process.argv[i+1])
+      setGame(process.argv[i+1])
       i++
       break
     case '--repack-cache':
       console.log('Repack cache: ', process.argv[i+1])
-      repackedCache = process.argv[i+1]
-      if(!fs.existsSync(repackedCache)) {
-        console.log('WARNING: directory does not exist, unexpect behavior.')
+      setRepack(process.argv[i+1])
+      if(!fs.existsSync(repackedCache())) {
+        console.log('WARNING: directory does not exist, unexpected behavior.')
       }
       i++
       break
     case '--download-cache':
       console.log('Download cache: ', process.argv[i+1])
-      downloadCache = process.argv[i+1]
-      if(!fs.existsSync(downloadCache)) {
+      setDownload(process.argv[i+1])
+      if(!fs.existsSync(getDownload())) {
         console.log('WARNING: directory does not exist, unexpect behavior.')
       }
       i++

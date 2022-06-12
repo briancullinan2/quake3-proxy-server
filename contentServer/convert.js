@@ -22,9 +22,10 @@ async function convertImage(imagePath) {
     //  request, 'en', { sensitivity: 'base' }) == 0)
     fs.mkdirSync(path.dirname(newPath), { recursive: true })
     if(imagePath.endsWith('.pk3')) {
-      pipeZipCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
-      -quality 20% -auto-orient ${isUnsupportedImage[0].substring(1)}:- "${newPath}"`, 
-      pk3InnerPath, imagePath)
+      pipeZipCmd(`convert -strip -interlace Plane \
+          -sampling-factor 4:2:0 -quality 20% -auto-orient \
+          ${isUnsupportedImage[0].substring(1)}:- "${newPath}"`, 
+          pk3InnerPath, imagePath)
     } else {
       execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
       -quality 20% -auto-orient "${imagePath}" "${newPath}"`)

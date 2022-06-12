@@ -7,6 +7,11 @@ const {
 const {createUDP} = require('../proxyServer/serve-udp.js')
 const MASTER_PORTS = [27950]
 const UDP_SOCKETS = []
+const MASTER_SERVERS = [
+  'ws://master.quakejs.com:27950', 
+  '207.246.91.235:27950', 
+  'master.quake3arena.com',
+]
 
 function createMasters() {
 
@@ -29,7 +34,9 @@ function createMasters() {
     }
   }
 
-  for(let i = 0; i < masters.length; i++) {
+  // preload our own master server with results from parent master servers
+  //   TODO: does dpmaster do this?
+  for(let i = 0; i < MASTER_SERVERS.length; i++) {
 
   }
 }

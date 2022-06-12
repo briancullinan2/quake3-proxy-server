@@ -1,32 +1,14 @@
 const fs = require('fs')
 const path = require('path')
+const {getIndex} = require('../utilities/zip.js')
+const {
+  FS_BASEPATH, STEAMPATH,
+  getGame
+} = require('../utilities/env.js')
 
-
-
-// virtual file-system
-function buildDirectories() {
-  // This includes a game directory with build/release-os-arch/baseq3a/vm/ui.qvm
-  const BUILD_OSES = [
-    'wasm-js', 'darwin-x86_64', 'linux-x86_64', 
-    'mingw-x86_64', 'msys-x86_64', 'qvms-x86_64',
-    'qvms-bytecode'
-  ]
-  const BUILD_MODES = ['release-', 'debug-']
-    .reduce(function (arr, item) {
-      return arr
-      .concat(BUILD_OSES.map(os => item + os))
-    }, [])
-  const BUILD_ORDER = BUILD_MODES
-    .map(mode => path.join(BUILD_DIRECTORY, mode))
-    .concat([
-      repackedCache, // TODO: 
-      WEB_DIRECTORY,
-      ASSETS_DIRECTORY,
-    ])
-  return BUILD_ORDER
-}
 
 function gameDirectories() {
+  let basegame = getGame()
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../../' + basegame)
   const GAME_DIRECTORIES = [
     repackedCache, // TODO: 
@@ -35,11 +17,11 @@ function gameDirectories() {
     path.join(GAME_DIRECTORY, 'assets'),
     GAME_DIRECTORY,
   ]
-  if(fs.existsSync(path.join(basepath, basegame))) {
-    GAME_DIRECTORIES.push(path.join(basepath, basegame))
+  if(fs.existsSync(path.join(FS_BASEPATH, basegame))) {
+    GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame))
   }
-  if(fs.existsSync(path.join(steampath, basegame))) {
-    GAME_DIRECTORIES.push(path.join(steampath, basegame))
+  if(fs.existsSync(path.join(STEAMPATH, basegame))) {
+    GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame))
   }
   return GAME_DIRECTORIES
 }
@@ -57,7 +39,7 @@ async function serveVirtualPk3dir(filename) {
   if(!pk3Path) {
     return []
   }
-  let index = await getZipIndex(pk3Path)
+  let index = await getIndex(pk3Path)
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let directory = []
   for(let i = 0; i < index.length; i++) {
@@ -86,6 +68,7 @@ function layeredDir(filepath) {
     filepath = filepath.substr(1)
   }
   let result = []
+  let basegame = getGame()
   /*
   let BUILD_ORDER = buildDirectories()
   for(let i = 0; i < BUILD_ORDER.length; i++) {
@@ -111,36 +94,6 @@ function layeredDir(filepath) {
         .map(dir => path.join(filepath, dir))
   } else {
     return false
-  }
-}
-
-function findFile(filename) {
-  if(filename.startsWith('/')) {
-    filename = filename.substr(1)
-  }
-  let BUILD_ORDER = buildDirectories()
-  for(let i = 0; i < BUILD_ORDER.length; i++) {
-    let newPath = path.join(BUILD_ORDER[i], filename)
-    if(fs.existsSync(newPath)) {
-      return newPath
-    }
-  }
-
-  if(!filename.startsWith(basegame)) {
-    return
-  }
-  let GAME_ORDER = gameDirectories()
-  for(let i = 0; i < GAME_ORDER.length; i++) {
-    let newPath = path.join(GAME_ORDER[i], filename.substr(basegame.length))
-    console.log(newPath)
-    if(fs.existsSync(newPath)) {
-      return newPath
-    }
-  }
-
-  let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  if(pk3File.length < filename.length) {
-    return findFile(pk3File)
   }
 }
 
