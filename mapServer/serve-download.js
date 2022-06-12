@@ -23,7 +23,7 @@ async function sourcePk3Download(filename) {
 
 
   let pk3header = response.headers['content-disposition']
-  let pk3name = (/filename=["'\s]*([^"'\s]*)["'\s]*/gi).exec(pk3header)
+  let pk3name = (/filename=["'\s]*([^"'\s]*)["'\s]*/i).exec(pk3header)
   let repacked = findFile(pk3name[1])
   if(repacked) {
     request.end()

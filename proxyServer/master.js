@@ -1,12 +1,25 @@
 
 const {RESOLVE_DEDICATED, serveDedicated} = require('../gameServer/serve-process.js')
+const {parseOOB} = require('../proxyServer/socks5.js')
+const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
 const MASTER_SERVICE = [
-  'getservers ', 'heartbeat ', 'infoResponse\n', 
+  'getserversResponse', 'getservers ', 'heartbeat ', 'infoResponse\n', 
   'subscribe'
 ]
 const GAME_SERVERS = {}
 const RESOLVE_INFOS = {}
+
+function sendOOB(socket, message, rinfo) {
+  let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(
+    message.split('').map(c => c.charCodeAt(0)))
+  if(typeof socket._socket == 'object') {
+    socket.send(Buffer.from(response), { binary: true })
+  } else {
+    socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
+  }
+}
+
 
 async function heartbeat(socket, message, rinfo) {
   //console.log(message, rinfo)
@@ -22,12 +35,7 @@ async function heartbeat(socket, message, rinfo) {
       clearTimeout(cancelTimer)
       resolve(info)
     }
-    let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(msg.split('').map(c => c.charCodeAt(0)))
-    if(typeof socket._socket == 'object') {
-      socket.send(Buffer.from(response), { binary: true })
-    } else {
-      socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
-    }
+    sendOOB(socket, msg, rinfo)
   })
   //console.log(info)
 
@@ -50,6 +58,7 @@ async function infoResponse(socket, message, rinfo) {
       }
       return obj
     }, {})
+  console.log(infos)
   if(typeof GAME_SERVERS[infos.challenge] != 'undefined') {
     Object.assign(GAME_SERVERS[infos.challenge], infos)
   }
@@ -58,6 +67,38 @@ async function infoResponse(socket, message, rinfo) {
     delete RESOLVE_INFOS[infos.challenge]
   }
 }
+
+
+// LOL, so funny, "case of the fuck-arounds"
+//   instead of returning the original address, 
+//   return a useful websocket proxy to the original dedicated
+//   and update ws://quakejs.com with our own address
+// When the time comes, I'll convert every server name to marquee
+//   the name of my proxy server and user login. Useful Ads?
+// Ads that sell NFTs? People pay to be advertised to because
+//   even knowing about luxury-goods should cost money? 
+// Interesting, I see an end to the classic "loss-leaders"
+async function getserversResponse(socket, message, rinfo) {
+  let buffer = message
+  //console.log(Array.from(message).map(c => String.fromCharCode(c)).join(''))
+  while(buffer[0] == '\\'.charCodeAt(0)
+    && !(buffer[1] == 'E'.charCodeAt(0)
+      && buffer[2] == 'O'.charCodeAt(0)
+      && buffer[3] == 'F'.charCodeAt(0))) {
+    // validate server info
+    let challenge = buildChallenge()
+    let msg = 'getinfo ' + challenge
+    let rinfo = {
+      address: buffer[1] + '.' + buffer[2] + '.' + buffer[3] + '.' + buffer[4],
+      port: (buffer[5] << 8) + buffer[6],
+    }
+    GAME_SERVERS[challenge] = rinfo
+    //console.log(rinfo)
+    sendOOB(socket, msg, rinfo)
+    buffer = buffer.slice(7)
+  }
+}
+
 
 async function getServers(socket, message, rinfo) {
   let msg = 'getserversResponse'
@@ -85,13 +126,7 @@ async function getServers(socket, message, rinfo) {
 	}
   console.log('sending ', keys.length, ' servers')
 	msg += '\\EOT'
-  let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(msg.split('').map(c => c.charCodeAt(0)))
-  if(typeof socket._socket == 'object') {
-    socket.send(Buffer.from(response), { binary: true })
-  } else {
-    socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
-  }
-
+  sendOOB(socket, msg, rinfo)
 }
 
 async function serveMaster(socket, message, rinfo) {
@@ -108,22 +143,38 @@ async function serveMaster(socket, message, rinfo) {
     let request = Array.from(buffer.slice(0, MASTER_SERVICE[i].length))
         .map(c => String.fromCharCode(c)).join('')
     if(MASTER_SERVICE[i].localeCompare(
-        request, 'en', { sensitivity: 'base' }) == 0
+        request, 'en', { sensitivity: 'base' }) != 0
     ) {
-      buffer = message.slice(MASTER_SERVICE[i].length)
-      if(i == 0) {
-        await getServers(socket, buffer, rinfo) 
-      } else
-      if(i == 1) {
-        await heartbeat(socket, buffer, rinfo)
-      } else
-      if(i == 2) {
-        await infoResponse(socket, buffer, rinfo) 
-      } else
-      if(i == 3) {
-        await subscribe(socket, buffer, rinfo) 
-      }
-      break
+      continue;
     }
+    //console.log(i, request, '!=', MASTER_SERVICE[i])
+    buffer = buffer.slice(MASTER_SERVICE[i].length)
+    if(i == 0) {
+      await getserversResponse(socket, buffer, rinfo) 
+    } else
+    if(i == 1) {
+      //await getServers(socket, buffer, rinfo) 
+    } else
+    if(i == 2) {
+      await heartbeat(socket, buffer, rinfo)
+    } else
+    if(i == 3) {
+      await infoResponse(socket, buffer, rinfo) 
+    } else
+    if(i == 4) {
+      await subscribe(socket, buffer, rinfo) 
+    } // else
+    return
   }
+
+  console.error(new Error('Unknown response: ' +  
+      Array.from(message.slice(4)).map(c => String.fromCharCode(c))
+          .join('').split(/[^a-z0-9]/i)[0]))
 }
+
+module.exports = {
+  serveMaster,
+  sendOOB,
+
+}
+

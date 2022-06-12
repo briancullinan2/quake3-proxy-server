@@ -27,3 +27,8 @@ function reverseLookup(isWS, address) {
   return domain
 }
 
+
+module.exports = {
+  lookupDNS,
+  reverseLookup,
+}

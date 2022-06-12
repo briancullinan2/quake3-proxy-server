@@ -2,16 +2,16 @@ const fs = require('fs')
 const path = require('path')
 const {getIndex} = require('../utilities/zip.js')
 const {
-  FS_BASEPATH, STEAMPATH,
+  FS_BASEPATH, STEAMPATH, repackedCache, 
   getGame
 } = require('../utilities/env.js')
 
 
 function gameDirectories() {
   let basegame = getGame()
-  const GAME_DIRECTORY = path.resolve(__dirname + '/../../../' + basegame)
+  const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + getGame())
   const GAME_DIRECTORIES = [
-    repackedCache, // TODO: 
+    repackedCache(), // TODO: 
     path.join(GAME_DIRECTORY, 'build/linux'),
     path.join(GAME_DIRECTORY, 'build/win32-qvm'),
     path.join(GAME_DIRECTORY, 'assets'),

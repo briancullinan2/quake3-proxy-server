@@ -11,8 +11,8 @@ let FS_BASEPATH = ''
 let STEAMPATH = ''
 
 const WEB_DIRECTORY = path.resolve(__dirname)
-const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../docs/')
-const BUILD_DIRECTORY = path.resolve(__dirname + '/../../build/')
+const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
+const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
 
