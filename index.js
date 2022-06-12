@@ -6,45 +6,22 @@
 // Every client has authenticated access to the proxy server
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
+const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
+const {HTTP_PORTS} = require('./proxyServer/serve-web.js')
 
 const SUPPORTED_SERVICES = [
-  'proxy', 'maps', 'master', 'redirect', 'games', 'content', 'repack', 'discord'
+  'proxy', 'maps', 'master', 'dedicated', 'redirect', 'games', 'content', 'repack', 'discord'
 ]
 const START_SERVICES = []
 
+let forwardIP = ''
+let noFS = false
+
 function parseAguments() {
 
-}
-
-function main() {
-  if(START_SERVICES.length > 0) {
-
-  }
-}
-
-
-// create servers
-let isCLI = false
-let noFS = false
-let runServer = false
-let forwardIP = ''
-let httpPort = [8080]
-let masterPort = [27950]
-
-
-
-for(let i = 0; i < process.argv.length; i++) {
-  let a = process.argv[i]
-  if(a.includes('node')) {
-    isCLI = true
-  } else 
-  if(a.match(__filename)) {
-    runServer = true
-  } else
-  if(SUPPORTED_SERVICES.includes(a)) {
-    START_SERVICES.push(a)
-  } else
-  switch(a) {
+  for(let i = 0; i < process.argv.length; i++) {
+    let a = process.argv[i]
+    switch(a) {
     case '--proxy-ip':
       console.log('Forwarding ip address: ', process.argv[i+1])
       forwardIP = process.argv[i+1]
@@ -52,12 +29,19 @@ for(let i = 0; i < process.argv.length; i++) {
       break
     case '--http-port':
       console.log('HTTP ports: ', process.argv[i+1])
-      httpPort = process.argv[i+1].split(',').map(p => parseInt(p))
+      HTTP_PORTS.splice(0)
+      for(let i = 0; i < newPorts.length; i++) {
+        HTTP_PORTS.push(parseInt(newPorts[i]))
+      }
       i++
       break
     case '--master-port':
       console.log('Master port: ', process.argv[i+1])
-      masterPort = process.argv[i+1].split(',').map(p => parseInt(p))
+      MASTER_PORTS.splice(0)
+      let newPorts = process.argv[i+1].split(',')
+      for(let i = 0; i < newPorts.length; i++) {
+        MASTER_PORTS.push(parseInt(newPorts[i]))
+      }
       i++
       break
     case '--masters':
@@ -90,6 +74,40 @@ for(let i = 0; i < process.argv.length; i++) {
       }
       i++
       break
+    }
+  }
+}
+
+function main() {
+  parseAguments()
+  if(START_SERVICES.length > 0) {
+
+  }
+
+  if(START_SERVICES.includes('master')) {
+    createMasters()
+  }
+
+  if(START_SERVICES.includes('dedicated')) {
+    serveDedicated()
+  }
+}
+
+
+// create servers
+let isCLI = false
+let runServer = false
+
+for(let i = 0; i < process.argv.length; i++) {
+  let a = process.argv[i]
+  if(a.includes('node')) {
+    isCLI = true
+  } else 
+  if(a.match(__filename)) {
+    runServer = true
+  } else
+  if(SUPPORTED_SERVICES.includes(a)) {
+    START_SERVICES.push(a)
   }
 }
 

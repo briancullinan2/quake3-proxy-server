@@ -63,3 +63,14 @@ function forwardMessage(port, isWS, message, rinfo) {
       ? buffer : Buffer.concat([buffer, message]),
       { binary: true })
 }
+
+function createUDP(port) {
+  const {createSocket} = require('dgram')
+  let udp = createSocket('udp4')
+  udp.bind(port, '0.0.0.0')
+  return udp
+}
+
+module.exports = {
+  createUDP,
+}

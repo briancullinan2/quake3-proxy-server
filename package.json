@@ -2,8 +2,8 @@
   "name": "quake3e-wasm",
   "version": "0.0.1",
   "scripts": {
-    "start": "node ./proxyServer/serve-proxy.js",
-    "proxy": "node ./proxyServer/serve-proxy.js"
+    "start": "node ./index.js",
+    "proxy": "node ./index.js"
   },
   "bin": {
     "quakejs-content": "bin/content.js",

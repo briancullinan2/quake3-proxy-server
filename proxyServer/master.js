@@ -1,5 +1,6 @@
 
-// repack live http://ws.q3df.org/maps/download/%1 
+const {RESOLVE_DEDICATED, serveDedicated} = require('../gameServer/serve-process.js')
+// repack live http://ws.q3df.org/maps/download/%1
 const MASTER_SERVICE = [
   'getservers ', 'heartbeat ', 'infoResponse\n', 
   'subscribe'
