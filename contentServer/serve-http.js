@@ -1,5 +1,9 @@
 
 const {serveGames} = require('../gameServer/serve-games.js')
+const {serveMaps} = require('../mapServer/serve-download.js')
+const {serveVirtual} = require('../contentServer/content.js')
+const {serveRepacked} = require('../mapServer/repack.js')
+const {STYLES} = require('../utilities/env.js')
 
 // < 100 LoC
 const express = require('express')
@@ -86,6 +90,13 @@ function createApplication(features) {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
+  app.use(function (req, res, next) {
+    let filename = req.url.replace(/\?.*$/, '')
+    if(filename.match('/index.css')) {
+      return res.sendFile(STYLES)
+    }
+    next()
+  })
 
   if(features.includes('repack')) {
     app.use(serveRepacked) // /maps/download/%1
@@ -101,6 +112,10 @@ function createApplication(features) {
 
   if(features.includes('games')) {
     app.use(serveGames) // /home fs for updates
+  }
+
+  if(features.includes('maps')) {
+    app.use(serveMaps) // /home fs for updates
   }
 
   return app

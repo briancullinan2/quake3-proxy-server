@@ -1,4 +1,5 @@
 
+const {sourcePk3Download} = require('../mapServer/serve-download.js')
 const {serveMaster, sendOOB, GAME_SERVERS} = require('../proxyServer/master.js')
 const {createUDP} = require('../proxyServer/serve-udp.js')
 const {lookupDNS} = require('../utilities/dns.js')
@@ -58,16 +59,31 @@ async function queryMaster(master) {
   })
 }
 
-function serveGames(request, response, next) {
+async function serveGames(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
-  console.log(GAME_SERVERS)
-  if(filename.match(/^\/games\/?$/i)) {
-    let keys = Object.keys(GAME_SERVERS)
-    let games = keys.map(k => GAME_SERVERS[k].hostname)
-    return response.send(games.map(node => 
-      `<li><a href="/${node}">${node}</a></li>`).join('\n'))
+  //console.log(GAME_SERVERS)
+  if(!filename.match(/^\/games\/?$/i)) {
+    return next()
   }
-  next()
+  
+  let values = Object.values(GAME_SERVERS)
+  //let games = keys.map(k => GAME_SERVERS[k].hostname)
+  let list = ''
+  for(let i = 0; i < values.length; i++) {
+    if(!values[i].hostname) {
+      continue
+    }
+    list += '<li>'
+    let pk3name = await sourcePk3Download(filename)
+    if(pk3name) {
+      list += `<img src="/levelshots/${values[i].mapname}" />`
+    } else {
+      list += `<img src="/menu/art/${values[i].mapname}" />`
+    }
+    list += `<a href="/${values[i].address}">${values[i].hostname}</a>`
+    list += '</li>'
+  }
+  return response.send('<ol>' + list + '<ol>')
 }
 
 module.exports = {

@@ -1,6 +1,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const {gameDirectories} = require('../contentServer/content.js')
 const {
   BUILD_DIRECTORY, repackedCache, WEB_DIRECTORY,
   ASSETS_DIRECTORY, getGame
@@ -44,6 +45,7 @@ function findFile(filename) {
   if(!filename.startsWith(basegame)) {
     return
   }
+
   let GAME_ORDER = gameDirectories()
   for(let i = 0; i < GAME_ORDER.length; i++) {
     let newPath = path.join(GAME_ORDER[i], filename.substr(basegame.length))

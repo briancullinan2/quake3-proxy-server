@@ -1,3 +1,7 @@
+const fs = require('fs')
+const path = require('path')
+const {findFile} = require('../contentServer/virtual.js')
+const {repackedCache} = require('../utilities/env.js')
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
@@ -19,7 +23,7 @@ async function repackPk3(pk3Path) {
     storeEntries: true,
     skipEntryNameValidation: true,
   })
-  let newZip = path.join(repackedCache, path.basename(pk3Path))
+  let newZip = path.join(repackedCache(), path.basename(pk3Path))
 
   // make a new zip, filter out everything but text files
   //   (e.g. menus, cfgs, shaders)
@@ -65,7 +69,9 @@ async function repackPk3(pk3Path) {
 }
 
 
-async function repackBasegame()
+async function repackBasegame() {
+
+}
 
 
 async function serveRepacked(request, response, next) {
@@ -81,7 +87,7 @@ async function serveRepacked(request, response, next) {
       // download pk3 and repack
       let newFile = await sourcePk3Download(filename)
       console.log(newFile)
-      if(!newFile.startsWith(repackedCache)) {
+      if(!newFile.startsWith((repackedCache()))) {
         newFile = await repackPk3(newFile)
       }
       return response.sendFile(newFile, {
@@ -109,7 +115,7 @@ async function serveRepacked(request, response, next) {
 
   if(newFile && !fs.statSync(newFile).isDirectory()) {
     // always convert pk3s, remove media to load individually
-    if(!newFile.startsWith(repackedCache)) { 
+    if(!newFile.startsWith(repackedCache())) { 
       newFile = await repackPk3(newFile)
     }
     return response.sendFile(newFile)
@@ -132,5 +138,10 @@ async function serveRepacked(request, response, next) {
       
     //}
   }
+
+}
+
+module.exports = {
+  serveRepacked,
 
 }

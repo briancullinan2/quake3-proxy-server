@@ -1,5 +1,6 @@
 // TODO: some basic capability checking and
 //   default config and file paths.
+const fs = require('fs')
 const path = require('path')
 const os = require('os')
 
@@ -14,6 +15,9 @@ const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
+const STYLES = path.resolve(__dirname + '/../utilities/index.css')
+const INDEX = fs.readFileSync(path.resolve(__dirname 
+    + '/../utilities/index.html')).toString('utf-8')
 
 let REPACK_CACHE = path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')
 let DOWNLOAD_CACHE = path.join(BUILD_DIRECTORY)
@@ -62,6 +66,8 @@ module.exports = {
   BUILD_DIRECTORY,
   FS_BASEPATH,
   STEAMPATH,
+  STYLES,
+  INDEX,
   setGame,
   getGame,
   repackedCache,

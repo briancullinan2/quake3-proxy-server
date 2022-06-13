@@ -6,13 +6,16 @@
 // Every client has authenticated access to the proxy server
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
+const fs = require('fs')
 const {createProxies} = require('./proxyServer/serve-web.js')
 const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
 const {serveDedicated} = require('./gameServer/serve-process.js')
+const {setDownload, setRepack, downloadCache, repackedCache} = require('./utilities/env.js')
 
 const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated', 
-  'redirect', 'games', 'content', 'repack', 'discord'
+  'redirect', 'games', 'content', 'repack', 'discord',
+  'virtual'
 ]
 const START_SERVICES = []
 
@@ -72,7 +75,7 @@ function parseAguments() {
     case '--download-cache':
       console.log('Download cache: ', process.argv[i+1])
       setDownload(process.argv[i+1])
-      if(!fs.existsSync(getDownload())) {
+      if(!fs.existsSync(downloadCache())) {
         console.log('WARNING: directory does not exist, unexpect behavior.')
       }
       i++

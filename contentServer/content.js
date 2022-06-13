@@ -183,7 +183,16 @@ async function serveVirtual(request, response, next) {
   if(isJson) {
     return response.json(directory)
   } else {
-    return response.send(directory.map(node => 
+    return '<ol>'
+      + response.send(directory.map(node => 
       `<li><a href="/${node}">${node}</a></li>`).join('\n'))
+      + '</ol>'
   }
 }
+
+module.exports = {
+  gameDirectories,
+  serveVirtual,
+  
+}
+
