@@ -4,7 +4,7 @@ const UDP_CLIENTS = []
 const WS_FORWARDS = []
 
 async function serveUDP(socket, address, port) {
-  const redirectApp = createRedirect()
+  const redirectApp = createRedirect(socket.forward)
   console.log('UDP associate: ' + address + ':' + port)
 
   if(typeof UDP_SERVERS[port] == 'undefined') {

@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const express = require('express')
 const {getIndex} = require('../utilities/zip.js')
 const {
   FS_BASEPATH, STEAMPATH, repackedCache, 
@@ -97,14 +98,6 @@ function layeredDir(filepath) {
   }
 }
 
-
-function createVirtual() {
-  const app = express()
-  app.use(serveRepacked) // /maps/download/%1
-  app.use(serveLive) // version.json and /build
-  app.use(serveVirtual) // /home fs for updates
-  return app
-}
 
 /*
 Theory: instead of trying to modify qcommon/files.c

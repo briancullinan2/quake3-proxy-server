@@ -6,15 +6,17 @@
 // Every client has authenticated access to the proxy server
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
+const {createProxies} = require('./proxyServer/serve-web.js')
 const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
 const {serveDedicated} = require('./gameServer/serve-process.js')
-const {HTTP_PORTS} = require('./proxyServer/serve-web.js')
 
 const SUPPORTED_SERVICES = [
-  'proxy', 'maps', 'master', 'dedicated', 'redirect', 'games', 'content', 'repack', 'discord'
+  'proxy', 'maps', 'master', 'mirror', 'dedicated', 
+  'redirect', 'games', 'content', 'repack', 'discord'
 ]
 const START_SERVICES = []
 
+let forward = 'http://locahost:8080'
 let forwardIP = ''
 let noFS = false
 
@@ -81,12 +83,13 @@ function parseAguments() {
 
 function main() {
   parseAguments()
-  if(START_SERVICES.length > 0) {
-
-  }
 
   if(START_SERVICES.includes('master')) {
-    createMasters()
+    createMasters(START_SERVICES.includes('mirror'))
+  }
+
+  if(START_SERVICES.length > 0) {
+    createProxies(START_SERVICES, forward)
   }
 
   if(START_SERVICES.includes('dedicated')) {

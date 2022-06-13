@@ -58,7 +58,7 @@ async function infoResponse(socket, message, rinfo) {
       }
       return obj
     }, {})
-  console.log(infos)
+  //console.log(infos)
   if(typeof GAME_SERVERS[infos.challenge] != 'undefined') {
     Object.assign(GAME_SERVERS[infos.challenge], infos)
   }
@@ -84,7 +84,7 @@ async function getserversResponse(socket, message, rinfo) {
   while(buffer[0] == '\\'.charCodeAt(0)
     && !(buffer[1] == 'E'.charCodeAt(0)
       && buffer[2] == 'O'.charCodeAt(0)
-      && buffer[3] == 'F'.charCodeAt(0))) {
+      && buffer[3] == 'T'.charCodeAt(0))) {
     // validate server info
     let challenge = buildChallenge()
     let msg = 'getinfo ' + challenge
@@ -97,6 +97,7 @@ async function getserversResponse(socket, message, rinfo) {
     sendOOB(socket, msg, rinfo)
     buffer = buffer.slice(7)
   }
+  return buffer
 }
 
 
@@ -173,6 +174,7 @@ async function serveMaster(socket, message, rinfo) {
 }
 
 module.exports = {
+  GAME_SERVERS,
   serveMaster,
   sendOOB,
 

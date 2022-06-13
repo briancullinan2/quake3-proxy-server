@@ -5,7 +5,6 @@ const os = require('os')
 
 const EXE_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
-let forward = 'http://local.games:8080'
 let FS_BASEGAME = 'baseq3a'
 let FS_BASEPATH = ''
 let STEAMPATH = ''

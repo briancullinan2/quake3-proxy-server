@@ -1,4 +1,5 @@
 
+const {serveGames} = require('../gameServer/serve-games.js')
 
 // < 100 LoC
 const express = require('express')
@@ -6,11 +7,11 @@ express.static.mime.types['wasm'] = 'application/wasm'
 express.static.mime.types['pk3'] = 'application/octet-stream'
 express.static.mime.types['bsp'] = 'application/octet-stream'
 
-function createRedirect() {
-  const express = require('express')
+function createRedirect(forward) {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
+
   app.use(function (request, response, next) {
     let newLocation = forward
     if(!forward) {
@@ -81,6 +82,32 @@ function serveLive(request, response, next) {
   return next()
 }
 
+function createApplication(features) {
+  const app = express()
+  app.enable('etag')
+  app.set('etag', 'strong')
+
+  if(features.includes('repack')) {
+    app.use(serveRepacked) // /maps/download/%1
+  }
+
+  if(features.includes('live')) {
+    app.use(serveLive) // version.json and /build
+  }
+
+  if(features.includes('virtual')) {
+    app.use(serveVirtual) // /home fs for updates
+  }
+
+  if(features.includes('games')) {
+    app.use(serveGames) // /home fs for updates
+  }
+
+  return app
+}
+
+
 module.exports = {
   createRedirect,
+  createApplication,
 }
