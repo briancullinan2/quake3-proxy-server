@@ -60,12 +60,16 @@ async function sourcePk3Download(filename) {
   }
 
   if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
-    let cached = findFile(getGame() + '/' + MAP_DICTIONARY[mapname] + '.pk3')
+    let pk3name = MAP_DICTIONARY[mapname] + '.pk3'
+    let cached = findFile(getGame() + '/' + pk3name)
     if(cached) {
       return cached
     } else
-    if(fs.existsSync(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'))) {
-      return path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3')
+    if((cached = findFile('baseq3/' + pk3name))) {
+      return cached
+    } else
+    if(fs.existsSync(path.join(downloadCache(), pk3name))) {
+      return path.join(downloadCache(), pk3name)
     }
   }
 
@@ -164,10 +168,12 @@ async function serveMaps(request, response, next) {
     start = parseInt(rangeString.split('\/')[0])
     end = parseInt(rangeString.split('\/')[1])
   } else 
+  // display map info, desconstruct
   if(rangeString) {
+    let pk3name = MAP_DICTIONARY[mapname] + '.pk3'
     let mapname = path.basename(filename).replace('.pk3', '')
         .toLocaleLowerCase()
-    if(fs.existsSync(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'))) {
+    if(fs.existsSync(path.join(downloadCache(), pk3name))) {
       return getMapInfo(mapname)
     } else {
       return next()

@@ -16,7 +16,7 @@ const {setDownload, setRepack, downloadCache, repackedCache,
 const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated', 
   'redirect', 'games', 'content', 'repack', 'discord',
-  'virtual', 'live'
+  'virtual', 'live', 'mods',
 ]
 const START_SERVICES = []
 

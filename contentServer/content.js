@@ -1,30 +1,10 @@
 const fs = require('fs')
 const path = require('path')
-const express = require('express')
 const {getIndex} = require('../utilities/zip.js')
+const {findFile, gameDirectories} = require('../contentServer/virtual.js')
 const {
-  FS_BASEPATH, STEAMPATH, repackedCache, getGame
+  FS_BASEPATH, MODS_NAMES, MODS
 } = require('../utilities/env.js')
-
-
-function gameDirectories() {
-  let basegame = getGame()
-  const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + getGame())
-  const GAME_DIRECTORIES = [
-    repackedCache(), // TODO: 
-    path.join(GAME_DIRECTORY, 'build/linux'),
-    path.join(GAME_DIRECTORY, 'build/win32-qvm'),
-    path.join(GAME_DIRECTORY, 'assets'),
-    GAME_DIRECTORY,
-  ]
-  if(fs.existsSync(path.join(FS_BASEPATH, basegame))) {
-    GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame))
-  }
-  if(fs.existsSync(path.join(STEAMPATH, basegame))) {
-    GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame))
-  }
-  return GAME_DIRECTORIES
-}
 
 
 // TODO: would be cool if a virtual directory could span say: 
@@ -68,7 +48,12 @@ function layeredDir(filepath) {
     filepath = filepath.substr(1)
   }
   let result = []
-  let basegame = getGame()
+  if(filepath.length == 0) {
+    // list available mods
+    if(fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
+      result.push.apply(result, fs.readdirSync(FS_BASEPATH))
+    }
+  }
   /*
   let BUILD_ORDER = buildDirectories()
   for(let i = 0; i < BUILD_ORDER.length; i++) {
@@ -78,10 +63,11 @@ function layeredDir(filepath) {
     }
   }
   */
-  if(filepath.startsWith(basegame)) {
-    let GAME_ORDER = gameDirectories()
+  let basename = MODS_NAMES.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
+  if(basename > -1) {
+    let GAME_ORDER = gameDirectories(MODS[basename])
     for(let i = 0; i < GAME_ORDER.length; i++) {
-      let newPath = path.join(GAME_ORDER[i], filepath.substr(basegame.length))
+      let newPath = path.join(GAME_ORDER[i], filepath.substr(MODS[basename].length))
       if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
         result.push.apply(result, fs.readdirSync(newPath))
       }

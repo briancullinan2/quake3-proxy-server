@@ -24,7 +24,7 @@ let previousLine = 0
 let previousHalf = 0
 
 async function refreshMaps() {
-  if(!mapList) {
+  if(!mapList || !mapList.children[0]) {
     return
   }
 

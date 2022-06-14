@@ -62,6 +62,30 @@ if(os.platform == 'linux') {
   STEAMPATH = path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common/quake3')
 }
 
+
+const MODS = []
+const MODS_NAMES = []
+
+if(fs.existsSync(FS_BASEPATH)
+//    || fs.existsSync(STEAMPATH)
+) {
+  let appDirectory = fs.readdirSync(FS_BASEPATH)
+  for(let i = 0; i < appDirectory.length; i++) {
+    let modDir = path.join(FS_BASEPATH, appDirectory[i])
+    if(fs.existsSync(modDir) 
+        && fs.statSync(modDir).isDirectory()) {
+      if(fs.existsSync(path.join(modDir, 'description.txt'))
+        || fs.readdirSync(modDir)
+          .filter(filename => filename.endsWith('.pk3') 
+            || filename.endsWith('.pk3dir')).length > 0) {
+        MODS.push(appDirectory[i])
+        MODS_NAMES.push(appDirectory[i].toLocaleLowerCase())
+      }
+    }
+  }
+}
+
+
 module.exports = {
   EXE_NAME,
   WEB_DIRECTORY,
@@ -74,6 +98,8 @@ module.exports = {
   SCRIPTS,
   UNKNOWN,
   INDEX,
+  MODS,
+  MODS_NAMES,
   setGame,
   getGame,
   repackedCache,

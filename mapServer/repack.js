@@ -90,7 +90,9 @@ async function repackPk3(pk3Path) {
 
     if(fileTypes.includes(path.extname(index[i].name))
       // skip too big files
-      || index[i].size < 1024 * 256) {
+      || index[i].size < 1024 * 256
+      // some images with all zeros will compress significantly
+      || index[i].compressedSize < 1024 * 64) {
       directory.push(newName)
     }
   }
