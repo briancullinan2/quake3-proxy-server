@@ -34,10 +34,13 @@ const {downloadCache, INDEX} = require('../utilities/env.js')
 const MAP_DICTIONARY = {}
 const MAP_TITLES = {}
 
-let maps = Object.keys(MAP_LIST)
+let maps = Object.keys(MAP_LIST).sort()
 for(let i = 0; i < maps.length; i++) {
   let mapname = MAP_LIST[maps[i]].includes.filter(i => typeof i['bsp'] != 'undefined')
   if(mapname.length == 0) {
+    continue
+  }
+  if(typeof MAP_TITLES[mapname[0].bsp.toLocaleLowerCase()] != 'undefined') {
     continue
   }
   MAP_TITLES[mapname[0].bsp.toLocaleLowerCase()] = mapname[0].title
@@ -110,45 +113,71 @@ async function sourcePk3Download(filename) {
 }
 
 
+async function getMapJson(maps) {
+  let result = []
+  for(let i = 0; i < maps.length; i++) {
+    let levelshot
+    let pk3name = await sourcePk3Download(maps[i])
+    if(pk3name) {
+      levelshot = `/${getGame()}/${MAP_DICTIONARY[maps[i]]}.pk3dir/levelshots/${maps[i]}.jpg`
+    } else {
+      levelshot = '/unknownmap.jpg'
+    }
+    result.push({
+      title: MAP_TITLES[maps[i]] || maps[i],
+      levelshot: levelshot,
+      bsp: maps[i],
+      pakname: MAP_DICTIONARY[maps[i]],
+      have: !!pk3name
+    })
+  }
+  return result
+}
+
+
 async function serveMaps(request, response, next) {
   let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
-  if(!filename.match(/^\/maps\/?$/i)) {
+  if(!filename.match(/^\/maps(\/?$|\/)/i)) {
     return next()
   }
+  let rangeString = filename.split('\/maps\/')[1]
+  let start = 0
+  let end = 100
+  if(rangeString) {
+    start = parseInt(rangeString.split('\/')[0])
+    end = parseInt(rangeString.split('\/')[1])
+  }
   
-  let maps = Object.keys(MAP_DICTIONARY).slice(0, 100)
+  let total = Object.keys(MAP_DICTIONARY).length
+  let maps = Object.keys(MAP_DICTIONARY).slice(start, end)
+  let json = await getMapJson(maps)
   if(isJson) {
-    let result = []
-    for(let i = 0; i < maps.length; i++) {
-      result.push({
-        title: MAP_TITLES[maps[i]] || maps[i],
-        levelshot: `/${getGame()}/${MAP_DICTIONARY[maps[i]]}.pk3dir/levelshots/${maps[i]}.jpg`,
-        bsp: maps[i],
-        pakname: MAP_DICTIONARY[maps[i]]
-      })
-    }
-    return response.json(result)
+    return response.json(json)
   }
   let list = ''
-  for(let i = 0; i < maps.length; i++) {
+  for(let i = 0; i < json.length; i++) {
     //if(!values[i].hostname) {
     //  continue
     //}
-    list += '<li>'
-    let pk3name = await sourcePk3Download(maps[i])
-    if(pk3name) {
-      list += `<img src="/${getGame()}/${MAP_DICTIONARY[maps[i]]}.pk3dir/levelshots/${maps[i]}.jpg" />`
-    } else {
-      list += `<img src="/${getGame()}/menu/art/unknownmap.jpg" />`
-    }
-    let title = MAP_TITLES[maps[i]] || maps[i]
-    list += `<a href="/maps/download/${maps[i]}">${title}</a>`
+    list += `<li style="background-image: url('${json[i].levelshot}')">`
+    list += `<h3><a href="/maps/download/${maps[i]}">`
+    list += `<span>${json[i].title}</span>`
+    list += json[i].title != json[i].bsp 
+          ? '<small>' + maps[i] + '</small>' : '<small>&nbsp;</small>'
+    list += `</a></h3>`
+    list += `<img ${json[i].have ? '' : 'class="unknownmap"'} src="${json[i].levelshot}" />`
+    list += `<a href="/maps/download/${maps[i]}">Download: ${json[i].pakname}.pk3</a>`
     list += '</li>'
   }
   let offset = INDEX.match('<body>').index
   let index = INDEX.substring(0, offset)
-      + '<ol id="map-list">' + list + '</ol>' 
+      + `
+      <script>window.sessionLines=${JSON.stringify(json)}</script>
+      <script>window.sessionLength=${total}</script>
+      <ol id="map-list">${list}</ol>
+      <script async defer src="index.js"></script>
+      `
       + INDEX.substring(offset, INDEX.length)
   return response.send(index
 //    don't accept-ranges because it will request partial and we don't

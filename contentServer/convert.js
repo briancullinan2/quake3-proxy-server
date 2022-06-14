@@ -1,36 +1,56 @@
 
-async function convertImage(imagePath) {
+const path = require('path')
+const fs = require('fs')
+const {PassThrough} = require('stream')
+const {repackedCache} = require('../utilities/env.js')
+const {execCmd} = require('../utilities/exec.js')
+const {getGame} = require('../utilities/env.js')
+
+async function convertImage(imagePath, unsupportedFormat) {
   let isOpaque
-  let pk3InnerPath
+  let unsupportedExt = path.extname(unsupportedFormat)
+  let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
   if(imagePath.endsWith('.pk3')) {
-    pk3InnerPath = imagePath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-    //console.log(pk3InnerPath)
-    isOpaque = await pipeZipCmd(`identify -format '%[opaque]' ${isUnsupportedImage[0].substring(1)}:-`, pk3InnerPath, imagePath)
+    let passThrough = new PassThrough()
+    isOpaque = (await Promise.all([
+      streamFileKey(pk3File, unsupportedFormat, passThrough),
+      execCmd(`identify -format '%[opaque]' ${unsupportedExt.substring(1)}:-`, passThrough)
+    ]))[1]
   } else {
     isOpaque = await execCmd(`identify -format '%[opaque]' "${imagePath}"`)
   }
-
   if(typeof isOpaque != 'string') {
-    return false
+    isOpaque = 'False'
+  }
+  if(unsupportedFormat.match(/\/.png$/i)
+    || unsupportedFormat.match(/levelshots\//i)) {
+    isOpaque = 'True'
   }
 
-  let newFile = imagePath.replace(isUnsupportedImage[0], 
+  let newFile = unsupportedFormat.replace(unsupportedExt, 
     isOpaque.match(/true/ig) ? '.jpg' : '.png')
-  let newPath = path.join(repackedCache, newFile.substring(basegame.length))
+  let newPath = path.join(repackedCache(), path.basename(pk3File) + 'dir', newFile)
   if(!fs.existsSync(newPath)) {
+    console.log('Converting: ', newPath)
     //console.assert(newFile.localeCompare(
     //  request, 'en', { sensitivity: 'base' }) == 0)
     fs.mkdirSync(path.dirname(newPath), { recursive: true })
     if(imagePath.endsWith('.pk3')) {
-      pipeZipCmd(`convert -strip -interlace Plane \
+      let passThrough = new PassThrough()
+      streamFileKey(pk3File, unsupportedFormat, passThrough)
+      await execCmd(`convert -strip -interlace Plane \
           -sampling-factor 4:2:0 -quality 20% -auto-orient \
-          ${isUnsupportedImage[0].substring(1)}:- "${newPath}"`, 
-          pk3InnerPath, imagePath)
+          ${unsupportedFormat.substring(1)}:- "${newPath}"`, passThrough)
     } else {
-      execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
-      -quality 20% -auto-orient "${imagePath}" "${newPath}"`)
+      await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
+      -quality 20% -auto-orient ${isOpaque ? ' -colorspace RGB ' : ''} \
+      "${imagePath}" "${newPath}"`)
     }
     // don't wait for anything
   }
   return newPath
+}
+
+module.exports = {
+  convertImage,
 }

@@ -1,25 +1,112 @@
 
-
 html, body {
   padding: 0;
   margin: 0;
   background: #000;
   white-space: nowrap;
-  font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
+  font: 16px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
 }
 
 body > img {
   opacity: .01;
 }
 
+*, ::after, ::before {
+  box-sizing: border-box;
+}
 
 #map-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  text-align:center;
+  display:flex;
+  flex-wrap: wrap;
+}
+
+#map-list li {
+  width: 300px;
+  white-space: normal;
+  display:flex;
+  flex-direction: column;
+  height: 200px;
+  margin: 5px;
+  position: relative;
+  z-index: 1;
+  background-image: url("/unknownmap.jpg");
+  background-repeat: no-repeat;
+  background-size: 0px 0px;
+  background-position: -1px -1px;
+}
+
+#map-list li::before {
+  content: "";
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -2;
+  background-image: inherit;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 0;
+}
+
+#map-list li::after {
+  content: "";
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  backdrop-filter: blur(5px);
 }
 
 #map-list img {
-  max-height: 100px;
+  display:block;
+  margin: 0 auto;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0;
+  height: 0;
+  width: auto;
 }
+
+#map-list img.unknownmap {
+  /* height: 150px; */
+  width: 180px;
+}
+
+#map-list h3 {
+  background-color: rgb(68 21 169);
+  border-radius: 10px 10px 0 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+#map-list h3 span {
+  white-space: nowrap;
+  transform: translateX(0);
+  transition: 1s;
+  display:inline-block;
+  min-width: 100%;
+  padding: 0 20px;
+}
+
+#map-list a:hover span {
+  width: auto;
+  transform: translateX(calc(300px - 100%));
+}
+
+#map-list a {
+  color: #CCC;
+  text-decoration: none;
+  display: block;
+  flex-grow: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+}
+
 

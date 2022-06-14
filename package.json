@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "scripts": {
     "start": "node ./index.js",
-    "proxy": "node ./index.js"
+    "proxy": "node ./index.js",
+    "debug": "node --inspect-brk ./index.js"
   },
   "bin": {
     "quakejs-content": "bin/content.js",

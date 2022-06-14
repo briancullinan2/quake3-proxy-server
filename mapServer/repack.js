@@ -1,7 +1,12 @@
 const fs = require('fs')
 const path = require('path')
+const {PassThrough} = require('stream')
 const {findFile} = require('../contentServer/virtual.js')
 const {repackedCache} = require('../utilities/env.js')
+const {sourcePk3Download} = require('../mapServer/serve-download.js')
+const {getIndex, streamFileKey, streamFile} = require('../utilities/zip.js')
+const {execCmd} = require('../utilities/exec.js')
+const {convertImage} = require('../contentServer/convert.js')
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
@@ -15,6 +20,16 @@ var fileTypes = [
   // these can be compiled in game to run bot AI
   '.c', '.h', '.map', '.scc',
 ]
+
+//  SOURCE: https://stackoverflow.com/questions/10623798/how-do-i-read-the-contents-of-a-node-js-stream-into-a-string-variable
+function streamToBuffer (stream) {
+  const chunks = [];
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on('error', (err) => reject(err));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  })
+}
 
 async function repackPk3(pk3Path) {
   const StreamZip = require('node-stream-zip')
@@ -34,29 +49,50 @@ async function repackPk3(pk3Path) {
   for(let i = 0; i < index.length; i++) {
     if(index[i].isDirectory) 
       continue
-    if(!fileTypes.includes(path.extname(index[i].name))
-      // skip too big files
-      && index[i].size > 1024 * 256) 
-      continue
-    //if() continue // skip too big files
+
     let outFile = path.join(newZip + 'dir', index[i].name)
-    console.log('Extracting', index[i].key, '->', outFile)
-    fs.mkdirSync(path.dirname(outFile), { recursive: true })
-    await new Promise(function(resolve, reject) {
-      zip.stream(index[i].key, (err, stm) => {
-        if(err) {
-          return reject(err)
+    if(!fs.existsSync(outFile)) {
+      console.log('Extracting', index[i].key, '->', outFile)
+      fs.mkdirSync(path.dirname(outFile), { recursive: true })
+
+      // stupid TGAs
+      if(outFile.match(/\.tga$/i)) {
+        let passThrough = new PassThrough()
+        let tgaFile = (await Promise.all([
+          streamFile(index[i], passThrough),
+          streamToBuffer(passThrough)
+        ]))[1]
+        //fs.writeFileSync(outFile + '_orig', tgaFile)
+        if(tgaFile[0] > 0) {
+          tgaFile = Array.from(tgaFile)
+          tgaFile.splice(18, tgaFile[0])
+          tgaFile[0] = 0
+          tgaFile = Buffer.from(tgaFile)
         }
+        fs.writeFileSync(outFile, tgaFile)
+      } else {
         const file = fs.createWriteStream(outFile)
-        stm.pipe(file)
-        file.on('finish', resolve)
-      })
-    })
-    let isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
-    if(isUnsupportedImage) {
-      await convertImage(outFile)
+        await streamFile(index[i], file)
+        file.close()
+      }
     }
-    directory.push(index[i].name)
+
+    let isUnsupportedImage
+    if(index[i].name.match(/levelshots\//i)) {
+      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$|\.png/gi)
+    } else {
+      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
+    }
+    let newName = index[i].name
+    if(isUnsupportedImage) {
+      newName = convertImage(outFile, index[i].name)
+    }
+
+    if(fileTypes.includes(path.extname(index[i].name))
+      // skip too big files
+      || index[i].size < 1024 * 256) {
+      directory.push(newName)
+    }
   }
   zip.close()
 
@@ -76,6 +112,7 @@ async function repackBasegame() {
 
 async function serveRepacked(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
+  let newFile
   if(filename.includes('maps/download/')) {
     if(filename.endsWith('/pak0')) {
       // TODO: repack mod directory pk3s into 1 overlapping 
@@ -85,8 +122,7 @@ async function serveRepacked(request, response, next) {
       //   make a new pak with combined file-system
     } else {
       // download pk3 and repack
-      let newFile = await sourcePk3Download(filename)
-      console.log(newFile)
+      newFile = await sourcePk3Download(filename)
       if(!newFile.startsWith((repackedCache()))) {
         newFile = await repackPk3(newFile)
       }
@@ -94,6 +130,8 @@ async function serveRepacked(request, response, next) {
         headers: { 'content-disposition': `attachment; filename="${path.basename(newFile)}"`}
       })
     }
+  } else {
+    newFile = findFile(filename)
   }
 
   if(!filename.includes('.pk3')) {
@@ -101,24 +139,42 @@ async function serveRepacked(request, response, next) {
   }
 
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  let newFile = findFile(filename)
+  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+  console.log(filename, '->', newFile, '(', pk3InnerPath, ')')
+
   if(newFile && newFile.endsWith('.pk3') 
       && pk3File.length < filename.length) {
-    let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-    if(await streamZipFile(newFile, pk3InnerPath, response)) {
+    if(await streamFileKey(newFile, pk3InnerPath, response)) {
       return
-    } else {
-      // not a file inside of zip, skip to directory listing
-      return next()
     }
-  } else
+  } // else
 
-  if(newFile && !fs.statSync(newFile).isDirectory()) {
+  if(newFile && newFile.includes('.pk3dir\/')) {
+    return response.sendFile(newFile)
+  }
+
+  // missing key!
+  if(newFile && newFile.endsWith('.pk3') 
+      && !fs.statSync(newFile).isDirectory()) {
+
     // always convert pk3s, remove media to load individually
     if(!newFile.startsWith(repackedCache())) { 
       newFile = await repackPk3(newFile)
     }
-    return response.sendFile(newFile)
+
+    newFile = findFile(filename)
+    if(pk3File.length < filename.length) {
+      if(await streamFileKey(newFile, pk3InnerPath, response)) {
+        return
+      } else {
+        return next()
+      }
+    } else
+    if(!fs.statSync(newFile).isDirectory()) {
+      return response.sendFile(newFile)
+    } else {
+      return response.sendFile(newFile)
+    }
 
   } else {
     return next()

@@ -4,7 +4,7 @@ const express = require('express')
 const {getIndex} = require('../utilities/zip.js')
 const {
   FS_BASEPATH, STEAMPATH, repackedCache, 
-  getGame
+  getGame, downloadCache
 } = require('../utilities/env.js')
 
 
@@ -13,6 +13,7 @@ function gameDirectories() {
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + getGame())
   const GAME_DIRECTORIES = [
     repackedCache(), // TODO: 
+    downloadCache(), // TODO: 
     path.join(GAME_DIRECTORY, 'build/linux'),
     path.join(GAME_DIRECTORY, 'build/win32-qvm'),
     path.join(GAME_DIRECTORY, 'assets'),
@@ -150,7 +151,7 @@ async function serveVirtual(request, response, next) {
         continue
       }  
       let imagePath = findFile(directory[i])
-      await convertImage(imagePath)
+      await convertImage(imagePath, directory[i])
       directory.splice(i, 1)
       i--
       if(!directory.includes(newFile)) {

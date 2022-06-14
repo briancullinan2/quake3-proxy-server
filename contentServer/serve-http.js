@@ -3,7 +3,7 @@ const {serveGames} = require('../gameServer/serve-games.js')
 const {serveMaps} = require('../mapServer/serve-download.js')
 const {serveVirtual} = require('../contentServer/content.js')
 const {serveRepacked} = require('../mapServer/repack.js')
-const {STYLES} = require('../utilities/env.js')
+const {STYLES, UNKNOWN, SCRIPTS} = require('../utilities/env.js')
 
 // < 100 LoC
 const express = require('express')
@@ -94,6 +94,12 @@ function createApplication(features) {
     let filename = req.url.replace(/\?.*$/, '')
     if(filename.match('/index.css')) {
       return res.sendFile(STYLES)
+    }
+    if(filename.match('/unknownmap.jpg')) {
+      return res.sendFile(UNKNOWN)
+    }
+    if(filename.match('/index.js')) {
+      return res.sendFile(SCRIPTS)
     }
     next()
   })

@@ -1,4 +1,5 @@
 const fs = require('fs')
+const path = require('path')
 
 async function getIndex(pk3Path) {
   const StreamZip = require('node-stream-zip')
@@ -36,8 +37,23 @@ async function getIndex(pk3Path) {
 }
 
 
+async function streamFile(file, stream) {
+  return await new Promise(function (resolve, reject) {
+    file.zip.stream(file.key, (err, stm) => {
+      if(err) {
+        console.error(err)
+        reject(new Error(err))
+      }
+      // TODO: result = await execCmd(command, stm)
+      stm.pipe(stream);
+      stm.on('end', resolve);
+    })
+  })
+}
+
+
 // async stream a file out of a zip matching the path
-async function streamFile(pk3Path, fileKey, stream) {
+async function streamFileKey(pk3Path, fileKey, stream) {
   let index = await getIndex(pk3Path)
   for(let i = 0; i < index.length; i++) {
     // match the converted filename
@@ -46,18 +62,7 @@ async function streamFile(pk3Path, fileKey, stream) {
             { sensitivity: 'base' } ) != 0) {
       continue
     }
-
-    await new Promise(function (resolve, reject) {
-      index[i].stream(index[i].key, (err, stm) => {
-        if(err) {
-          console.error(err)
-          reject(new Error(err))
-        }
-        // TODO: result = await execCmd(command, stm)
-        stm.pipe(stream);
-        stm.on('end', resolve);
-      })
-    })
+    await streamFile(index[i], stream)
     return true
   }
   return false
@@ -66,5 +71,6 @@ async function streamFile(pk3Path, fileKey, stream) {
 
 module.exports = {
   getIndex,
-  streamFile
+  streamFileKey,
+  streamFile,
 }

@@ -16,6 +16,8 @@ const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
 const STYLES = path.resolve(__dirname + '/../utilities/index.css')
+const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
+const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname 
     + '/../utilities/index.html')).toString('utf-8')
 
@@ -67,6 +69,8 @@ module.exports = {
   FS_BASEPATH,
   STEAMPATH,
   STYLES,
+  SCRIPTS,
+  UNKNOWN,
   INDEX,
   setGame,
   getGame,
