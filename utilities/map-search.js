@@ -1,14 +1,12 @@
-var path = require('path')
-var fs = require('fs')
-var Fuse = require('fuse.js')
+const path = require('path')
+const fs = require('fs')
+const Fuse = require('fuse.js')
+const {LVLWORLD_DB} = require('../utilities/metadata.js')
 
-var TEMP_DIR = process.env.LVLWORLD || path.join(process.env.HOME || process.env.HOMEPATH 
-  || process.env.USERPROFILE || os.tmpdir(), '/quake3-discord-bot/lvlworldDB')
-
-var cache = fs.readdirSync(TEMP_DIR)
+var cache = fs.readdirSync(LVLWORLD_DB)
   .filter(d => d[0] != '.' && d.includes('.json'))
   .reduce((list, d) => {
-    var maps = require(path.join(TEMP_DIR, d))
+    var maps = require(path.join(LVLWORLD_DB, d))
     return list.concat(Object.values(maps))
   }, [])
 

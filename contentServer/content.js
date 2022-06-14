@@ -115,7 +115,7 @@ async function serveVirtual(request, response, next) {
   }
 
   // duck out early
-  if(!directory) {
+  if(!directory || directory.length == 0) {
     return next()
   }
 
@@ -178,6 +178,7 @@ async function serveVirtual(request, response, next) {
 module.exports = {
   gameDirectories,
   serveVirtual,
+  layeredDir,
   
 }
 

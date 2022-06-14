@@ -3,6 +3,7 @@
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+const process = require('process')
 
 const EXE_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
@@ -14,7 +15,7 @@ const WEB_DIRECTORY = path.resolve(__dirname)
 const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
-const LVLWORLD_DB = path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
+const LVLWORLD_DB = process.env.LVLWORLD || path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
 const STYLES = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
