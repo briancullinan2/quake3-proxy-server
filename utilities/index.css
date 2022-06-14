@@ -51,6 +51,7 @@ body > img {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 50% 0;
+  border-radius: 10px 10px 0 0;
 }
 
 #map-list li::after {
@@ -62,6 +63,7 @@ body > img {
   top: 0;
   z-index: -1;
   backdrop-filter: blur(5px);
+  border-radius: 10px 10px 0 0;
 }
 
 #map-list img {
@@ -100,7 +102,7 @@ body > img {
   transform: translateX(calc(300px - 100%));
 }
 
-#map-list a {
+#map-list li a {
   color: #CCC;
   text-decoration: none;
   display: block;
@@ -109,4 +111,7 @@ body > img {
   overflow: hidden;
 }
 
+#map-list li > a {
+  text-shadow: 1px 2px 3px rgba(0, 0, 0, 1), 0px 1px 6px rgba(255, 255, 255, 1);
+}
 

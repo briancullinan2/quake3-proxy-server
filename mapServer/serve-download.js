@@ -138,6 +138,19 @@ async function getMapJson(maps) {
 async function serveMaps(request, response, next) {
   let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
+
+  if(filename.includes('maps/download/')) {
+    let mapname = path.basename(filename).replace('.pk3', '')
+        .toLocaleLowerCase()
+    if(fs.existsSync(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'))) {
+      return response.sendFile(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'), {
+        headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname] + '.pk3'}"`}
+      })
+    } else {
+      return next()
+    }
+  }
+
   if(!filename.match(/^\/maps(\/?$|\/)/i)) {
     return next()
   }
@@ -193,6 +206,7 @@ async function serveMaps(request, response, next) {
 
 
 module.exports = {
+  MAP_DICTIONARY,
   sourcePk3Download,
   serveMaps,
 }

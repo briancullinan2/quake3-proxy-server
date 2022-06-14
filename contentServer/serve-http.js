@@ -33,6 +33,7 @@ function serveLive(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let newFile = findFile(filename)
+  debugger
 
   if(newFile && newFile.endsWith('.pk3') 
       && pk3File.length < filename.length) {
@@ -90,6 +91,7 @@ function createApplication(features) {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
+
   app.use(function (req, res, next) {
     let filename = req.url.replace(/\?.*$/, '')
     if(filename.match('/index.css')) {
@@ -123,6 +125,15 @@ function createApplication(features) {
   if(features.includes('maps')) {
     app.use(serveMaps) // /home fs for updates
   }
+
+  app.use(function (req, res, next) {
+    let filename = req.url.replace(/\?.*$/, '')
+    if(filename.match('/unknownmap.jpg')
+    || filename.match(/levelshots\//i)) {
+      return res.sendFile(UNKNOWN)
+    }
+    next()
+  })
 
   return app
 }

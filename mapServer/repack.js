@@ -2,8 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const {PassThrough} = require('stream')
 const {findFile} = require('../contentServer/virtual.js')
-const {repackedCache} = require('../utilities/env.js')
-const {sourcePk3Download} = require('../mapServer/serve-download.js')
+const {downloadCache, repackedCache} = require('../utilities/env.js')
+const {MAP_DICTIONARY, sourcePk3Download} = require('../mapServer/serve-download.js')
 const {getIndex, streamFileKey, streamFile} = require('../utilities/zip.js')
 const {execCmd} = require('../utilities/exec.js')
 const {convertImage} = require('../contentServer/convert.js')
@@ -85,7 +85,7 @@ async function repackPk3(pk3Path) {
     }
     let newName = index[i].name
     if(isUnsupportedImage) {
-      newName = convertImage(outFile, index[i].name)
+      newName = await convertImage(outFile, index[i].name)
     }
 
     if(fileTypes.includes(path.extname(index[i].name))
@@ -113,7 +113,8 @@ async function repackBasegame() {
 async function serveRepacked(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
   let newFile
-  if(filename.includes('maps/download/')) {
+
+  if(filename.includes('maps/repacked/')) {
     if(filename.endsWith('/pak0')) {
       // TODO: repack mod directory pk3s into 1 overlapping 
       //   (i.e. do the same virtual combination the 
@@ -140,7 +141,7 @@ async function serveRepacked(request, response, next) {
 
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  console.log(filename, '->', newFile, '(', pk3InnerPath, ')')
+  //console.log(filename, '->', newFile, '(', pk3InnerPath, ')')
 
   if(newFile && newFile.endsWith('.pk3') 
       && pk3File.length < filename.length) {

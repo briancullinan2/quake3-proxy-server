@@ -7,6 +7,7 @@ window.addEventListener('load', (event) => {
   mapList = document.getElementById('map-list')
   if(mapList) {
     setInterval(refreshMaps, 20)
+    setInterval(function () { previousLine = -1 }, 500)
   }
 })
 
@@ -44,7 +45,7 @@ async function refreshMaps() {
   let halfway = Math.ceil(count / itemsPerLine / 2)
   let halfwareMark = Math.floor(window.scrollY / (halfway * lineHeight))
   if(halfwareMark != previousHalf) {
-    await loadNextPage(halfwareMark)
+    loadNextPage(halfwareMark)
   }
 
 
@@ -60,6 +61,7 @@ async function refreshMaps() {
     startLine = maxLine
   }
 
+  let updateVisibility = previousLine == -1
   if(startLine == previousLine) {
     return
   }
@@ -80,6 +82,10 @@ async function refreshMaps() {
     if (item.style.visibility == 'hidden') {
       item.style.visibility = 'visible'
     }
+    if(updateVisibility) {
+      continue
+    }
+
     item.style.backgroundImage = 'url(' + object.levelshot + ')'
 
     let title = item.children[0].children[0].children[0]

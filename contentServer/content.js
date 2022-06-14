@@ -13,7 +13,6 @@ function gameDirectories() {
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + getGame())
   const GAME_DIRECTORIES = [
     repackedCache(), // TODO: 
-    downloadCache(), // TODO: 
     path.join(GAME_DIRECTORY, 'build/linux'),
     path.join(GAME_DIRECTORY, 'build/win32-qvm'),
     path.join(GAME_DIRECTORY, 'assets'),
