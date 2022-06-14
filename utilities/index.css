@@ -76,7 +76,7 @@ body > img {
   width: auto;
 }
 
-img.unknownmap {
+#map-list img.unknownmap, #game-list img.unknownmap {
   /* height: 150px; */
   width: 180px;
 }
