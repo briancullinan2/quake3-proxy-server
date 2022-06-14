@@ -4,7 +4,6 @@ const fs = require('fs')
 const {PassThrough} = require('stream')
 const {repackedCache} = require('../utilities/env.js')
 const {execCmd} = require('../utilities/exec.js')
-const {getGame} = require('../utilities/env.js')
 
 async function convertImage(imagePath, unsupportedFormat) {
   let isOpaque

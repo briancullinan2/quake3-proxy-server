@@ -1,8 +1,10 @@
 
-const {sourcePk3Download} = require('../mapServer/serve-download.js')
+const {sourcePk3Download, MAP_TITLES, MAP_DICTIONARY} = require('../mapServer/serve-download.js')
 const {serveMaster, sendOOB, GAME_SERVERS} = require('../proxyServer/master.js')
 const {createUDP} = require('../proxyServer/serve-udp.js')
 const {lookupDNS} = require('../utilities/dns.js')
+const {getGame, INDEX} = require('../utilities/env.js')
+
 const MASTER_PORTS = [27950]
 const UDP_SOCKETS = []
 const MASTER_SERVERS = [
@@ -59,31 +61,78 @@ async function queryMaster(master) {
   })
 }
 
+
+
+async function getGameJson(games) {
+  let result = []
+  for(let i = 0; i < games.length; i++) {
+    if(!games[i].hostname || !games[i].mapname) {
+      continue
+    }
+    let mapname = games[i].mapname.toLocaleLowerCase()
+    let levelshot
+    let pk3name = await sourcePk3Download(mapname)
+    if(pk3name) {
+      levelshot = `/${getGame()}/${MAP_DICTIONARY[mapname]}.pk3dir/levelshots/${mapname}.jpg`
+    } else {
+      levelshot = '/unknownmap.jpg'
+    }
+    result.push({
+      title: MAP_TITLES[mapname] || mapname,
+      levelshot: levelshot,
+      bsp: mapname,
+      pakname: MAP_DICTIONARY[mapname],
+      have: !!pk3name,
+      mapname: mapname,
+      hostname: games[i].hostname,
+    })
+  }
+  return result
+}
+
+
 async function serveGames(request, response, next) {
+  let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
   //console.log(GAME_SERVERS)
   if(!filename.match(/^\/games\/?$/i)) {
     return next()
   }
-  
-  let values = Object.values(GAME_SERVERS)
-  //let games = keys.map(k => GAME_SERVERS[k].hostname)
+
+  let rangeString = filename.split('\/maps\/')[1]
+  let start = 0
+  let end = 100
+  if(rangeString) {
+    start = parseInt(rangeString.split('\/')[0])
+    end = parseInt(rangeString.split('\/')[1])
+  }
+
+  let total = Object.values(GAME_SERVERS).length
+  let games = Object.values(GAME_SERVERS).slice(start, end)
+  let json = await getGameJson(games)
+  if(isJson) {
+    return response.json(json)
+  }
   let list = ''
-  for(let i = 0; i < values.length; i++) {
-    if(!values[i].hostname) {
-      continue
-    }
+  for(let i = 0; i < json.length; i++) {
     list += '<li>'
-    let pk3name = await sourcePk3Download(filename)
-    if(pk3name) {
-      list += `<img src="/levelshots/${values[i].mapname}" />`
-    } else {
-      list += `<img src="/menu/art/${values[i].mapname}" />`
-    }
-    list += `<a href="/${values[i].address}">${values[i].hostname}</a>`
+    list += `<h3><a href="/games/${json[i].address}">`
+    list += `<span>${json[i].hostname}</span>`
+    list += `</a></h3>`
+    list += `<img ${json[i].have ? '' : 'class="unknownmap"'} src="${json[i].levelshot}" />`
+    list += `<a href="/maps/download/${json[i].mapname}">${json[i].title}</a>`
     list += '</li>'
   }
-  return response.send('<ol>' + list + '<ol>')
+  let offset = INDEX.match('<body>').index
+  let index = INDEX.substring(0, offset)
+      + `
+      <script>window.sessionLines=${JSON.stringify(json)}</script>
+      <script>window.sessionLength=${total}</script>
+      <ol id="game-list">${list}</ol>
+      <script async defer src="index.js"></script>
+      `
+      + INDEX.substring(offset, INDEX.length)
+  return response.send(index)
 }
 
 module.exports = {

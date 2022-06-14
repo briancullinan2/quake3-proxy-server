@@ -154,6 +154,7 @@ async function serveMaps(request, response, next) {
   if(!filename.match(/^\/maps(\/?$|\/)/i)) {
     return next()
   }
+
   let rangeString = filename.split('\/maps\/')[1]
   let start = 0
   let end = 100
@@ -207,6 +208,7 @@ async function serveMaps(request, response, next) {
 
 module.exports = {
   MAP_DICTIONARY,
+  MAP_TITLES,
   sourcePk3Download,
   serveMaps,
 }

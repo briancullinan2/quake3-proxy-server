@@ -72,7 +72,8 @@ async function refreshMaps() {
 
   // update lines every half page
   for(let i = 0; i < mapList.children.length; i++) {
-    let object = window.sessionLines[startLine * scrollback * itemsPerLine + i]
+    let ariaId = startLine * scrollback * itemsPerLine + i
+    let object = window.sessionLines[ariaId]
 
     let item = mapList.children[i]
     if(!object) {
@@ -82,7 +83,7 @@ async function refreshMaps() {
     if (item.style.visibility == 'hidden') {
       item.style.visibility = 'visible'
     }
-    if(updateVisibility) {
+    if(updateVisibility && parseInt(item.getAttribute('aria-id')) == ariaId) {
       continue
     }
 

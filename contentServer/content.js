@@ -3,8 +3,7 @@ const path = require('path')
 const express = require('express')
 const {getIndex} = require('../utilities/zip.js')
 const {
-  FS_BASEPATH, STEAMPATH, repackedCache, 
-  getGame, downloadCache
+  FS_BASEPATH, STEAMPATH, repackedCache, getGame
 } = require('../utilities/env.js')
 
 

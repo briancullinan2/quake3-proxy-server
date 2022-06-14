@@ -49,6 +49,13 @@ async function serveDedicated() {
   })
 }
 
+
+async function serveProcess() {
+  // show basic process runner like Github Actions
+  
+}
+
+
 module.exports = {
   RESOLVE_DEDICATED,
   serveDedicated,
