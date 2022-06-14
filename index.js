@@ -10,12 +10,13 @@ const fs = require('fs')
 const {createProxies} = require('./proxyServer/serve-web.js')
 const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
 const {serveDedicated} = require('./gameServer/serve-process.js')
-const {setDownload, setRepack, downloadCache, repackedCache} = require('./utilities/env.js')
+const {setDownload, setRepack, downloadCache, repackedCache, 
+  setGame } = require('./utilities/env.js')
 
 const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated', 
   'redirect', 'games', 'content', 'repack', 'discord',
-  'virtual'
+  'virtual', 'live'
 ]
 const START_SERVICES = []
 

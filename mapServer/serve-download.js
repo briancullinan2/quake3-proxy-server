@@ -142,8 +142,10 @@ async function serveMaps(request, response, next) {
   if(filename.includes('maps/download/')) {
     let mapname = path.basename(filename).replace('.pk3', '')
         .toLocaleLowerCase()
-    if(fs.existsSync(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'))) {
-      return response.sendFile(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'), {
+    let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3')
+    console.log('Downloading:', newFile)
+    if(fs.existsSync(newFile)) {
+      return response.sendFile(newFile, {
         headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname] + '.pk3'}"`}
       })
     } else {
@@ -158,11 +160,20 @@ async function serveMaps(request, response, next) {
   let rangeString = filename.split('\/maps\/')[1]
   let start = 0
   let end = 100
-  if(rangeString) {
+  if(rangeString && rangeString.includes('\/')) {
     start = parseInt(rangeString.split('\/')[0])
     end = parseInt(rangeString.split('\/')[1])
+  } else 
+  if(rangeString) {
+    let mapname = path.basename(filename).replace('.pk3', '')
+        .toLocaleLowerCase()
+    if(fs.existsSync(path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3'))) {
+      return getMapInfo(mapname)
+    } else {
+      return next()
+    }
   }
-  
+
   let total = Object.keys(MAP_DICTIONARY).length
   let maps = Object.keys(MAP_DICTIONARY).slice(start, end)
   let json = await getMapJson(maps)
@@ -171,11 +182,11 @@ async function serveMaps(request, response, next) {
   }
   let list = ''
   for(let i = 0; i < json.length; i++) {
-    //if(!values[i].hostname) {
-    //  continue
-    //}
+    if(!json[i].have) {
+      continue
+    }
     list += `<li style="background-image: url('${json[i].levelshot}')">`
-    list += `<h3><a href="/maps/download/${maps[i]}">`
+    list += `<h3><a href="/maps/${maps[i]}">`
     list += `<span>${json[i].title}</span>`
     list += json[i].title != json[i].bsp 
           ? '<small>' + maps[i] + '</small>' : '<small>&nbsp;</small>'

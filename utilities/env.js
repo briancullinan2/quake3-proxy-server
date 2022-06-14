@@ -14,6 +14,7 @@ const WEB_DIRECTORY = path.resolve(__dirname)
 const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
+const LVLWORLD_DB = path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
 const STYLES = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
@@ -66,6 +67,7 @@ module.exports = {
   WEB_DIRECTORY,
   ASSETS_DIRECTORY,
   BUILD_DIRECTORY,
+  LVLWORLD_DB,
   FS_BASEPATH,
   STEAMPATH,
   STYLES,

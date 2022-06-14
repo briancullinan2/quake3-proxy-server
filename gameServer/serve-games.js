@@ -62,7 +62,6 @@ async function queryMaster(master) {
 }
 
 
-
 async function getGameJson(games) {
   let result = []
   for(let i = 0; i < games.length; i++) {
@@ -85,6 +84,8 @@ async function getGameJson(games) {
       have: !!pk3name,
       mapname: mapname,
       hostname: games[i].hostname,
+      address: games[i].address,
+      port: games[i].port,
     })
   }
   return result
@@ -95,16 +96,21 @@ async function serveGames(request, response, next) {
   let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
   //console.log(GAME_SERVERS)
-  if(!filename.match(/^\/games\/?$/i)) {
+  if(!filename.match(/^\/games(\/?$|\/)/i)) {
     return next()
   }
 
-  let rangeString = filename.split('\/maps\/')[1]
+  let rangeString = filename.split('\/games\/')[1]
   let start = 0
   let end = 100
-  if(rangeString) {
+  if(rangeString && rangeString.includes('\/')) {
     start = parseInt(rangeString.split('\/')[0])
     end = parseInt(rangeString.split('\/')[1])
+  } else
+  if(rangeString && rangeString.includes(':')) {
+    let address = rangeString.split(':')[0]
+    let port = rangeString.split(':')[1]
+    return
   }
 
   let total = Object.values(GAME_SERVERS).length
@@ -116,7 +122,7 @@ async function serveGames(request, response, next) {
   let list = ''
   for(let i = 0; i < json.length; i++) {
     list += '<li>'
-    list += `<h3><a href="/games/${json[i].address}">`
+    list += `<h3><a href="/games/${json[i].address}:${json[i].port}">`
     list += `<span>${json[i].hostname}</span>`
     list += `</a></h3>`
     list += `<img ${json[i].have ? '' : 'class="unknownmap"'} src="${json[i].levelshot}" />`
