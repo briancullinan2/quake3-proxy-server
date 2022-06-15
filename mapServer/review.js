@@ -8,7 +8,7 @@ const { getGame } = require('../utilities/env.js')
 const {MAP_DICTIONARY} = require('../mapServer/serve-download.js')
 
 async function getMapInfo() {
-  let re = loadRenderer()
+  let re = await loadRenderer()
   re.RE_LoadWorldMap()
   re.RE_BeginFrame( STEREO_CENTER )
   return
@@ -56,7 +56,7 @@ async function getMapInfo() {
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   await getExistingMaps()
-  console.log(MAP_DICTIONARY)
+  //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   let newFile = findFile(getGame() + '/' + MAP_DICTIONARY[mapname] + '.pk3')

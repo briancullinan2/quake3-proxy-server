@@ -20,8 +20,7 @@ const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILE
 const STYLES = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
 const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
-const INDEX = fs.readFileSync(path.resolve(__dirname 
-    + '/../utilities/index.html')).toString('utf-8')
+const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
 
 let REPACK_CACHE = path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')
 let DOWNLOAD_CACHE = path.join(BUILD_DIRECTORY)
