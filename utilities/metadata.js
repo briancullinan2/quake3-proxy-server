@@ -3,7 +3,7 @@ const path = require('path')
 const {LVLWORLD_DB} = require('../utilities/env.js')
 const METADATA_BASE = 'https://lvlworld.com/metadata/'
 
-async function downloadAllMeta() {
+async function downloadAllMeta(request, webResponse, next) {
   const currentYear = (new Date()).getFullYear()
   for(let y = 2004; y <= currentYear; y++) {
     let from = y
@@ -30,6 +30,10 @@ async function downloadAllMeta() {
   })
   let json = await response.json()
   fs.writeFileSync(path.join(LVLWORLD_DB, 'maplist.json'), JSON.stringify(json, null, 2))
+
+  if(webResponse) {
+    webResponse.send('Metadata downloaded.')
+  }
 }
 
 module.exports = {

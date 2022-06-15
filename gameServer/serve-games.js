@@ -129,15 +129,13 @@ async function serveGames(request, response, next) {
     list += `<a href="/maps/download/${json[i].mapname}">${json[i].title}</a>`
     list += '</li>'
   }
-  let offset = INDEX.match('<body>').index
+  let offset = INDEX.match('<body>').index + 6
   let index = INDEX.substring(0, offset)
-      + `
+      + `<ol id="game-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(json)}</script>
       <script>window.sessionLength=${total}</script>
-      <ol id="game-list">${list}</ol>
       <script async defer src="index.js"></script>
-      `
-      + INDEX.substring(offset, INDEX.length)
+      ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)
 }
 

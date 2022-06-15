@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
-const {getIndex} = require('../utilities/zip.js')
-const {findFile, gameDirectories} = require('../contentServer/virtual.js')
+const { getIndex } = require('../utilities/zip.js')
+const { findFile, gameDirectories } = require('../contentServer/virtual.js')
 const {
   FS_BASEPATH, MODS_NAMES, MODS
 } = require('../utilities/env.js')
@@ -12,28 +12,28 @@ const {
 //   and build/convert from remote sources
 async function serveVirtualPk3dir(filename) {
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  if(pk3File.startsWith('/')) {
+  if (pk3File.startsWith('/')) {
     pk3File = pk3File.substr(1)
   }
   let pk3Path = findFile(pk3File)
-  if(!pk3Path) {
+  if (!pk3Path) {
     return []
   }
   let index = await getIndex(pk3Path)
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let directory = []
-  for(let i = 0; i < index.length; i++) {
+  for (let i = 0; i < index.length; i++) {
     let newPath = index[i].name.replace(/\\/ig, '/')
-                               .replace(/\/$/, '')
+      .replace(/\/$/, '')
     let currentPath = newPath.substr(0, pk3InnerPath.length)
     let relativePath = newPath.substr(pk3InnerPath.length + 1)
     let isSubdir = relativePath.indexOf('/')
 
-    if((pk3InnerPath.length == 0 || currentPath.localeCompare(
-        pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
-        && relativePath.length
-        // recursive directory inside pk3?
-        && (isSubdir == -1 || isSubdir == relativePath.length - 1)) {
+    if ((pk3InnerPath.length == 0 || currentPath.localeCompare(
+      pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
+      && relativePath.length
+      // recursive directory inside pk3?
+      && (isSubdir == -1 || isSubdir == relativePath.length - 1)) {
       directory.push(path.join(pk3File + 'dir', newPath))
     }
   }
@@ -44,13 +44,13 @@ async function serveVirtualPk3dir(filename) {
 //  TODO: use in /home/ path for async game assets
 //  like switching mods, downloading skins / maps
 function layeredDir(filepath) {
-  if(filepath.startsWith('/')) {
+  if (filepath.startsWith('/')) {
     filepath = filepath.substr(1)
   }
   let result = []
-  if(filepath.length == 0) {
+  if (filepath.length == 0) {
     // list available mods
-    if(fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
+    if (fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
       result.push.apply(result, fs.readdirSync(FS_BASEPATH))
     }
   }
@@ -64,20 +64,20 @@ function layeredDir(filepath) {
   }
   */
   let basename = MODS_NAMES.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
-  if(basename > -1) {
+  if (basename > -1) {
     let GAME_ORDER = gameDirectories(MODS[basename])
-    for(let i = 0; i < GAME_ORDER.length; i++) {
+    for (let i = 0; i < GAME_ORDER.length; i++) {
       let newPath = path.join(GAME_ORDER[i], filepath.substr(MODS[basename].length))
-      if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
+      if (fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
         result.push.apply(result, fs.readdirSync(newPath))
       }
     }
   }
   // because even if its empty, there will be a link to parent ..
-  if(result.length) {
-    return result.filter((r, i, arr) => 
-        !r.startsWith('.') && arr.indexOf(r) === i)
-        .map(dir => path.join(filepath, dir))
+  if (result.length) {
+    return result.filter((r, i, arr) =>
+      !r.startsWith('.') && arr.indexOf(r) === i)
+      .map(dir => path.join(filepath, dir))
   } else {
     return false
   }
@@ -102,58 +102,58 @@ async function serveVirtual(request, response, next) {
   // TODO: server a file from inside a pk3 to the pk3dirs
   let directory = layeredDir(filename)
   // TODO: move to layeredDir()?
-  if(filename.includes('.pk3')) {
+  if (filename.includes('.pk3')) {
     let pk3directory = await serveVirtualPk3dir(filename)
-    if(!directory) {
+    if (!directory) {
       directory = []
     }
-    for(let i = 0; i < pk3directory.length; i++) {
-      if(!directory.includes(pk3directory[i])) {
+    for (let i = 0; i < pk3directory.length; i++) {
+      if (!directory.includes(pk3directory[i])) {
         directory.push(pk3directory[i])
       }
     }
   }
 
   // duck out early
-  if(!directory || directory.length == 0) {
+  if (!directory || directory.length == 0) {
     return next()
   }
 
   // TODO: if findFile() returns a pk3, pipe the file out replace a few files
   // TODO: on backend, convert formats on the fly to/from assets directory
-  for(let i = 0; i < directory.length; i++) {
+  for (let i = 0; i < directory.length; i++) {
     let isUnsupportedImage = directory[i].match(/\.tga$|\.dds$/gi)
-    if(isUnsupportedImage) {
+    if (isUnsupportedImage) {
       let alternateImages = [
         directory[i].replace(isUnsupportedImage[0], '.jpg'),
         directory[i].replace(isUnsupportedImage[0], '.png'),
       ]
-      if(directory.includes(alternateImages[0]) 
-          || directory.includes(alternateImages[1])) {
+      if (directory.includes(alternateImages[0])
+        || directory.includes(alternateImages[1])) {
         directory.splice(i, 1)
         i--
         continue
-      }  
+      }
       let imagePath = findFile(directory[i])
       await convertImage(imagePath, directory[i])
       directory.splice(i, 1)
       i--
-      if(!directory.includes(newFile)) {
+      if (!directory.includes(newFile)) {
         directory.push(newFile)
       }
       continue
     }
 
     let isUnsupportedAudio = directory[i].match(/\.wav$|\.mp3$/gi)
-    if(isUnsupportedAudio) {
+    if (isUnsupportedAudio) {
     }
 
     // create a virtual directory that makes the pk3 but with files converted
     //   individual files can be served dynamically. I did this kind of stuff 
     //   with this media-server I worked on for 10 years.
     let isPk3 = directory[i].match(/\.pk3$/gi)
-    if(isPk3) {
-      if(!directory.includes(directory[i] + 'dir')) {
+    if (isPk3) {
+      if (!directory.includes(directory[i] + 'dir')) {
         directory.push(directory[i] + 'dir')
       }
     }
@@ -165,12 +165,12 @@ async function serveVirtual(request, response, next) {
   directory.sort()
 
   // at least one directory exists
-  if(isJson) {
+  if (isJson) {
     return response.json(directory)
   } else {
     return '<ol>'
-      + response.send(directory.map(node => 
-      `<li><a href="/${node}">${node}</a></li>`).join('\n'))
+      + response.send(directory.map(node =>
+        `<li><a href="/${node}">${node}</a></li>`).join('\n'))
       + '</ol>'
   }
 }
@@ -179,6 +179,6 @@ module.exports = {
   gameDirectories,
   serveVirtual,
   layeredDir,
-  
+
 }
 

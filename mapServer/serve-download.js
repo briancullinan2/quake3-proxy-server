@@ -26,7 +26,13 @@
 //   on Github will be reset.
 const fs = require('fs')
 const path = require('path')
-const {LVLWORLD_DB} = require('../utilities/env.js')
+const { findFile } = require('../contentServer/virtual.js')
+const { getGame } = require('../utilities/env.js')
+const { downloadCache, INDEX } = require('../utilities/env.js')
+const { layeredDir } = require('../contentServer/content.js')
+const { getIndex } = require('../utilities/zip.js')
+
+const { LVLWORLD_DB } = require('../utilities/env.js')
 const MAP_LIST = require(path.join(LVLWORLD_DB, 'maplist.json'))
   .reduce((obj, item) => {
     obj[item.id] = item.fileName
@@ -37,91 +43,43 @@ const MAP_LIST_LOWER = Object.keys(MAP_LIST)
     obj[key] = MAP_LIST[key].toLocaleLowerCase()
     return obj
   }, {})
-const {findFile} = require('../contentServer/virtual.js')
-const {getGame} = require('../utilities/env.js')
-const {downloadCache, INDEX} = require('../utilities/env.js')
-const {downloadAllMeta} = require('../utilities/metadata.js')
-const {layeredDir} = require('../contentServer/content.js')
-const {getIndex} = require('../utilities/zip.js')
-
-/*
 const MAP_DICTIONARY = {}
-const MAP_TITLES = {}
-const MAP_SOURCES = {}
 
-let maps = Object.keys(MAP_LIST).sort()
-for(let i = 0; i < maps.length; i++) {
-  let mapname = MAP_LIST[maps[i]].includes.filter(i => typeof i['bsp'] != 'undefined')
-  if(mapname.length == 0) {
-    continue
-  }
-  if(typeof MAP_TITLES[mapname[0].bsp.toLocaleLowerCase()] != 'undefined') {
-    continue
-  }
-  MAP_TITLES[mapname[0].bsp.toLocaleLowerCase()] = mapname[0].title
-  MAP_DICTIONARY[mapname[0].bsp.toLocaleLowerCase()] = maps[i]
-}
-//console.log(MAP_DICTIONARY)
-*/
 
 async function sourcePk3Download(filename) {
   let mapname = path.basename(filename).replace('.pk3', '')
-                    .toLocaleLowerCase()
+    .toLocaleLowerCase()
   let source
 
-  if(typeof MAP_SOURCES[mapname] != 'undefined') {
+  if (typeof MAP_SOURCES[mapname] != 'undefined') {
     return MAP_SOURCES[mapname]
   }
 
   // TODO: remove for testing
-  if(mapname == 'sokam-bloody') {
+  if (mapname == 'sokam-bloody') {
     source = path.join(downloadCache(), 'sokam-bloody.pk3')
   }
 
-  if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
+  if (typeof MAP_DICTIONARY[mapname] != 'undefined') {
     let pk3name = MAP_DICTIONARY[mapname] + '.pk3'
     let cached = findFile(getGame() + '/' + pk3name)
-    if(cached) {
+    if (cached) {
       source = cached
     } else
-    if((cached = findFile('baseq3/' + pk3name))) {
-      source = cached
-    } else
-    if(fs.existsSync(path.join(downloadCache(), pk3name))) {
-      source = path.join(downloadCache(), pk3name)
-    }
+      if ((cached = findFile('baseq3/' + pk3name))) {
+        source = cached
+      } else
+        if (fs.existsSync(path.join(downloadCache(), pk3name))) {
+          source = path.join(downloadCache(), pk3name)
+        }
   }
 
-  if(source) {
+  if (source) {
     MAP_SOURCES[mapname] = source
   }
 
   return source
 }
-
-/*
-async function getMapJson(maps) {
-  let result = []
-  let have = false
-  for(let i = 0; i < maps.length; i++) {
-    let levelshot
-    if(typeof MAP_SOURCES[maps[i]] != 'undefined') {
-      have = true
-      levelshot = `/${getGame()}/${MAP_DICTIONARY[maps[i]]}.pk3dir/levelshots/${maps[i]}.jpg`
-    } else {
-      levelshot = '/unknownmap.jpg'
-    }
-    result.push({
-      title: MAP_TITLES[maps[i]] || maps[i],
-      levelshot: levelshot,
-      bsp: maps[i],
-      pakname: MAP_DICTIONARY[maps[i]],
-      have: have
-    })
-  }
-  return result
-}
-*/
 
 
 async function getExistingMaps() {
@@ -130,15 +88,15 @@ async function getExistingMaps() {
   let gamedir = await layeredDir(basegame)
   let pk3files = gamedir.filter(file => file.endsWith('.pk3'))
   let maps = await Promise.all(pk3files.map(async function (pk3name) {
+    let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))
     let bsps = index.filter(item => item.key.endsWith('.bsp'))
     let maps = bsps.map(function (bsp) {
-      let mapname = path.basename(bsp.key).replace(/\.bsp$/i, '')
+      let mapname = path.basename(bsp.key).replace(/\.bsp$/i, '').toLocaleLowerCase()
+      MAP_DICTIONARY[mapname] = basename
       return {
-        levelshot: `/${basegame}/${path.basename(pk3name)}dir/levelshots/`
-            + mapname + '.jpg',
-
-        pakname: path.basename(pk3name).replace('map-', '').replace('map_', ''),
+        levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
+        pakname: basename.replace('map-', '').replace('map_', ''),
         title: mapname,
         bsp: mapname,
       }
@@ -149,82 +107,54 @@ async function getExistingMaps() {
 }
 
 
-async function serveDownload() {
-  
+async function serveDownload(request, response, next) {
+  let filename = request.url.replace(/\?.*$/, '')
+  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
+  let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3')
+  console.log('Downloading:', newFile)
+  if (fs.existsSync(newFile)) {
+    return response.sendFile(newFile, {
+      headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname] + '.pk3'}"` }
+    })
+  } else {
+    return next()
+  }
+
+}
+
+
+async function serveMapsRange(request, response, next) {
+  let filename = request.originalUrl.replace(/\?.*$/, '')
+  let start = 0
+  let end = 100
+  let rangeString = filename.split(/\/maps\//i)[1]
+  if (rangeString && rangeString.includes('\/')) {
+    start = parseInt(rangeString.split('\/')[0])
+    end = parseInt(rangeString.split('\/')[1])
+  }
 }
 
 
 async function serveMaps(request, response, next) {
   let isJson = request.url.match(/\?json/)
-  let filename = request.url.replace(/\?.*$/, '')
-
-  if(filename.includes('maps/download/')) {
-    let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-    let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3')
-    console.log('Downloading:', newFile)
-    if(fs.existsSync(newFile)) {
-      return response.sendFile(newFile, {
-        headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname] + '.pk3'}"`}
-      })
-    } else {
-      return next()
-    }
-  }
-  if(filename.includes('maps/reload/')) {
-    await downloadAllMeta()
-    return response.send('Metadata downloaded.')
-  }
-
-  if(!filename.match(/^\/maps(\/?$|\/)/i)) {
-    return next()
-  }
-
-  let rangeString = filename.split('\/maps\/')[1]
+  let mapsAvailable = await getExistingMaps()
   let start = 0
   let end = 100
-  if(rangeString && rangeString.includes('\/')) {
-    start = parseInt(rangeString.split('\/')[0])
-    end = parseInt(rangeString.split('\/')[1])
-  } else 
-  // display map info, desconstruct
-  if(rangeString && rangeString.length > 0) {
-    let pk3name = MAP_DICTIONARY[mapname] + '.pk3'
-    let mapname = path.basename(filename).replace('.pk3', '')
-        .toLocaleLowerCase()
-    if(fs.existsSync(path.join(downloadCache(), pk3name))) {
-      return getMapInfo(mapname)
-    } else {
-      return next()
-    }
-  }
-
-  let mapsAvailable = await getExistingMaps()
-  console.log(mapsAvailable)
   let maps = mapsAvailable.slice(start, end)
-  if(isJson) {
+  if (isJson) {
     return response.json(maps)
   }
+
   let total = mapsAvailable.length
   let list = (await Promise.all(maps.map(map => renderMap(map)))).join('')
-  let offset = INDEX.match('<body>').index
+  let offset = INDEX.match('<body>').index + 6
   let index = INDEX.substring(0, offset)
-      + `
+    + `<ol id="map-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(maps)}</script>
       <script>window.sessionLength=${total}</script>
-      <ol id="map-list">${list}</ol>
       <script async defer src="index.js"></script>
-      `
-      + INDEX.substring(offset, INDEX.length)
-  return response.send(index
-//    don't accept-ranges because it will request partial and we don't
-//    feel like doing the math to figure out which part of the html based
-//    list they need, so only accept ranges from the unacceptable ranges header
-//    if javascript will allow, so the page doesn't get too large. 
-//    headers: { 'accept-ranges': 'bytes'}
-// Otherwise
-//    show something like a cached best rated maps so it isn't enumerating
-//    the entire database every request.
-  )
+      ` + INDEX.substring(offset, INDEX.length)
+  return response.send(index)
 }
 
 
@@ -233,12 +163,12 @@ async function renderMap(map) {
   result += `<li style="background-image: url('${map.levelshot}')">`
   result += `<h3><a href="/maps/${map.bsp}">`
   result += `<span>${map.title}</span>`
-  result += map.title != map.bsp 
-        ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
+  result += map.title != map.bsp
+    ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
   result += `</a></h3>`
   result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
   result += `<a href="/maps/download/${map.bsp}">Download: ${map.pakname}`
-  result += map.pakname.includes('.pk3') ? '' : '.pk3'
+  //result += map.pakname.includes('.pk3') ? '' : '.pk3'
   result += '</a></li>'
   return result
 }
@@ -246,9 +176,12 @@ async function renderMap(map) {
 
 
 module.exports = {
-  //MAP_DICTIONARY,
+  MAP_DICTIONARY,
   //MAP_TITLES,
   //MAP_SOURCES,
   sourcePk3Download,
   serveMaps,
+  serveDownload,
+  serveMapsRange,
+  getExistingMaps,
 }

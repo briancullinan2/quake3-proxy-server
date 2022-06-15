@@ -1,9 +1,11 @@
 
 const {serveGames} = require('../gameServer/serve-games.js')
-const {serveMaps} = require('../mapServer/serve-download.js')
+const {serveMaps, serveDownload, serveMapsRange} = require('../mapServer/serve-download.js')
+const {serveMapInfo} = require('../mapServer/review.js')
 const {serveVirtual} = require('../contentServer/content.js')
-const {serveRepacked} = require('../mapServer/repack.js')
+const {serveRepacked, serveFinished} = require('../mapServer/repack.js')
 const {STYLES, UNKNOWN, SCRIPTS} = require('../utilities/env.js')
+const { downloadAllMeta } = require('../utilities/metadata.js')
 
 // < 100 LoC
 const express = require('express')
@@ -107,6 +109,7 @@ function createApplication(features) {
   })
 
   if(features.includes('repack')) {
+    app.use('/maps/repacked', serveFinished) // /maps/download/%1
     app.use(serveRepacked) // /maps/download/%1
   }
 
@@ -119,11 +122,15 @@ function createApplication(features) {
   }
 
   if(features.includes('games')) {
-    app.use(serveGames) // /home fs for updates
+    app.use('/games', serveGames)
   }
 
   if(features.includes('maps')) {
-    app.use(serveMaps) // /home fs for updates
+    app.use('/maps/reload', downloadAllMeta)
+    app.use('/maps/download', serveDownload)
+    app.use(/\/maps\/[0-9]+\/[0-9]+/i, serveMapsRange)
+    app.use(/\/maps\/.+/, serveMapInfo)
+    app.use('/maps/?', serveMaps)
   }
 
   app.use(function (req, res, next) {
