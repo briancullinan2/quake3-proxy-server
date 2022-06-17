@@ -44,11 +44,11 @@ const MAP_LIST_LOWER = Object.keys(MAP_LIST)
     return obj
   }, {})
 const MAP_DICTIONARY = {}
+const MAP_SOURCES = {}
 
 
 async function sourcePk3Download(filename) {
-  let mapname = path.basename(filename).replace('.pk3', '')
-    .toLocaleLowerCase()
+  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   let source
 
   if (typeof MAP_SOURCES[mapname] != 'undefined') {
@@ -87,7 +87,7 @@ async function getExistingMaps() {
   //let pk3names = Object.values(MAP_LIST_LOWER)
   let gamedir = await layeredDir(basegame)
   let pk3files = gamedir.filter(file => file.endsWith('.pk3'))
-  let maps = await Promise.all(pk3files.map(async function (pk3name) {
+  let maps = (await Promise.all(pk3files.map(async function (pk3name) {
     let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))
     let bsps = index.filter(item => item.key.endsWith('.bsp'))
@@ -99,11 +99,13 @@ async function getExistingMaps() {
         pakname: basename.replace('map-', '').replace('map_', ''),
         title: mapname,
         bsp: mapname,
+        have: true,
       }
     })
     return maps
-  }))
-  return maps.flat(1)
+  }))).flat(1)
+  let mapsNames = maps.map(m => m.bsp)
+  return maps.filter((m, i) => mapsNames.indexOf(m.bsp) == i)
 }
 
 

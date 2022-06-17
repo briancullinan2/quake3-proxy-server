@@ -1,17 +1,46 @@
 // TODO: rank, comment, review, like lvlworld
 const path = require('path')
 const fs = require('fs')
-const {loadRenderer} = require('../utilities/wasm-cli.js')
-const {getExistingMaps} = require('../mapServer/serve-download.js')
+const {getExistingMaps, sourcePk3Download} = require('../mapServer/serve-download.js')
 const { findFile } = require('../contentServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const {MAP_DICTIONARY} = require('../mapServer/serve-download.js')
+const { repackedCache, INDEX } = require('../utilities/env.js')
+const { streamFileKey } = require('../utilities/zip.js')
+const { execCmd } = require('../utilities/exec.js')
+const {EXE_NAME, FS_BASEPATH, FS_GAMEHOME} = require('../utilities/env.js')
+const { repackPk3 } = require('../mapServer/repack.js')
 
-async function getMapInfo() {
-  let re = await loadRenderer()
-  re.RE_LoadWorldMap()
-  re.RE_BeginFrame( STEREO_CENTER )
-  return
+
+async function getMapInfo(mapname) {
+  // TODO: make sure BSP file is available synchronously first
+  let newFile = await sourcePk3Download(mapname)
+  let newZip = path.join(repackedCache(), path.basename(newFile))
+  let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
+
+  // extract the BSP because we might change it anyways
+  if(!fs.existsSync(bspFile)) {
+    fs.mkdirSync(path.dirname(bspFile), { recursive: true })
+    const file = fs.createWriteStream(bspFile)
+    await streamFileKey(newFile, `maps/${mapname}.bsp`, response)
+    file.close()
+  }
+  
+  let basegame = getGame()
+  let levelshotPath = `/${basegame}/${path.basename(newFile)}dir/levelshots/` + mapname + '.jpg'
+  let levelshot = findFile(levelshotPath)
+  if(levelshot.endsWith('.pk3')) {
+    newFile = await repackPk3(newFile)
+    levelshot = findFile(levelshotPath)
+  }
+
+  //if(!levelshot) {
+    await execLevelshot(mapname)
+  //}
+
+  return {
+    levelshot: levelshotPath,
+  }
 
   re.SwitchWorld(worldMaps[i]);
   //re.SetDvrFrame(clientScreens[i][0], clientScreens[i][1], clientScreens[i][2], clientScreens[i][3]);
@@ -61,7 +90,14 @@ async function serveMapInfo(request, response, next) {
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   let newFile = findFile(getGame() + '/' + MAP_DICTIONARY[mapname] + '.pk3')
   if (newFile) {
-    let mapInfo = await getMapInfo(newFile)
+    let mapInfo = await getMapInfo(mapname)
+
+  let offset = INDEX.match('<body>').index + 6
+  let index = INDEX.substring(0, offset)
+    + `<div><img src="${mapInfo.levelshot}" /></div>` 
+    + INDEX.substring(offset, INDEX.length)
+  return response.send(index)
+
     console.log(mapInfo)
     /*
     Mapname	Decidia
@@ -85,6 +121,52 @@ async function serveMapInfo(request, response, next) {
     return next(new Error('Map not found ' + mapname))
   }
 }
+
+
+/*
+async function () {
+  let dedicated = findFile(DED_NAME)
+  execDed(dedicated, mapname)
+
+}
+*/
+
+
+async function execLevelshot(mapname) {
+  let client = findFile(EXE_NAME)
+  const {execFile} = require('child_process')
+  return await new Promise(function (resolve, reject) {
+    let ps = execFile(client, [
+      '+set', 'fs_basepath', FS_BASEPATH,
+      '+set', 'fs_homepath', FS_GAMEHOME,
+      '+set', 'bot_enable', '0',
+      '+set', 'developer', '0',
+      // TODO: run a few frames to load images before
+      //   taking a screen shot and exporting canvas
+      //   might also be necessary for aligning animations.
+      '+set', 's_initsound', '0',
+      '+devmap', mapname,
+      '+wait', '30', 
+      '+team', 's',
+      '+wait', '30', 
+      '+levelshot', 
+      '+wait', '30', 
+      '+screenshot', 'levelshot',
+      '+wait', '30', 
+      '+quit'
+    ],
+    function(errCode, stdout, stderr) {
+      if(errCode > 0) {
+        reject(new Error(stderr))
+      } else {
+        resolve(stdout)
+      }
+    })
+    ps.stderr.on('data', console.error);
+    ps.stdout.on('data', console.log);
+  })
+}
+
 
 module.exports = {
   serveMapInfo,

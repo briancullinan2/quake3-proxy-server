@@ -5,9 +5,10 @@ const path = require('path')
 const os = require('os')
 const process = require('process')
 
-const EXE_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
+const EXE_NAME = 'quake3e' + (os.platform() == 'win32' ? '.exe' : '')
+const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
-let FS_BASEGAME = 'baseq3a'
+let FS_BASEGAME = 'baseq3'
 let FS_BASEPATH = ''
 let STEAMPATH = ''
 
@@ -15,6 +16,7 @@ const WEB_DIRECTORY = path.resolve(__dirname)
 const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
+const FS_GAMEHOME = path.join(FS_HOMEPATH, '.q3a')
 const LVLWORLD_DB = process.env.LVLWORLD || path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
 const STYLES = path.resolve(__dirname + '/../utilities/index.css')
@@ -93,6 +95,8 @@ module.exports = {
   BUILD_DIRECTORY,
   LVLWORLD_DB,
   FS_BASEPATH,
+  FS_HOMEPATH,
+  FS_GAMEHOME,
   STEAMPATH,
   STYLES,
   SCRIPTS,

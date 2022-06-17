@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const {
   BUILD_DIRECTORY, repackedCache, WEB_DIRECTORY,
-  ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
+  ASSETS_DIRECTORY, FS_BASEPATH, FS_GAMEHOME, STEAMPATH,
   MODS_NAMES, MODS,
 } = require('../utilities/env.js')
 
@@ -17,6 +17,9 @@ function gameDirectories(basegame) {
     path.join(GAME_DIRECTORY, 'assets'),
     GAME_DIRECTORY,
   ]
+  if(fs.existsSync(path.join(FS_GAMEHOME, basegame))) {
+    GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, basegame))
+  }
   if(fs.existsSync(path.join(FS_BASEPATH, basegame))) {
     GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame))
   }
@@ -49,7 +52,7 @@ function buildDirectories() {
     .concat([
       repackedCache(), // TODO: 
       WEB_DIRECTORY,
-      ASSETS_DIRECTORY,
+      ASSETS_DIRECTORY, // last because least reliable
     ])
   return BUILD_ORDER
 }

@@ -197,5 +197,6 @@ async function serveRepacked(request, response, next) {
 module.exports = {
   serveRepacked,
   serveFinished,
-
+  repackPk3,
+  
 }

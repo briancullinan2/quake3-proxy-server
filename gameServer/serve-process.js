@@ -1,13 +1,14 @@
 
 const path = require('path')
-const {EXE_NAME, FS_BASEPATH, getGame} = require('../utilities/env.js')
+const {DED_NAME, FS_BASEPATH, FS_GAMEHOME} = require('../utilities/env.js')
 const {findFile} = require('../contentServer/virtual.js')
 const RESOLVE_DEDICATED = []
 
-function execDed(dedicated) {
+function execDed(dedicated, mapname) {
   const {execFile} = require('child_process')
   let ps = execFile(dedicated, [
     '+set', 'fs_basepath', FS_BASEPATH,
+    '+set', 'fs_homepath', FS_GAMEHOME,
     '+set', 'dedicated', '2',
     '+set', 'bot_enable', '0',
     '+set', 'developer', '1',
@@ -15,17 +16,18 @@ function execDed(dedicated) {
     '+set', 'sv_master2', '"207.246.91.235:27950"',
     '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
 
-    '+map', 'smc06_quBit', '+wait', '+heartbeat'
+    '+map', mapname, 
+    '+wait', '+heartbeat'
   ])
   ps.stderr.on('data', console.error);
   ps.stdout.on('data', console.log);
 }
 
 
-async function serveDedicated() {
-  let dedicated = findFile(EXE_NAME)
+async function serveDedicated(mapname) {
+  let dedicated = findFile(DED_NAME)
   if(!dedicated) {
-    throw new Error(EXE_NAME + ' not found, build first')
+    throw new Error(DED_NAME + ' not found, build first')
   }
   return await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
@@ -34,7 +36,7 @@ async function serveDedicated() {
     try {
       if(RESOLVE_DEDICATED.length == 0) {
         console.log('Starting ', dedicated)
-        execDed(dedicated)
+        execDed(dedicated, mapname)
       }
       RESOLVE_DEDICATED.push(function () {
         clearTimeout(cancelTimer)

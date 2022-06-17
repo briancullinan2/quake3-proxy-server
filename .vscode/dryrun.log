@@ -1,0 +1,6 @@
+make -f /Users/briancullinan/quake3-proxy-server/Makefile --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/briancullinan/quake3-proxy-server'
+make: Leaving directory `/Users/briancullinan/quake3-proxy-server'
+ 
+/Users/briancullinan/quake3-proxy-server/Makefile:180: *** missing separator.  Stop.
+

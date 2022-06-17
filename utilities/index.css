@@ -8,7 +8,7 @@ html, body {
 }
 
 body > img {
-  opacity: .01;
+  /* opacity: .01; */
 }
 
 *, ::after, ::before {

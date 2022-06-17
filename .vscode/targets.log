@@ -1,0 +1,336 @@
+make all -f /Users/briancullinan/quake3-proxy-server/Makefile --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 3.81
+# Copyright (C) 2006  Free Software Foundation, Inc.
+# This is free software; see the source for copying conditions.
+# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# This program built for i386-apple-darwin11.3.0
+
+# Make data base, printed on Thu Jun 16 07:44:00 2022
+
+# Variables
+
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 128)
+Q3OBJ = $(B)/rend2-cli/cl_main.o $(B)/rend2-cli/cl_jpeg.o $(B)/rend2-cli/sdl_glimp.o $(B)/rend2-cli/render.o $(B)/rend2-cli/files.o $(B)/rend2-cli/cmd.o $(B)/rend2-cli/cvar.o $(B)/rend2-cli/common.o $(B)/rend2-cli/unzip.o $(B)/rend2-cli/md4.o $(B)/rend2-cli/cm_load.o $(B)/rend2-cli/cm_patch.o $(B)/rend2-cli/cm_polylib.o $(B)/rend2-cli/cm_test.o $(B)/rend2-cli/cm_trace.o  $(B)/rend2-cli/unix_shared.o $(B)/rend2-cli/unix_main.o $(B)/rend2-cli/linux_signals.o $(Q3REND2OBJ) $(Q3REND2STROBJ)
+# environment
+VSCODE_LOG_NATIVE = false
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 21)
+RCDIR = $(MOUNT_DIR)/renderercommon
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 17)
+B := ../Quake3e/build/release-darwin-x86_64
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# automatic
+@F = $(notdir $@)
+# makefile
+CURDIR := /Users/briancullinan/quake3-proxy-server
+# makefile
+SHELL = /bin/sh
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 14)
+Q = @
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 13)
+echo_cmd = @echo
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+_ = /usr/bin/make
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 1)
+MAKEFILE_LIST :=  /Users/briancullinan/quake3-proxy-server/Makefile
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# environment
+__CFBundleIdentifier = com.microsoft.VSCode
+# environment
+WASMER_DIR = /Users/briancullinan/.wasmer
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /var/folders/gk/xqv2x4jn6l3ffpf3m3y4x2xh0000gn/T/vscode-ipc-0d6408f3-75cf-4c09-9755-6db6479d34db.sock
+# environment
+VSCODE_CWD = /
+# environment
+PATH = /Users/briancullinan/.wasmer/bin:/usr/local/opt/openjdk/bin:/Users/briancullinan/google-cloud-sdk/bin:/usr/local/opt/llvm/bin:/Users/briancullinan/opt/miniconda3/bin:/Users/briancullinan/opt/miniconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/kitty.app/Contents/MacOS:/usr/local/go/bin:/usr/local/share/dotnet:/opt/X11/bin:~/.dotnet/tools:/Library/Apple/usr/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/briancullinan/.wasmer/globals/wapm_packages/.bin
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 22)
+WASMDIR = $(MOUNT_DIR)/wasm
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 92)
+Q3REND2OBJ = $(B)/rend2-cli/tr_animation.o $(B)/rend2-cli/tr_backend.o $(B)/rend2-cli/tr_bsp.o $(B)/rend2-cli/tr_cmds.o $(B)/rend2-cli/tr_curve.o $(B)/rend2-cli/tr_dsa.o $(B)/rend2-cli/tr_extramath.o $(B)/rend2-cli/tr_extensions.o $(B)/rend2-cli/tr_fbo.o $(B)/rend2-cli/tr_flares.o $(B)/rend2-cli/tr_font.o $(B)/rend2-cli/tr_glsl.o $(B)/rend2-cli/tr_image.o $(B)/rend2-cli/tr_image_bmp.o $(B)/rend2-cli/tr_image_jpg.o $(B)/rend2-cli/tr_image_pcx.o $(B)/rend2-cli/tr_image_png.o $(B)/rend2-cli/tr_image_tga.o $(B)/rend2-cli/tr_image_dds.o $(B)/rend2-cli/tr_init.o $(B)/rend2-cli/tr_light.o $(B)/rend2-cli/tr_main.o $(B)/rend2-cli/tr_marks.o $(B)/rend2-cli/tr_mesh.o $(B)/rend2-cli/tr_model.o $(B)/rend2-cli/tr_model_iqm.o $(B)/rend2-cli/tr_noise.o $(B)/rend2-cli/tr_postprocess.o $(B)/rend2-cli/tr_scene.o $(B)/rend2-cli/tr_shade.o $(B)/rend2-cli/tr_shade_calc.o $(B)/rend2-cli/tr_shader.o $(B)/rend2-cli/tr_shadows.o $(B)/rend2-cli/tr_sky.o $(B)/rend2-cli/tr_surface.o $(B)/rend2-cli/tr_vbo.o $(B)/rend2-cli/tr_world.o $(B)/rend2-cli/q_shared.o $(B)/rend2-cli/puff.o $(B)/rend2-cli/q_math.o
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 98)
+Q3REND2STROBJ = $(B)/rend2-cli/glsl/bokeh_fp.o $(B)/rend2-cli/glsl/bokeh_vp.o $(B)/rend2-cli/glsl/calclevels4x_fp.o $(B)/rend2-cli/glsl/calclevels4x_vp.o $(B)/rend2-cli/glsl/depthblur_fp.o $(B)/rend2-cli/glsl/depthblur_vp.o $(B)/rend2-cli/glsl/dlight_fp.o $(B)/rend2-cli/glsl/dlight_vp.o $(B)/rend2-cli/glsl/down4x_fp.o $(B)/rend2-cli/glsl/down4x_vp.o $(B)/rend2-cli/glsl/fogpass_fp.o $(B)/rend2-cli/glsl/fogpass_vp.o $(B)/rend2-cli/glsl/generic_fp.o $(B)/rend2-cli/glsl/generic_vp.o $(B)/rend2-cli/glsl/lightall_fp.o $(B)/rend2-cli/glsl/lightall_vp.o $(B)/rend2-cli/glsl/pshadow_fp.o $(B)/rend2-cli/glsl/pshadow_vp.o $(B)/rend2-cli/glsl/shadowfill_fp.o $(B)/rend2-cli/glsl/shadowfill_vp.o $(B)/rend2-cli/glsl/shadowmask_fp.o $(B)/rend2-cli/glsl/shadowmask_vp.o $(B)/rend2-cli/glsl/ssao_fp.o $(B)/rend2-cli/glsl/ssao_vp.o $(B)/rend2-cli/glsl/texturecolor_fp.o $(B)/rend2-cli/glsl/texturecolor_vp.o $(B)/rend2-cli/glsl/tonemap_fp.o $(B)/rend2-cli/glsl/tonemap_vp.o
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 19)
+TARGET_CLIENT := quake3e_opengl_x86_64
+# environment
+VSCODE_LOG_STACK = false
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 135)
+LDFLAGS := -F/Library/Frameworks -framework SDL2 -ljpeg
+# default
+.FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
+# environment
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.ZdKjZXl1Nu/Listeners
+# automatic
+%F = $(notdir $%)
+# environment
+DISPLAY = /private/tmp/com.apple.launchd.L1BoVuLraZ/org.xquartz:0
+# environment
+CONDA_EXE = /Users/briancullinan/opt/miniconda3/bin/conda
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 130)
+RENDCFLAGS := -DBUILD_CLI_RENDERER=1 -DUSE_SYSTEM_JPEG -DRENDERER_PREFIX=\"quake3e\" -I/Library/Frameworks/SDL2.framework/Headers
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 24)
+CDIR = $(MOUNT_DIR)/client
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+PWD = /Users/briancullinan/quake3-proxy-server
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 20)
+R2DIR = $(MOUNT_DIR)/renderer2
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
+# environment
+HOME = /Users/briancullinan
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 139)
+define DO_REND_CC
+$(echo_cmd) "REND_CC $<"
+$(Q)$(CC) $(RENDCFLAGS) $(CFLAGS) -o $@ -c $<
+endef
+# default
+MAKEFILEPATH := /Applications/Xcode.app/Contents/Developer/Makefiles
+# environment
+VSCODE_CODE_CACHE_PATH = /Users/briancullinan/Library/Application Support/Code/CachedData/30d9c6cd9483b2cc586687151bcbcd635f373630
+# environment
+LOGNAME = briancullinan
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+CONDA_PROMPT_MODIFIER = (base) 
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 26)
+UDIR = $(MOUNT_DIR)/unix
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 2)
+MOUNT_DIR := ../Quake3e/code
+# environment
+CONDA_DEFAULT_ENV = base
+# environment
+XPC_FLAGS = 0x0
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 23)
+CMDIR = $(MOUNT_DIR)/qcommon
+# environment
+SHLVL = 1
+# environment
+WASMER_CACHE_DIR = /Users/briancullinan/.wasmer/cache
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 6)
+CC := gcc
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 3)
+BUILD_DIR := ../Quake3e/build
+# default
+MAKE_VERSION := 3.81
+# environment
+USER = briancullinan
+# makefile
+.DEFAULT_GOAL := ../Quake3e/build/release-darwin-x86_64/quake3e_opengl_x86_64
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 18)
+RENDERER_PREFIX := quake3e
+# automatic
+ 
+/Users/briancullinan/quake3-proxy-server/Makefile:180: *** missing separator.  Stop.
+
+%D = $(patsubst %/,%,$(dir $%))
+# environment
+CONDA_SHLVL = 1
+# default
+MAKE_COMMAND := /Applications/Xcode.app/Contents/Developer/usr/bin/make
+# default
+.VARIABLES := 
+# environment
+TMPDIR = /var/folders/gk/xqv2x4jn6l3ffpf3m3y4x2xh0000gn/T/
+# automatic
+*F = $(notdir $*)
+# environment
+VSCODE_IPC_HOOK = /Users/briancullinan/Library/Application Support/Code/1.68.1-main.sock
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 4)
+ARCH := x86_64
+# makefile
+MAKEFLAGS = Rrqp
+# environment
+MFLAGS = -Rrqp
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+XPC_SERVICE_NAME = application.com.microsoft.VSCode.8801776013.8801776019
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# automatic
++F = $(notdir $+)
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 7)
+USE_RENDERER_DLOPEN = 0
+# environment
+__CF_USER_TEXT_ENCODING = 0x1F5:0x0:0x0
+# environment
+COMMAND_MODE = unix2003
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 5)
+PLATFORM := darwin
+# default
+MAKEFILES := 
+# automatic
+<F = $(notdir $<)
+# makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 25)
+SDLDIR = $(MOUNT_DIR)/sdl
+# environment
+LC_ALL = C
+# environment
+CONDA_PYTHON_EXE = /Users/briancullinan/opt/miniconda3/bin/python
+# automatic
+^F = $(notdir $^)
+# default
+SUFFIXES := 
+# environment
+_CE_M = 
+# default
+.INCLUDE_DIRS = /usr/local/include
+# environment
+MAKELEVEL := 0
+# environment
+CONDA_PREFIX = /Users/briancullinan/opt/miniconda3
+# environment
+VSCODE_PID = 72175
+# environment
+_CE_CONDA = 
+# environment
+LANG = C
+# variable set hash-table stats:
+# Load=97/1024=9%, Rehash=0, Collisions=4/242=2%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+
+# No files, no impossibilities in 0 directories.
+
+# Implicit Rules
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/%.c: ../Quake3e/code/renderer2/glsl/%.glsl
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 145):
+	$(echo_cmd) "REF_STR $@"
+	$(Q)echo "const char *fallbackShader_$(notdir $(basename $<)) =" >> $@
+	$(Q)cat $< | sed -e 's/^/\"/;s/$$/\\n\"/' | tr -d '\r' >> $@
+	$(Q)echo ";" >> $@
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/%.o: ../Quake3e/build/release-darwin-x86_64/renderer2/glsl/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 151):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/renderer2/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 154):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/client/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 157):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/renderercommon/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 160):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/sdl/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 163):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/unix/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 166):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/wasm/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 169):
+	$(DO_REND_CC)
+	
+
+../Quake3e/build/release-darwin-x86_64/rend2-cli/%.o: ../Quake3e/code/qcommon/%.c
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 172):
+	$(DO_REND_CC)
+	
+
+# 9 implicit rules, 0 (0.0%) terminal.
+
+# Files
+
+# Not a target:
+all:
+#  Command-line target.
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+../Quake3e/build/release-darwin-x86_64/quake3e_opengl_x86_64: renderer ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_jpeg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/sdl_glimp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/render.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/files.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cmd.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cvar.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/common.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unzip.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/md4.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_load.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_patch.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_polylib.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_test.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_trace.o  ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/linux_signals.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_animation.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_backend.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_bsp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_cmds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_curve.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_dsa.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extramath.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extensions.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_fbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_flares.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_font.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_glsl.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_bmp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_jpg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_pcx.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_png.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_tga.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_dds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_init.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_light.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_marks.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_mesh.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model_iqm.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_noise.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_postprocess.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_scene.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade_calc.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shader.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shadows.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_sky.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_surface.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_vbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_world.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/puff.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_math.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/dlight_fp.o ../Quake3e/build/release-darwin-x86_64/rend2 
+-cli/glsl/dlight_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_vp.o
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  commands to execute (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 175):
+	$(echo_cmd) "LD $@"
+	$(Q)$(CC) -o $@ $(Q3OBJ) $(CLIENT_LDFLAGS) \
+	$(LDFLAGS)
+	
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+renderer:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+/Users/briancullinan/quake3-proxy-server/Makefile:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# files hash-table stats:
+# Load=6/1024=1%, Rehash=0, Collisions=0/7=0%
+# VPATH Search Paths
+
+# No `vpath' search paths.
+
+# No general (`VPATH' variable) search path.
+
+# # of strings in strcache: 1
+# # of strcache buffers: 1
+# strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
+# strcache free: total = 4046 / max = 4046 / min = 4046 / avg = 4046
+
+# Finished Make data base on Thu Jun 16 07:44:00 2022
+
+ 
