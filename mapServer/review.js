@@ -133,6 +133,18 @@ async function () {
 
 
 async function execLevelshot(mapname) {
+  // TODO: this is pretty lame, tried to make a screenshot, and a
+  //   bunch of stuff failed, now I have some arbitrary wait time
+  //   and it works okay, but a real solution would be "REAL-TIME"!
+  // TODO: open a control port and create a new master server. One
+  //   separate master control for every single map, split up and only
+  //   do 10 maps at a time, because of this.
+  // TODO: wait for the new dedicated process to connect to our specialized
+  //   control port. Now we have a Quake 3 server command pipe. Send OOB
+  //   RCON messages to control our own process remotely / asynchronously.
+  // TODO: take the screenshots, run client commands using local dedicate 
+  //   connected commands (side-effect, easily switch out client to a real
+  //   server using the reconnect command).
   let client = findFile(EXE_NAME)
   const {execFile} = require('child_process')
   return await new Promise(function (resolve, reject) {
@@ -144,15 +156,27 @@ async function execLevelshot(mapname) {
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
       //   might also be necessary for aligning animations.
+      '+set', 'screenshotBirdsEyeView', '"set g_birdsEye 1; wait 30; screenshot; wait 30; set g_birdsEye 0"',
+      '+set', 'sv_pure', '0',
       '+set', 's_initsound', '0',
+      '+set', 'con_notifytime', '0',
       '+devmap', mapname,
       '+wait', '30', 
       '+team', 's',
+      '+set', 'cg_birdsEye', '0',
+      '+set', 'cg_draw2D', '0',
+      '+set', 'cg_drawFPS', '0',
+      '+set', 'cg_drawSpeed', '0',
+      '+set', 'cg_drawStatus', '0',
       '+wait', '30', 
       '+levelshot', 
       '+wait', '30', 
       '+screenshot', 'levelshot',
+      '+screenshot',
       '+wait', '30', 
+      '+vstr', 'screenshotBirdsEyeView', // full size levelshot, same angle
+      // TODO: export / write entities / mapname.ents file
+      // TODO: take screenshot from every camera position
       '+quit'
     ],
     function(errCode, stdout, stderr) {
