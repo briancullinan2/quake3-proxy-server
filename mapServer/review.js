@@ -131,16 +131,19 @@ async function () {
 async function serveLevelshot(request, response, next) {
   let basegame = getGame()
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  if(!filename.match(/levelshots\//i)) {
+  if(!filename.match(/levelshots\/|screenshots\//i)) {
     return next()
   }
+  let isLevelshot = filename.match(/levelshots\//i)
 
   if(filename.match('/unknownmap.jpg')) {
     return response.sendFile(UNKNOWN)
   }
 
   let mapname = path.basename(filename).replace('.jpg', '')
-  let localLevelshot = path.join(basegame, '/levelshots/', mapname + '.jpg')
+                                       .replace(/_screenshot[0-9]+/gi, '')
+  let localLevelshot = path.join(basegame, isLevelshot 
+      ? '/levelshots/' : '/screenshots/', path.basename(filename))
   let levelshot = findFile(localLevelshot)
   if(levelshot) {
     return response.sendFile(levelshot)
@@ -149,6 +152,7 @@ async function serveLevelshot(request, response, next) {
   levelshot = findFile(filename)
   if(!levelshot || levelshot.endsWith('.pk3')) {
     let logs = await execLevelshot(mapname)
+    console.log(logs)
     let wroteScreenshot = /^Wrote\s+((levelshots\/|screenshots\/).*?)$/gmi
     let match
     while (match = wroteScreenshot.exec(logs)) {
@@ -188,36 +192,40 @@ async function execLevelshot(mapname) {
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+set', 'bot_enable', '0',
       '+set', 'developer', '0',
-      // TODO: run a few frames to load images before
-      //   taking a screen shot and exporting canvas
-      //   might also be necessary for aligning animations.
+      // Ironically, the thing I learned working for the radio station about
+      //   M$ Windows not being able to run without a video card for remote
+      //   desktop, but Xvfb working fine with remote desktop, has suddenly
+      //   become relevant, and now I understand why.
+      // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
       '+set', 'r_headless', '1',
       '+set', 'r_fullscreen', '0',
       '+set', 'r_mode', '-1',
       '+set', 'r_customWidth', '1024',
       '+set', 'r_customHeight', '768',
-      '+set', 'screenshotBirdsEyeView', '"set g_birdsEye 1; wait 30; screenshot; wait 30; set g_birdsEye 0"',
       '+set', 'sv_pure', '0',
       '+set', 's_initsound', '0',
       '+set', 'con_notifytime', '0',
+      // TODO: run a few frames to load images before
+      //   taking a screen shot and exporting canvas
+      //   might also be necessary for aligning animations.
+      '+set', 'setupLevelshot',
+      '"wait 30 ; team s ; set cg_birdsEye 0 ; set cg_draw2D 0 ; set cg_drawFPS 0 ; '
+        + 'set cg_drawSpeed 0 ; set cg_drawStatus 0 ; wait 30 ;"',
+
+      '+set', 'takeLevelshot', 
+      '"wait 30 ; levelshot ; wait 30 ; screenshot levelshot ; wait 30 ; screenshot ;"',
+
+      '+set', 'screenshotBirdsEyeView',
+      '"wait 30 ; set g_birdsEye 1 ; wait 30 ; screenshot ; wait 30 ; set g_birdsEye 0 ;"',
+
       '+devmap', mapname,
-      '+wait', '30', 
-      '+team', 's',
-      '+set', 'cg_birdsEye', '0',
-      '+set', 'cg_draw2D', '0',
-      '+set', 'cg_drawFPS', '0',
-      '+set', 'cg_drawSpeed', '0',
-      '+set', 'cg_drawStatus', '0',
-      '+wait', '30', 
-      '+levelshot', 
-      '+wait', '30', 
-      '+screenshot', 'levelshot',
-      '+screenshot',
-      '+wait', '30', 
+
+      '+vstr', 'setupLevelshot',
+      '+vstr', 'takeLevelshot',
       '+vstr', 'screenshotBirdsEyeView', // full size levelshot, same angle
       // TODO: export / write entities / mapname.ents file
       // TODO: take screenshot from every camera position
-      '+quit'
+      '+wait',  '30', '+quit'
     ],
     function(errCode, stdout, stderr) {
       if(errCode > 0) {
