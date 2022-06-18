@@ -9,7 +9,7 @@ async function execCmd(cmd, stdInPipe) {
       if(errCode > 0) {
         reject(new Error(stderr))
       } else {
-        resolve(stdout)
+        resolve(stdout + stderr)
       }
     })
     ps.stderr.on('data', console.error);

@@ -28,7 +28,12 @@ async function convertImage(imagePath, unsupportedFormat) {
 
   let newFile = unsupportedFormat.replace(unsupportedExt, 
     isOpaque.match(/true/ig) ? '.jpg' : '.png')
-  let newPath = path.join(repackedCache(), path.basename(pk3File) + 'dir', newFile)
+  let newPath
+  if(imagePath.includes('.pk3')) {
+    newPath = path.join(repackedCache(), path.basename(pk3File) + 'dir', newFile)
+  } else {
+    newPath = path.join(repackedCache(), newFile)
+  }
   if(!fs.existsSync(newPath)) {
     console.log('Converting: ', newPath)
     //console.assert(newFile.localeCompare(

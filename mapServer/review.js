@@ -9,7 +9,8 @@ const { repackedCache, INDEX } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const {EXE_NAME, FS_BASEPATH, FS_GAMEHOME} = require('../utilities/env.js')
-const { repackPk3 } = require('../mapServer/repack.js')
+const { extractPk3 } = require('../contentServer/compress.js')
+const { convertImage } = require('../contentServer/convert.js')
 
 
 async function getMapInfo(mapname) {
@@ -22,7 +23,7 @@ async function getMapInfo(mapname) {
   if(!fs.existsSync(bspFile)) {
     fs.mkdirSync(path.dirname(bspFile), { recursive: true })
     const file = fs.createWriteStream(bspFile)
-    await streamFileKey(newFile, `maps/${mapname}.bsp`, response)
+    await streamFileKey(newFile, `maps/${mapname}.bsp`, file)
     file.close()
   }
   
@@ -30,13 +31,8 @@ async function getMapInfo(mapname) {
   let levelshotPath = `/${basegame}/${path.basename(newFile)}dir/levelshots/` + mapname + '.jpg'
   let levelshot = findFile(levelshotPath)
   if(levelshot.endsWith('.pk3')) {
-    newFile = await repackPk3(newFile)
-    levelshot = findFile(levelshotPath)
+    newFile = await extractPk3(newFile)
   }
-
-  //if(!levelshot) {
-    await execLevelshot(mapname)
-  //}
 
   return {
     levelshot: levelshotPath,
@@ -132,6 +128,45 @@ async function () {
 */
 
 
+async function serveLevelshot(request, response, next) {
+  let basegame = getGame()
+  let filename = request.originalUrl.replace(/\?.*$/, '')
+  if(!filename.match(/levelshots\//i)) {
+    return next()
+  }
+
+  if(filename.match('/unknownmap.jpg')) {
+    return response.sendFile(UNKNOWN)
+  }
+
+  let mapname = path.basename(filename).replace('.jpg', '')
+  let localLevelshot = path.join(basegame, '/levelshots/', mapname + '.jpg')
+  let levelshot = findFile(localLevelshot)
+  if(levelshot) {
+    return response.sendFile(levelshot)
+  }
+
+  levelshot = findFile(filename)
+  if(!levelshot || levelshot.endsWith('.pk3')) {
+    let logs = await execLevelshot(mapname)
+    let wroteScreenshot = /^Wrote\s+((levelshots\/|screenshots\/).*?)$/gmi
+    let match
+    while (match = wroteScreenshot.exec(logs)) {
+      let unsupportedFormat = findFile(basegame + '/' + match[1])
+      console.log(unsupportedFormat)
+      await convertImage(unsupportedFormat, match[1])
+    }
+  }
+
+  levelshot = findFile(localLevelshot)
+  if(levelshot) {
+    return response.sendFile(levelshot)
+  }
+
+  next()
+}
+
+
 async function execLevelshot(mapname) {
   // TODO: this is pretty lame, tried to make a screenshot, and a
   //   bunch of stuff failed, now I have some arbitrary wait time
@@ -156,6 +191,11 @@ async function execLevelshot(mapname) {
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
       //   might also be necessary for aligning animations.
+      '+set', 'r_headless', '1',
+      '+set', 'r_fullscreen', '0',
+      '+set', 'r_mode', '-1',
+      '+set', 'r_customWidth', '1024',
+      '+set', 'r_customHeight', '768',
       '+set', 'screenshotBirdsEyeView', '"set g_birdsEye 1; wait 30; screenshot; wait 30; set g_birdsEye 0"',
       '+set', 'sv_pure', '0',
       '+set', 's_initsound', '0',
@@ -183,16 +223,17 @@ async function execLevelshot(mapname) {
       if(errCode > 0) {
         reject(new Error(stderr))
       } else {
-        resolve(stdout)
+        resolve(stdout + stderr)
       }
     })
-    ps.stderr.on('data', console.error);
-    ps.stdout.on('data', console.log);
+    //ps.stderr.on('data', console.error);
+    //ps.stdout.on('data', console.log);
   })
 }
 
 
 module.exports = {
   serveMapInfo,
+  serveLevelshot,
 }
 

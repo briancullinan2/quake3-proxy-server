@@ -1,6 +1,7 @@
 
 const {serveGames} = require('../gameServer/serve-games.js')
 const {serveMaps, serveDownload, serveMapsRange} = require('../mapServer/serve-download.js')
+const {serveLevelshot} = require('../mapServer/review.js')
 const {serveMapInfo} = require('../mapServer/review.js')
 const {serveVirtual} = require('../contentServer/content.js')
 const {serveRepacked, serveFinished} = require('../mapServer/repack.js')
@@ -133,14 +134,7 @@ function createApplication(features) {
     app.use('/maps/?', serveMaps)
   }
 
-  app.use(function (req, res, next) {
-    let filename = req.url.replace(/\?.*$/, '')
-    if(filename.match('/unknownmap.jpg')
-    || filename.match(/levelshots\//i)) {
-      return res.sendFile(UNKNOWN)
-    }
-    next()
-  })
+  app.use('/*/*/levelshots/*.jpg', serveLevelshot)
 
   return app
 }

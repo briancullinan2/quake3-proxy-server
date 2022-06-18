@@ -78,6 +78,7 @@ function findFile(filename) {
   let GAME_ORDER = gameDirectories(MODS[basename])
   for(let i = 0; i < GAME_ORDER.length; i++) {
     let newPath = path.join(GAME_ORDER[i], filename.substr(MODS[basename].length))
+    console.log(newPath)
     if(fs.existsSync(newPath)) {
       return newPath
     }

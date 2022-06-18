@@ -7,6 +7,7 @@ const { sourcePk3Download } = require('../mapServer/serve-download.js')
 const { getIndex, streamFileKey, streamFile } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const { convertImage } = require('../contentServer/convert.js')
+const { extractPk3 } = require('../contentServer/compress.js')
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
@@ -31,50 +32,19 @@ function streamToBuffer(stream) {
   })
 }
 
-async function repackPk3(pk3Path) {
-  const StreamZip = require('node-stream-zip')
-  const zip = new StreamZip({
-    file: pk3Path,
-    storeEntries: true,
-    skipEntryNameValidation: true,
-  })
-  let newZip = path.join(repackedCache(), path.basename(pk3Path))
 
-  // make a new zip, filter out everything but text files
-  //   (e.g. menus, cfgs, shaders)
-  //   and very small images from shaders/gfx/sfx
-  // generate new palette
-  let index = await getIndex(pk3Path)
+
+async function repackPk3(pk3Path) {
+  let newZip = path.join(repackedCache(), path.basename(pk3Path))
   let directory = []
+  let index = extractPk3(pk3Path)
   for (let i = 0; i < index.length; i++) {
     if (index[i].isDirectory)
       continue
 
     let outFile = path.join(newZip + 'dir', index[i].name)
     if (!fs.existsSync(outFile)) {
-      console.log('Extracting', index[i].key, '->', outFile)
-      fs.mkdirSync(path.dirname(outFile), { recursive: true })
-
-      // stupid TGAs
-      if (outFile.match(/\.tga$/i)) {
-        let passThrough = new PassThrough()
-        let tgaFile = (await Promise.all([
-          streamFile(index[i], passThrough),
-          streamToBuffer(passThrough)
-        ]))[1]
-        //fs.writeFileSync(outFile + '_orig', tgaFile)
-        if (tgaFile[0] > 0) {
-          tgaFile = Array.from(tgaFile)
-          tgaFile.splice(18, tgaFile[0])
-          tgaFile[0] = 0
-          tgaFile = Buffer.from(tgaFile)
-        }
-        fs.writeFileSync(outFile, tgaFile)
-      } else {
-        const file = fs.createWriteStream(outFile)
-        await streamFile(index[i], file)
-        file.close()
-      }
+      continue;
     }
 
     let isUnsupportedImage
@@ -83,9 +53,8 @@ async function repackPk3(pk3Path) {
     } else {
       isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
     }
-    let newName = index[i].name
     if (isUnsupportedImage) {
-      newName = await convertImage(outFile, index[i].name)
+      await convertImage(outFile, index[i].name)
     }
 
     if (fileTypes.includes(path.extname(index[i].name))
@@ -93,7 +62,7 @@ async function repackPk3(pk3Path) {
       || index[i].size < 1024 * 256
       // some images with all zeros will compress significantly
       || index[i].compressedSize < 1024 * 64) {
-      directory.push(newName)
+      directory.push(index[i].name)
     }
   }
   zip.close()
