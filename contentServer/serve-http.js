@@ -135,6 +135,9 @@ function createApplication(features) {
   }
 
   app.use('/*/*/levelshots/*.jpg', serveLevelshot)
+  app.use('/*/screenshots/*.jpg', serveLevelshot)
+  app.use('/*/levelshots/*.jpg', serveLevelshot)
+  app.use('/*/maps/*_tracemap*.jpg', serveLevelshot)
 
   return app
 }

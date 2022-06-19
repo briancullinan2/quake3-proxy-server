@@ -2,7 +2,7 @@
 
 let mapList
 let gameList
-
+let mapInfo
 
 window.addEventListener('load', (event) => {
   mapList = document.getElementById('map-list')
@@ -17,7 +17,20 @@ window.addEventListener('load', (event) => {
     setInterval(refreshGames, 20)
     setInterval(function () { previousLine = -1 }, 2000)
   }
+
+
+  mapInfo = document.getElementById('map-info')
+  if(mapInfo) {
+    setInterval(refreshMapinfo, 20)
+    setInterval(function () { previousLine = -1 }, 2000)
+  }
 })
+
+
+async function refreshMapinfo() {
+  
+}
+
 
 //window.addEventListener('scroll', refreshMaps)
 let previousLine = 0
