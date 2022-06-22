@@ -5,7 +5,8 @@ const {PassThrough} = require('stream')
 const {repackedCache} = require('../utilities/env.js')
 const {execCmd} = require('../utilities/exec.js')
 
-async function convertImage(imagePath, unsupportedFormat) {
+async function convertImage(imagePath, unsupportedFormat, quality) {
+  console.log('Converting: ', imagePath)
   let isOpaque
   let unsupportedExt = path.extname(unsupportedFormat)
   let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
@@ -35,7 +36,6 @@ async function convertImage(imagePath, unsupportedFormat) {
     newPath = path.join(repackedCache(), newFile)
   }
   if(!fs.existsSync(newPath)) {
-    console.log('Converting: ', newPath)
     //console.assert(newFile.localeCompare(
     //  request, 'en', { sensitivity: 'base' }) == 0)
     fs.mkdirSync(path.dirname(newPath), { recursive: true })
@@ -43,12 +43,13 @@ async function convertImage(imagePath, unsupportedFormat) {
       let passThrough = new PassThrough()
       streamFileKey(pk3File, unsupportedFormat, passThrough)
       await execCmd(`convert -strip -interlace Plane \
-          -sampling-factor 4:2:0 -quality 20% -auto-orient \
+          -sampling-factor 4:2:0 -quality ${quality ? quality : '20%'} -auto-orient \
           ${unsupportedFormat.substring(1)}:- "${newPath}"`, passThrough)
     } else {
       await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
-      -quality 20% -auto-orient ${isOpaque ? ' -colorspace RGB ' : ''} \
+      -quality ${quality ? quality : '20%'} -auto-orient \
       "${imagePath}" "${newPath}"`)
+      // ${isOpaque ? ' -colorspace RGB ' : ''} 
     }
     // don't wait for anything
   }
