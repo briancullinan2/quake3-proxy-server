@@ -8,10 +8,23 @@ const {
 } = require('../utilities/env.js')
 
 
+function modDirectory(filename) {
+  if(filename.startsWith('/')) {
+    filename = filename.substr(1)
+  }
+
+  let basename = MODS_NAMES.indexOf(filename.split('\/')[0].toLocaleLowerCase())
+  if(basename == -1) {
+    return
+  }
+
+  return MODS[basename]
+}
+
 function gameDirectories(basegame) {
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + basegame)
   const GAME_DIRECTORIES = [
-    repackedCache(), // TODO: 
+    //repackedCache(), // TODO: 
     path.join(GAME_DIRECTORY, 'build/linux'),
     path.join(GAME_DIRECTORY, 'build/win32-qvm'),
     path.join(GAME_DIRECTORY, 'assets'),
@@ -57,6 +70,7 @@ function buildDirectories() {
   return BUILD_ORDER
 }
 
+
 function findFile(filename) {
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
@@ -70,14 +84,14 @@ function findFile(filename) {
     }
   }
 
-  let basename = MODS_NAMES.indexOf(filename.split('\/')[0].toLocaleLowerCase())
-  if(basename == -1) {
+  let modname = modDirectory(filename)
+  if(!modname) {
     return
   }
 
-  let GAME_ORDER = gameDirectories(MODS[basename])
+  let GAME_ORDER = gameDirectories(modname)
   for(let i = 0; i < GAME_ORDER.length; i++) {
-    let newPath = path.join(GAME_ORDER[i], filename.substr(MODS[basename].length))
+    let newPath = path.join(GAME_ORDER[i], filename.substr(modname.length))
     //console.log(newPath)
     if(fs.existsSync(newPath)) {
       return newPath
@@ -94,4 +108,5 @@ module.exports = {
   findFile,
   buildDirectories,
   gameDirectories,
+  modDirectory,
 }

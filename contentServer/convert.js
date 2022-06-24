@@ -4,9 +4,22 @@ const fs = require('fs')
 const {PassThrough} = require('stream')
 const {repackedCache} = require('../utilities/env.js')
 const {execCmd} = require('../utilities/exec.js')
+const { streamFileKey } = require('../utilities/zip.js')
+
+const CURRENTLY_CONVERTING = {}
+
+
+
+
 
 async function convertImage(imagePath, unsupportedFormat, quality) {
   console.log('Converting: ', imagePath)
+  // TODO: only convert the same output image once at a time not to clobber
+  
+
+
+
+
   let isOpaque
   let unsupportedExt = path.extname(unsupportedFormat)
   let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
@@ -44,7 +57,7 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
       streamFileKey(pk3File, unsupportedFormat, passThrough)
       await execCmd(`convert -strip -interlace Plane \
           -sampling-factor 4:2:0 -quality ${quality ? quality : '20%'} -auto-orient \
-          ${unsupportedFormat.substring(1)}:- "${newPath}"`, passThrough)
+          ${unsupportedExt.substring(1)}:- "${newPath}"`, passThrough)
     } else {
       await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
       -quality ${quality ? quality : '20%'} -auto-orient \

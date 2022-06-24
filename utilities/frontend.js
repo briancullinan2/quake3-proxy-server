@@ -128,7 +128,9 @@ async function refreshMaps() {
     }
 
     let levelshot = item.children[1]
-    levelshot.setAttribute('src', object.levelshot)
+    if(levelshot.getAttribute('src') != object.levelshot) {
+      levelshot.setAttribute('src', object.levelshot)
+    }
     if(object.have) {
       levelshot.classList.remove('unknownmap')
     } else {

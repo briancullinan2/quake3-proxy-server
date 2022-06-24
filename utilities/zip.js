@@ -1,6 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 
+const EXISTING_INDEX = {}
+const EXISTING_MTIME = {}
+
 async function getIndex(pk3Path) {
   const StreamZip = require('node-stream-zip')
   let zip
@@ -13,6 +16,14 @@ async function getIndex(pk3Path) {
       storeEntries: true,
       skipEntryNameValidation: true,
     })
+    // if the index has already been loaded, use the
+    //   loaded copy until the zip file changes
+    let newMtime = fs.statSync(pk3Path).mtime.getTime()
+    if(typeof EXISTING_MTIME[pk3Path] != 'undefined'
+      && EXISTING_MTIME[pk3Path] >= newMtime) {
+      return EXISTING_INDEX[pk3Path]
+    }
+    EXISTING_MTIME[pk3Path] = newMtime
   }
   const index = await new Promise(resolve => {
     zip.on('ready', () => {
@@ -32,8 +43,8 @@ async function getIndex(pk3Path) {
                            .replace(/\/$/, '')
     entry.zip = zip
   }
-
-  return index
+  EXISTING_MTIME[pk3Path] = Date.now()
+  return (EXISTING_INDEX[pk3Path] = index)
 }
 
 
@@ -70,6 +81,7 @@ async function streamFileKey(pk3Path, fileKey, stream) {
 
 
 module.exports = {
+  EXISTING_INDEX,
   getIndex,
   streamFileKey,
   streamFile,

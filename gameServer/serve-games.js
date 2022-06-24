@@ -94,7 +94,7 @@ async function getGameJson(games) {
 
 async function serveGames(request, response, next) {
   let isJson = request.url.match(/\?json/)
-  let filename = request.url.replace(/\?.*$/, '')
+  let filename = request.originalUrl.replace(/\?.*$/, '')
   //console.log(GAME_SERVERS)
   if(!filename.match(/^\/games(\/?$|\/)/i)) {
     return next()
@@ -110,7 +110,7 @@ async function serveGames(request, response, next) {
   if(rangeString && rangeString.includes(':')) {
     let address = rangeString.split(':')[0]
     let port = rangeString.split(':')[1]
-    return
+    return next()
   }
 
   let total = Object.values(GAME_SERVERS).length

@@ -2,6 +2,12 @@ const path = require('path')
 const fs = require('fs')
 const { repackedCache } = require('../utilities/env.js')
 const { getIndex, streamFile } = require('../utilities/zip.js')
+const {PassThrough} = require('stream')
+
+const CURRENTLY_UNPACKING = {
+
+}
+
 
 async function extractPk3(pk3Path) {
   const StreamZip = require('node-stream-zip')
@@ -11,6 +17,25 @@ async function extractPk3(pk3Path) {
     skipEntryNameValidation: true,
   })
   let newZip = path.join(repackedCache(), path.basename(pk3Path))
+  if(typeof CURRENTLY_UNPACKING[newZip] == 'undefined') {
+    CURRENTLY_UNPACKING[newZip] = []
+  }
+
+  // only extract the same pk3 once, even if multiple page loads initiates it
+  if(CURRENTLY_UNPACKING[newZip].length > 0) {
+    return await new Promise(function (resolve, reject) {
+      let rejectTimer = setTimeout(function () {
+        reject(new Error('Already extracting timed out.'))
+        rejectTimer = null
+      }, 3000)
+      CURRENTLY_UNPACKING[newZip].push(function (directoryIndex) {
+        if(rejectTimer) {
+          cancelTimeout(rejectTimer)
+          resolve(directoryIndex)
+        }
+      })
+    })
+  }
 
   // make a new zip, filter out everything but text files
   //   (e.g. menus, cfgs, shaders)
@@ -50,7 +75,14 @@ async function extractPk3(pk3Path) {
       file.close()
     }
   }
-  return index
+
+  return await new Promise(resolve => {
+    resolve(index)
+    for(let i = 0; i < CURRENTLY_UNPACKING[newZip].length; i++) {
+      CURRENTLY_UNPACKING[newZip](index)
+    }
+    CURRENTLY_UNPACKING[newZip].splice(0)
+  })
 }
 
 

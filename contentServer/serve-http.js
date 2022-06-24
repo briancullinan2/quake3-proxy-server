@@ -1,7 +1,7 @@
 
 const {serveGames} = require('../gameServer/serve-games.js')
 const {serveMaps, serveDownload, serveMapsRange} = require('../mapServer/serve-download.js')
-const {serveLevelshot} = require('../mapServer/review.js')
+const {serveLevelshot} = require('../mapServer/serve-lvlshot.js')
 const {serveMapInfo} = require('../mapServer/review.js')
 const {serveVirtual} = require('../contentServer/content.js')
 const {serveRepacked, serveFinished} = require('../mapServer/repack.js')

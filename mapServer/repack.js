@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { PassThrough } = require('stream')
-const { findFile } = require('../contentServer/virtual.js')
+const { findFile, modDirectory } = require('../contentServer/virtual.js')
 const { repackedCache } = require('../utilities/env.js')
 const { sourcePk3Download } = require('../mapServer/serve-download.js')
 const { getIndex, streamFileKey, streamFile } = require('../utilities/zip.js')
@@ -33,11 +33,13 @@ function streamToBuffer(stream) {
 }
 
 
-
-async function repackPk3(pk3Path) {
+// same as extractPk3 but initiates conversions immediately
+async function unpackPk3(pk3Path) {
   let newZip = path.join(repackedCache(), path.basename(pk3Path))
   let directory = []
-  let index = extractPk3(pk3Path)
+
+  let index = await extractPk3(pk3Path)
+
   for (let i = 0; i < index.length; i++) {
     if (index[i].isDirectory)
       continue
@@ -66,18 +68,35 @@ async function repackPk3(pk3Path) {
     }
   }
   zip.close()
+  return directory
+}
+
+
+async function repackPk3(pk3Path) {
+  let newZip = path.join(repackedCache(), path.basename(pk3Path))
+
+  let directory = await unpackPk3(pk3Path)
 
   for (let i = 0; i < directory.length; i++) {
     await execCmd(`cd ${newZip + 'dir'} && \
       zip ${i == 0 ? ' -u ' : ''} "../${path.basename(pk3Path)}" \
       "${path.join('./', directory[i])}"`)
   }
+
   return newZip
 }
 
 
-async function repackBasegame() {
+async function repackBasegame(pk3Path) {
+  let newZip = path.join(repackedCache(), path.basename(pk3Path) + '.pk3')
+  let promises = []
+  promises.push(Promise.resolve(unpackPk3(newZip)))
+  // start extracting other zips simultaneously,
+  //   then wait for all of them to resolve
 
+
+
+  return newZip
 }
 
 
@@ -88,11 +107,17 @@ async function serveFinished() {
     //      engine does and recompile)
     // TODO: get index of all pk3 in non-cache game directories,
     //   make a new pak with combined file-system
+    let newZip = path.join(repackedCache(), path.basename(pk3Path) + '.pk3')
+    if(fs.existsSync(newZip)) {
+      return newZip
+    } else {
+      return repackBasegame()
+    }
   } else {
     // download pk3 and repack
     newFile = await sourcePk3Download(filename)
     if (!newFile.startsWith((repackedCache()))) {
-      newFile = await repackPk3(newFile)
+      //newFile = await repackPk3(newFile)
     }
     return response.sendFile(newFile, {
       headers: { 'content-disposition': `attachment; filename="${path.basename(newFile)}"` }
@@ -100,16 +125,69 @@ async function serveFinished() {
   }
 }
 
+async function tryAltPath(newFile, pk3InnerPath, response) {
+  let index = await getIndex(newFile)
+  //console.log(newFile)
+
+  for (let i = 0; i < index.length; i++) {
+    if(index[i].isDirectory) {
+      continue
+    }
+
+    let isUnsupportedImage
+    if (index[i].name.match(/levelshots\//i)) {
+      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$|\.png/gi)
+    } else {
+      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
+    }
+    if(!isUnsupportedImage) {
+      continue
+    }
+
+    let fileKey = pk3InnerPath.replace(path.extname(pk3InnerPath), path.extname(index[i].name))
+    if(index[i].name.localeCompare( fileKey, 'en', 
+          { sensitivity: 'base' } ) != 0) {
+      continue
+    }
+
+    // FOUND IT!
+    // convert in addition to stream
+    //let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
+    let newImage = await convertImage(newFile, index[i].name)
+    await response.sendFile(newImage)
+    return true
+  }
+
+  return false
+}
+
+
 
 async function serveRepacked(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
-  let newFile = findFile(filename)
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+  let repackedFile = path.join(repackedCache(), path.basename(pk3File) + 'dir', pk3InnerPath)
+  if(pk3File.length < filename.length && fs.existsSync(repackedFile)) {
+    return response.sendFile(newFile)
+  }
+  if(filename.startsWith('/')) {
+    filename = filename.substr(1)
+  }
 
+  let modname = modDirectory(filename)
+  if(modname) {
+    repackedFile = path.join(repackedCache(), filename.substr(modname.length))
+    console.log(repackedFile)
+    if(fs.existsSync(repackedFile)) {
+      return response.sendFile(repackedFile)
+    }
+  }
 
+  
+  let newFile = findFile(filename)
   if (newFile && newFile.endsWith('.pk3')
-    && pk3File.length < filename.length) {
+      && pk3File.length < filename.length) {  
     if (await streamFileKey(newFile, pk3InnerPath, response)) {
       return
     }
@@ -125,7 +203,7 @@ async function serveRepacked(request, response, next) {
 
     // always convert pk3s, remove media to load individually
     if (!newFile.startsWith(repackedCache())) {
-    //  newFile = await repackPk3(newFile)
+      //newFile = await unpackPk3(newFile)
     }
 
     newFile = findFile(filename)
