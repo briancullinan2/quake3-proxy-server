@@ -96,6 +96,7 @@ body > img {
 #map-info ol img {
   width: 100%;
   max-height: 200px;
+  max-width: 200px;
   box-shadow: 0px 0px 10px rgb(255 255 255 / 50%);
   margin:auto;
 }
@@ -191,6 +192,15 @@ body > img {
   background-color: rgb(16, 127, 47);
 }
 
+.shaders li {
+  overflow: hidden;
+}
+
+#map-info ol.shaders li img {
+  box-shadow: none;
+}
+
+.shaders li a,
 #map-list h3 span, #game-list h3 span {
   white-space: nowrap;
   transform: translateX(0);
@@ -200,6 +210,10 @@ body > img {
   padding: 0 20px;
 }
 
+.shaders li a:hover {
+  width: auto;
+  transform: translateX(calc(200px - 100%));
+}
 #map-list a:hover span, #game-list a:hover span {
   width: auto;
   transform: translateX(calc(300px - 100%));

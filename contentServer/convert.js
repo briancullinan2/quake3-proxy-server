@@ -13,7 +13,6 @@ const CURRENTLY_CONVERTING = {}
 
 
 async function convertImage(imagePath, unsupportedFormat, quality) {
-  console.log('Converting: ', imagePath)
   // TODO: only convert the same output image once at a time not to clobber
   
 
@@ -24,9 +23,13 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   let unsupportedExt = path.extname(unsupportedFormat)
   let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
   if(imagePath.endsWith('.pk3')) {
+    //console.log(unsupportedFormat)
     let passThrough = new PassThrough()
     isOpaque = (await Promise.all([
-      streamFileKey(pk3File, unsupportedFormat, passThrough),
+      streamFileKey(pk3File, unsupportedFormat, passThrough)
+          .then(result => {
+            if(!result) throw new Error('File not found: ' + unsupportedFormat)
+          }),
       execCmd(`identify -format '%[opaque]' ${unsupportedExt.substring(1)}:-`, passThrough)
     ]))[1]
   } else {
@@ -48,24 +51,28 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   } else {
     newPath = path.join(repackedCache(), newFile)
   }
-  if(!fs.existsSync(newPath)) {
-    //console.assert(newFile.localeCompare(
-    //  request, 'en', { sensitivity: 'base' }) == 0)
-    fs.mkdirSync(path.dirname(newPath), { recursive: true })
-    if(imagePath.endsWith('.pk3')) {
-      let passThrough = new PassThrough()
-      streamFileKey(pk3File, unsupportedFormat, passThrough)
-      await execCmd(`convert -strip -interlace Plane \
-          -sampling-factor 4:2:0 -quality ${quality ? quality : '20%'} -auto-orient \
-          ${unsupportedExt.substring(1)}:- "${newPath}"`, passThrough)
-    } else {
-      await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
-      -quality ${quality ? quality : '20%'} -auto-orient \
-      "${imagePath}" "${newPath}"`)
-      // ${isOpaque ? ' -colorspace RGB ' : ''} 
-    }
-    // don't wait for anything
+  if(fs.existsSync(newPath)) {
+    console.log('Skipping: ', newPath)
+    return newPath
   }
+  //console.assert(newFile.localeCompare(
+  //  request, 'en', { sensitivity: 'base' }) == 0)
+  fs.mkdirSync(path.dirname(newPath), { recursive: true })
+  if(imagePath.endsWith('.pk3')) {
+    console.log('Converting: ', imagePath, unsupportedFormat)
+    let passThrough = new PassThrough()
+    streamFileKey(pk3File, unsupportedFormat, passThrough)
+    await execCmd(`convert -strip -interlace Plane \
+        -sampling-factor 4:2:0 -quality ${quality ? quality : '20%'} -auto-orient \
+        ${unsupportedExt.substring(1)}:- "${newPath}"`, passThrough)
+  } else {
+    console.log('Converting: ', imagePath)
+    await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
+    -quality ${quality ? quality : '20%'} -auto-orient \
+    "${imagePath}" "${newPath}"`)
+    // ${isOpaque ? ' -colorspace RGB ' : ''} 
+  }
+  // TODO: don't wait for anything?
   return newPath
 }
 

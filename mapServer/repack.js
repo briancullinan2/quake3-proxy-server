@@ -3,11 +3,12 @@ const path = require('path')
 const { PassThrough } = require('stream')
 const { findFile, modDirectory } = require('../contentServer/virtual.js')
 const { repackedCache } = require('../utilities/env.js')
-const { sourcePk3Download } = require('../mapServer/serve-download.js')
+const { MAP_DICTIONARY, sourcePk3Download } = require('../mapServer/serve-download.js')
 const { getIndex, streamFileKey, streamFile } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { extractPk3 } = require('../contentServer/compress.js')
+const { unsupportedImage } = require('../contentServer/content.js')
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
@@ -49,14 +50,9 @@ async function unpackPk3(pk3Path) {
       continue;
     }
 
-    let isUnsupportedImage
-    if (index[i].name.match(/levelshots\//i)) {
-      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$|\.png/gi)
-    } else {
-      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
-    }
-    if (isUnsupportedImage) {
-      await convertImage(outFile, index[i].name)
+    if (unsupportedImage(index[i].name)) {
+      let newImage = await convertImage(outFile, index[i].name)
+      directory.push(index[i].name.replace(path.extname(index[i].name, path.extname(newImage))))
     }
 
     if (fileTypes.includes(path.extname(index[i].name))
@@ -78,6 +74,10 @@ async function repackPk3(pk3Path) {
   let directory = await unpackPk3(pk3Path)
 
   for (let i = 0; i < directory.length; i++) {
+    if(unsupportedImage(directory[i])) {
+      continue
+    }
+  
     await execCmd(`cd ${newZip + 'dir'} && \
       zip ${i == 0 ? ' -u ' : ''} "../${path.basename(pk3Path)}" \
       "${path.join('./', directory[i])}"`)
@@ -99,9 +99,21 @@ async function repackBasegame(pk3Path) {
   return newZip
 }
 
+async function repackBasemap(mapname) {
+  // TODO: load the map in renderer, get list of loaded images / shaders available 
+  //   on server, and package into new converted / compressed zip
+  
+}
 
-async function serveFinished() {
-  if (filename.endsWith('/pak0')) {
+
+async function serveFinished(request, response, next) {
+  let filename = request.url.replace(/\?.*$/, '')
+  if(filename.startsWith('/')) {
+    filename = filename.substr(1)
+  }
+
+  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
+  if (mapname.localeCompare('pak0', 'en', { sensitivity: 'base' }) == 0) {
     // TODO: repack mod directory pk3s into 1 overlapping 
     //   (i.e. do the same virtual combination the 
     //      engine does and recompile)
@@ -114,10 +126,20 @@ async function serveFinished() {
       return repackBasegame()
     }
   } else {
+    // repack base-maps for web
+    if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+      return next(new Error('File not found: ' + filename))
+    }
+    if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
+      && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
+      return repackBasemap(mapname)
+    }
+  
+
     // download pk3 and repack
     newFile = await sourcePk3Download(filename)
     if (!newFile.startsWith((repackedCache()))) {
-      //newFile = await repackPk3(newFile)
+      newFile = await repackPk3(newFile)
     }
     return response.sendFile(newFile, {
       headers: { 'content-disposition': `attachment; filename="${path.basename(newFile)}"` }
@@ -133,20 +155,12 @@ async function tryAltPath(newFile, pk3InnerPath, response) {
     if(index[i].isDirectory) {
       continue
     }
-
-    let isUnsupportedImage
-    if (index[i].name.match(/levelshots\//i)) {
-      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$|\.png/gi)
-    } else {
-      isUnsupportedImage = index[i].name.match(/\.tga$|\.dds$/gi)
-    }
-    if(!isUnsupportedImage) {
+    if(!unsupportedImage(index[i])) {
       continue
     }
 
     let fileKey = pk3InnerPath.replace(path.extname(pk3InnerPath), path.extname(index[i].name))
-    if(index[i].name.localeCompare( fileKey, 'en', 
-          { sensitivity: 'base' } ) != 0) {
+    if(index[i].name.localeCompare( fileKey, 'en', { sensitivity: 'base' } ) != 0) {
       continue
     }
 
@@ -165,29 +179,43 @@ async function tryAltPath(newFile, pk3InnerPath, response) {
 
 async function serveRepacked(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
+  if(filename.startsWith('/')) {
+    filename = filename.substr(1)
+  }
+
+
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let repackedFile = path.join(repackedCache(), path.basename(pk3File) + 'dir', pk3InnerPath)
   if(pk3File.length < filename.length && fs.existsSync(repackedFile)) {
-    return response.sendFile(newFile)
-  }
-  if(filename.startsWith('/')) {
-    filename = filename.substr(1)
+    return response.sendFile(repackedFile)
   }
 
   let modname = modDirectory(filename)
   if(modname) {
     repackedFile = path.join(repackedCache(), filename.substr(modname.length))
-    console.log(repackedFile)
     if(fs.existsSync(repackedFile)) {
       return response.sendFile(repackedFile)
     }
   }
 
-  
+
   let newFile = findFile(filename)
   if (newFile && newFile.endsWith('.pk3')
-      && pk3File.length < filename.length) {  
+      && pk3File.length < filename.length) {
+
+    // TODO: serve unsupported images with ?alt in URL
+    let isAlt = request.url.match(/\?alt/)
+    if(isAlt && unsupportedImage(filename)) {
+      try {
+        let newImage = await convertImage(newFile, pk3InnerPath)
+        return response.sendFile(newImage)
+      } catch (e) {
+        if(!e.message.startsWith('File not found')) {
+          throw e
+        }
+      }
+    } else
     if (await streamFileKey(newFile, pk3InnerPath, response)) {
       return
     }

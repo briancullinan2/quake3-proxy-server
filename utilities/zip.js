@@ -20,7 +20,8 @@ async function getIndex(pk3Path) {
     //   loaded copy until the zip file changes
     let newMtime = fs.statSync(pk3Path).mtime.getTime()
     if(typeof EXISTING_MTIME[pk3Path] != 'undefined'
-      && EXISTING_MTIME[pk3Path] >= newMtime) {
+      && EXISTING_MTIME[pk3Path] >= newMtime
+      && typeof EXISTING_INDEX[pk3Path] != 'undefined') {
       return EXISTING_INDEX[pk3Path]
     }
     EXISTING_MTIME[pk3Path] = newMtime
@@ -69,8 +70,7 @@ async function streamFileKey(pk3Path, fileKey, stream) {
   for(let i = 0; i < index.length; i++) {
     // match the converted filename
     if(index[i].isDirectory
-        || index[i].name.localeCompare( fileKey, 'en', 
-            { sensitivity: 'base' } ) != 0) {
+        || index[i].name.localeCompare( fileKey, 'en', { sensitivity: 'base' } ) != 0) {
       continue
     }
     await streamFile(index[i], stream)

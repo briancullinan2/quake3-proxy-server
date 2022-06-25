@@ -59,7 +59,7 @@ async function execLevelshotDed(mapname, extraCommands) {
     //   might also be necessary for aligning animations.
   ]
   .concat(extraCommands)
-  console.log(startArgs)
+  //console.log(startArgs)
   // TODO: wait for the new dedicated process to connect to our specialized
   //   control port. Now we have a Quake 3 server command pipe. Send OOB
   //   RCON messages to control our own process remotely / asynchronously.
@@ -68,6 +68,7 @@ async function execLevelshotDed(mapname, extraCommands) {
   //   server using the reconnect command).
   let client = findFile(EXE_NAME)
   const {execFile} = require('child_process')
+  //console.log(startArgs)
   // TODO: CODE REVIEW, using the same technique in compress.js (CURRENTLY_UNPACKING)
   //   but the last resolve function would be here after the resolve(stderr)
   //   instead of after, in the encapsulating function call.
@@ -90,17 +91,20 @@ async function execLevelshotDed(mapname, extraCommands) {
 async function execLevelshot(mapname) {
   let basegame = getGame()
   let screenshotCommands = []
-  // figure out which images are missing and do it in one shot
-  let levelshot = path.join(basegame, '/levelshots/', mapname + '.jpg')
   let newVstr = ''
-  let needsSetup = false
+  let REPACKED_MAPS = path.join(repackedCache(), '/maps/')
+  let REPACKED_SCREENSHOTS = path.join(repackedCache(), '/screenshots/')
+  let REPACKED_LVLSHOTS = path.join(repackedCache(), '/levelshots/')
 
-  if(!findFile(levelshot)) {
+  // figure out which images are missing and do it in one shot
+  let needsSetup = false
+  let levelshot = path.join(REPACKED_LVLSHOTS, mapname + '.jpg')
+  if(!fs.existsSync(levelshot)) {
     newVstr += ' ; vstr takeLevelshot ; '
     needsSetup = true
   }
-  let screenshot1 = path.join(basegame, '/screenshots/', mapname + '_screenshot0001.jpg')
-  if(!findFile(screenshot1)) {
+  let screenshot1 = path.join(REPACKED_SCREENSHOTS, mapname + '_screenshot0001.jpg')
+  if(!fs.existsSync(screenshot1)) {
     newVstr += ' ; vstr takeLevelshotFullsize ; '
     needsSetup = true
   }
@@ -110,55 +114,69 @@ async function execLevelshot(mapname) {
     newVstr = ' ; vstr setupLevelshot ; ' + newVstr
   }
 
-  let screenshot2 = path.join(basegame, '/screenshots/', mapname + '_screenshot0002.jpg')
-  if(!findFile(screenshot2)) {
+  let screenshot2 = path.join(REPACKED_SCREENSHOTS, mapname + '_screenshot0002.jpg')
+  if(!fs.existsSync(screenshot2)) {
     newVstr += ' ; vstr screenshotBirdsEyeView ; '
   }
-  let tracemap1 = path.join(basegame, '/maps/', mapname + '_tracemap0001.jpg')
-  if(!findFile(tracemap1)) {
+  let tracemap1 = path.join(REPACKED_MAPS, mapname + '_tracemap0001.jpg')
+  if(!fs.existsSync(tracemap1)) {
     newVstr += ' ; vstr exportAreaMask ; '
   }
 
-  let tracemap2 = path.join(basegame, '/maps/', mapname + '_tracemap0002.jpg')
-  if(!findFile(tracemap2)) {
+  let tracemap2 = path.join(REPACKED_MAPS, mapname + '_tracemap0002.jpg')
+  if(!fs.existsSync(tracemap2)) {
     newVstr += ' ; vstr exportHeightMap ; '
   }
 
-  let tracemap3 = path.join(basegame, '/maps/', mapname + '_tracemap0003.jpg')
-  if(!findFile(tracemap3)) {
+  let tracemap3 = path.join(REPACKED_MAPS, mapname + '_tracemap0003.jpg')
+  if(!fs.existsSync(tracemap3)) {
     newVstr += ' ; vstr exportSkybox ; '
   }
 
-  let tracemap4 = path.join(basegame, '/maps/', mapname + '_tracemap0004.jpg')
-  if(!findFile(tracemap4)) {
+  let tracemap4 = path.join(REPACKED_MAPS, mapname + '_tracemap0004.jpg')
+  if(!fs.existsSync(tracemap4)) {
     newVstr += ' ; vstr exportBottomup ; '
   }
 
-  let tracemap5 = path.join(basegame, '/maps/', mapname + '_tracemap0005.jpg')
-  if(!findFile(tracemap5)) {
+  let tracemap5 = path.join(REPACKED_MAPS, mapname + '_tracemap0005.jpg')
+  if(!fs.existsSync(tracemap5)) {
     newVstr += ' ; vstr exportGroundheight ; '
   }
 
   let tracemap6 = path.join(basegame, '/maps/', mapname + '_tracemap0006.jpg')
-  if(!findFile(tracemap6)) {
+  if(!fs.existsSync(tracemap6)) {
     newVstr += ' ; vstr exportSkyboxVolume ; '
   }
 
-  let tracemap7 = path.join(basegame, '/maps/', mapname + '_tracemap0007.jpg')
-  if(!findFile(tracemap7)) {
+  let tracemap7 = path.join(REPACKED_MAPS, mapname + '_tracemap0007.jpg')
+  if(!fs.existsSync(tracemap7)) {
     newVstr += ' ; vstr exportSkyboxVolume2 ; '
   }
 
-  let tracemap8 = path.join(basegame, '/maps/', mapname + '_tracemap0008.jpg')
-  if(!findFile(tracemap8)) {
+  let tracemap8 = path.join(REPACKED_MAPS, mapname + '_tracemap0008.jpg')
+  if(!fs.existsSync(tracemap8)) {
     newVstr += ' ; vstr exportSkyboxVolume3 ; '
   }
 
   // TODO: export / write entities / mapname.ents file
-  let entityFile = path.join(basegame, '/maps/', mapname + '.ent')
-  if(!findFile(entityFile)) {
-    newVstr += ' ; set cm_saveEnts 1 ; '
+  let entityFile = path.join(REPACKED_MAPS, mapname + '.ent')
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), {recursive: true})
+  if(!fs.existsSync(entityFile)) {
+    screenshotCommands.push.apply(screenshotCommands, [
+      '+set', 'cm_saveEnts', '1'
+    ])
   }
+
+  let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
+  if(!fs.existsSync(shaderFile)) {
+    newVstr += ' ; shaderlist ; '
+  }
+
+  let imageFile = path.join(REPACKED_MAPS, mapname + '-images.txt')
+  if(!fs.existsSync(imageFile)) {
+    newVstr += ' ; imagelist ; '
+  }
+
   // TODO: take screenshot from every camera position
   // TODO: export all BLUEPRINTS and all facets through sv_bsp_mini
   let logs = ''
@@ -180,21 +198,35 @@ async function execLevelshot(mapname) {
     fs.unlinkSync(lvlconfig)
   } 
   
-
+  let outputEnts = path.join(FS_GAMEHOME, basegame, '/maps/' + mapname + '.ent')
+  fs.mkdirSync(REPACKED_MAPS, {recursive: true})
+  if(fs.existsSync(outputEnts)) {
+    fs.renameSync(outputEnts, path.join(REPACKED_MAPS, mapname + '.ent'))
+  }
   //if(screenshotCommands.length) {
   //}
 
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
-  let wroteScreenshot = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
+  let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
   let match
-  while (match = wroteScreenshot.exec(logs)) {
+  while (match = WROTE_SCREENSHOT.exec(logs)) {
     let unsupportedFormat = findFile(basegame + '/' + match[1])
     if(!unsupportedFormat) {
       console.error('WARNING: output image not found ' + match[1])
       continue
     }
+    // TODO: don't wait for anything?
     await convertImage(unsupportedFormat, match[1], '80%')
+  }
+
+  let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
+  let imageList = IMAGE_LIST.exec(logs)
+  if(imageList) {
+    let images = imageList[0].split('\n').slice(1, -3)
+        .map(line => (' ' + line).split(/\s+/ig).pop())
+        .join('\n')
+    fs.writeFileSync(imageFile, images)
   }
 
   // TODO: CODE REVIEW, in another location, I call resolve() after a promised resolve()

@@ -2,10 +2,20 @@ const fs = require('fs')
 const path = require('path')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../contentServer/virtual.js')
-const {
-  FS_BASEPATH, MODS_NAMES, MODS
-} = require('../utilities/env.js')
+const { FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
+const { convertImage } = require('../contentServer/convert.js')
 
+async function unsupportedImage(imagePath) {
+  if (imagePath.match(/levelshots\//i)) {
+    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.png/gi)
+  } else {
+    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$/gi)
+  }
+  if(isUnsupportedImage) {
+    return imagePath
+  }
+
+}
 
 // TODO: would be cool if a virtual directory could span say: 
 //   https://github.com/xonotic/xonotic-data.pk3dir
@@ -31,9 +41,11 @@ async function serveVirtualPk3dir(filename) {
 
     if ((pk3InnerPath.length == 0 || currentPath.localeCompare(
       pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
-      && relativePath.length
+      && relativePath.length && newPath[pk3InnerPath.length] == '/'
       // recursive directory inside pk3?
-      && (isSubdir == -1 || isSubdir == relativePath.length - 1)) {
+      && (isSubdir == -1 || isSubdir == relativePath.length - 1)
+      && newPath.length > currentPath.length) {
+        console.log(newPath, currentPath)
       directory.push(path.join(pk3File + 'dir', newPath))
     }
   }
@@ -118,15 +130,15 @@ async function serveVirtual(request, response, next) {
   if (!directory || directory.length == 0) {
     return next()
   }
+  console.log('wtf? ', directory)
 
   // TODO: if findFile() returns a pk3, pipe the file out replace a few files
   // TODO: on backend, convert formats on the fly to/from assets directory
   for (let i = 0; i < directory.length; i++) {
-    let isUnsupportedImage = directory[i].match(/\.tga$|\.dds$/gi)
-    if (isUnsupportedImage) {
+    if (unsupportedImage(directory[i])) {
       let alternateImages = [
-        directory[i].replace(isUnsupportedImage[0], '.jpg'),
-        directory[i].replace(isUnsupportedImage[0], '.png'),
+        directory[i].replace(path.extname(directory[i]), '.jpg'),
+        directory[i].replace(path.extname(directory[i]), '.png'),
       ]
       if (directory.includes(alternateImages[0])
         || directory.includes(alternateImages[1])) {
@@ -179,6 +191,7 @@ module.exports = {
   gameDirectories,
   serveVirtual,
   layeredDir,
+  unsupportedImage,
 
 }
 

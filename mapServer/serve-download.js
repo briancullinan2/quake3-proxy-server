@@ -61,7 +61,7 @@ async function sourcePk3Download(filename) {
   }
 
   if (typeof MAP_DICTIONARY[mapname] != 'undefined') {
-    let pk3name = MAP_DICTIONARY[mapname] + '.pk3'
+    let pk3name = MAP_DICTIONARY[mapname]
     let cached = findFile(getGame() + '/' + pk3name)
     if (cached) {
       source = cached
@@ -86,40 +86,48 @@ async function getExistingMaps() {
   let basegame = getGame()
   //let pk3names = Object.values(MAP_LIST_LOWER)
   let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3'))
+  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
   let maps = (await Promise.all(pk3files.map(async function (pk3name) {
     let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))
     let bsps = index.filter(item => item.key.endsWith('.bsp'))
-    let maps = bsps.map(function (bsp) {
-      let mapname = path.basename(bsp.key).replace(/\.bsp$/i, '').toLocaleLowerCase()
+    let pakname = basename.replace('map-', '').replace('map_', '')
+    return bsps.map(function (bsp) {
+      let mapname = path.basename(bsp.key).replace(/\.bsp/ig, '').toLocaleLowerCase()
       MAP_DICTIONARY[mapname] = basename
-      return {
-        levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
-        pakname: basename.replace('map-', '').replace('map_', ''),
-        title: mapname,
-        bsp: mapname,
-        have: true,
-      }
+      return `/${basegame}/${pakname}dir/maps/${mapname}.bsp`
     })
-    return maps
   }))).flat(1)
-  let mapsNames = maps.map(m => m.bsp)
-  return maps.filter((m, i) => mapsNames.indexOf(m.bsp) == i)
+  let mapsNames = maps.map(m => path.basename(m).toLocaleLowerCase())
+  let uniqueMaps = maps.filter((m, i) => mapsNames
+      .indexOf(path.basename(m).toLocaleLowerCase()) == i)
+  uniqueMaps.sort()
+  return uniqueMaps
 }
 
 
 async function serveDownload(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
+  if(filename.startsWith('/')) {
+    filename = filename.substr(1)
+  }
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-  let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname] + '.pk3')
+  await getExistingMaps()
+  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+    return next(new Error('File not found: ' + filename))
+  }
+  if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
+    && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
+    return next(new Error('Won\'t serve base file: ' + MAP_DICTIONARY[mapname]))
+  }
+  let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname])
   console.log('Downloading:', newFile)
   if (fs.existsSync(newFile)) {
     return response.sendFile(newFile, {
-      headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname] + '.pk3'}"` }
+      headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname]}"` }
     })
   } else {
-    return next()
+    return next(new Error('File not found: ' + filename))
   }
 
 }
@@ -154,7 +162,7 @@ async function serveMaps(request, response, next) {
     + `<ol id="map-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(maps)}</script>
       <script>window.sessionLength=${total}</script>
-      <script async defer src="index.js"></script>
+      <!--<script async defer src="index.js"></script>-->
       ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)
 }
@@ -162,15 +170,17 @@ async function serveMaps(request, response, next) {
 
 async function renderMap(map) {
   let result = ''
-  result += `<li style="background-image: url('${map.levelshot}')">`
-  result += `<h3><a href="/maps/${map.bsp}">`
-  result += `<span>${map.title}</span>`
-  result += map.title != map.bsp
-    ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
+  let bspname = path.basename(map).replace(path.extname(map), '')
+  let lvlshot = path.join(map.split('/').slice(0, -2).join('/'), 
+      '/levelshots/', bspname + '.jpg')
+  let pakname = map.split('/').slice(0, -2).pop().replace(/\.pk3dir/ig, '.pk3')
+  result += `<li style="background-image: url('${lvlshot}')">`
+  result += `<h3><a href="/maps/${bspname}">`
+  result += `<span>${bspname}</span>`
+  result += bspname != bspname ? `<small>${title}</small>` : '<small>&nbsp;</small>'
   result += `</a></h3>`
-  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
-  result += `<a href="/maps/download/${map.bsp}">Download: ${map.pakname}`
-  //result += map.pakname.includes('.pk3') ? '' : '.pk3'
+  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${lvlshot}" />`
+  result += `<a href="/maps/download/${bspname}">Download: ${pakname}`
   result += '</a></li>'
   return result
 }

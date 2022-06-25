@@ -8,7 +8,7 @@ const { getGame } = require('../utilities/env.js')
 const {MAP_DICTIONARY} = require('../mapServer/serve-download.js')
 const { repackedCache, INDEX } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
-const { layeredDir } = require('../contentServer/content.js')
+const { layeredDir, unsupportedImage } = require('../contentServer/content.js')
 const {execLevelshot} = require('../mapServer/serve-lvlshot.js')
 
 const GAME_ARENAS = {
@@ -23,6 +23,7 @@ async function getMapInfo(mapname) {
   let basegame = getGame()
   // TODO: make sure BSP file is available synchronously first
   let newFile = await sourcePk3Download(mapname)
+  await ScanAndLoadShaderFiles()
   let newZip = path.join(repackedCache(), path.basename(newFile))
   let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
   let pk3Path = `/${basegame}/${path.basename(newFile)}dir`
@@ -50,16 +51,43 @@ async function getMapInfo(mapname) {
   }
 
 
-  let entityFile = findFile(path.join(basegame, '/maps/', mapname + '.ent'))
-  if(!entityFile) {
-    await execLevelshot(mapname)
-    entityFile = findFile(path.join(basegame, '/maps/', mapname + '.ent'))
+  let entityFile = path.join(repackedCache(), '/maps/', mapname + '.ent')
+  if(!fs.existsSync(entityFile)) {
+    let logs = await execLevelshot(mapname)
+    console.log(logs)
   }
   let entities = ''
-  if(entityFile) {
+  if(fs.existsSync(entityFile)) {
     entities = fs.readFileSync(entityFile).toString('utf-8')
   } else {
     console.error('WARNING: entities not found: ' + mapname)
+  }
+
+
+
+  let shaderFile = path.join(repackedCache(), '/maps/', mapname + '-shaders.txt')
+  if(!fs.existsSync(shaderFile)) {
+    //let logs = await execLevelshot(mapname)
+    //console.log(logs)
+  }
+  let shaders = []
+  if(fs.existsSync(shaderFile)) {
+    shaders = fs.readFileSync(shaderFile).toString('utf-8').split('\n')
+  } else {
+    console.error('WARNING: shaders not found: ' + mapname)
+  }
+
+
+  let imagesFile = path.join(repackedCache(), '/maps/', mapname + '-images.txt')
+  if(!fs.existsSync(imagesFile)) {
+    let logs = await execLevelshot(mapname)
+    console.log(logs)
+  }
+  let images = []
+  if(fs.existsSync(imagesFile)) {
+    images = fs.readFileSync(imagesFile).toString('utf-8').split('\n')
+  } else {
+    console.error('WARNING: images not found: ' + mapname)
   }
 
 
@@ -83,6 +111,8 @@ async function getMapInfo(mapname) {
     entities: entities + '\n' + (scripts || []).join('\n'),
     worldspawn: worldspawn[0],
     title: (worldspawn[0] || {}).message || mapname,
+    images: images,
+    pakname: MAP_DICTIONARY[mapname]
   }
 
   re.SwitchWorld(worldMaps[i]);
@@ -131,8 +161,12 @@ async function serveMapInfo(request, response, next) {
   await getExistingMaps()
   //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-  let newFile = findFile(basegame + '/' + MAP_DICTIONARY[mapname] + '.pk3')
+  let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
+  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+    return next(new Error('Map not found ' + mapname))
+  }
+  
+  let newFile = findFile(basegame + '/' + MAP_DICTIONARY[mapname])
   if (!newFile) {
     return next(new Error('Map not found ' + mapname))
   }
@@ -142,7 +176,7 @@ async function serveMapInfo(request, response, next) {
     mapInfo = await getMapInfo(mapname)
   } catch (e) {
     console.error(e)
-    return next()
+    return next(e)
   }
 
   let offset = INDEX.match('<body>').index + 6
@@ -192,11 +226,7 @@ async function serveMapInfo(request, response, next) {
       <li class="title"><span>Model2</span></li>
     </ol>
     <h3>Shaders</h3>
-    <ol class="shaders">
-      <li class="title"><span>World</span></li>
-      <li class="title"><span>Overrides</span></li>
-      <li class="title"><span>Base</span></li>
-    </ol>
+    <ol class="shaders">${await renderImages(mapInfo.images, mapInfo.pakname, basegame)}</ol>
     <h3>Voxelized</h3>
     <p>Coming soon. Reconstructed maps using only X/Y image data.</p>
     <h3>Entities</h3>
@@ -241,7 +271,33 @@ async function () {
 */
 
 
+async function renderImages(images, pk3name, basegame) {
+  let imageHtml = ''
+  // TODO: text in shaders, like Q3e renderer does
+
+
+  for(let i = 0; i < images.length; i++) {
+    if(images[i][0] == '*') {
+      continue
+    }
+    if(unsupportedImage(images[i])) {
+      imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="">${images[i]}</a></li>`
+    } else {
+      imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}" /><a href="">${images[i]}</a></li>`
+    }
+
+  }
+  
+  return `
+  <li class="title"><span>World</span></li>
+  <li class="title"><span>Overrides</span></li>
+  <li class="title"><span>Base</span></li>
+  ${imageHtml}`
+}
+
+
 module.exports = {
   serveMapInfo,
+  unsupportedImage,
 }
 
