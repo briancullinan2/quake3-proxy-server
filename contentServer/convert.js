@@ -35,7 +35,7 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
       throw new Error('File not found: ' + unsupportedFormat)
     }
   } else {
-    isOpaque = await execCmd('identify',  '-format', '\'%[opaque]\'',  imagePath)
+    isOpaque = await execCmd('identify', ['-format', '\'%[opaque]\'', imagePath])
   }
   if(typeof isOpaque != 'string') {
     isOpaque = 'False'

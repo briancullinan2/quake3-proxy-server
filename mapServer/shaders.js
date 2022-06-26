@@ -88,23 +88,23 @@ async function ScanAndLoadShaderFiles() {
 
 
 async function FindShaderInShaderText(shaderName) {
-  let shaders = Object.keys(SHADER_BODY)
   let result = []
-  for(let i = 0; i < shaders.length; i++) {
-    if (shaders[i].localeCompare(shaderName, 'en', { sensitivity: 'base' }) != 0) {
-      continue
+  let lower = shaderName.toLocaleLowerCase().replace(path.extname(shaderName), '')
+  if(typeof SHADER_BODY[lower] == 'undefined') {
+    return
+  }
+ 
+  for(let l = 0; l < SHADER_BODY[lower].length; l++) {
+    let line = SHADER_BODY[lower][l]
+    let match
+    if((match = (/map ([\/\w-]+)/gi).exec(line))) {
+      result.push(match[1])
     }
-    for(let l = 0; l < SHADER_BODY[shaders[i]].length; l++) {
-      let line = SHADER_BODY[shaders[i]][l]
-      let match
-      if((match = (/map ([\/\w-]+)/gi).exec(line))) {
-        result.push(match[1])
-      }
-      if(line.match(/implicit/gi) && !result.includes(shaderName)) {
-        result.push(shaderName)
-      }
+    if(line.match(/implicit/gi) && !result.includes(shaderName)) {
+      result.push(shaderName)
     }
   }
+
   if(result.length) {
     return result
   }

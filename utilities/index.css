@@ -66,6 +66,7 @@ body > img {
   display:inline-block;
   margin:10px;
   white-space: normal;
+  position: relative;
 }
 
 #map-info ol a {
@@ -214,6 +215,30 @@ body > img {
   width: auto;
   transform: translateX(calc(200px - 100%));
 }
+
+#map-info ol.shaders li img + a + img {
+  position:absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  min-width: 70%;
+  min-height: 0;
+  width:auto;
+}
+
+#map-info ol.shaders li img + a + img + a + img {
+  position:absolute;
+  top: 40px;
+  left: 40px;
+  right: 40px;
+  bottom: 40px;
+  min-width: 40%;
+  min-height: 0;
+  width:auto;
+}
+
+
 #map-list a:hover span, #game-list a:hover span {
   width: auto;
   transform: translateX(calc(300px - 100%));

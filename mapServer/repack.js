@@ -195,7 +195,6 @@ async function serveRepacked(request, response, next) {
     return next()
   }
 
-
   let repackedFile = path.join(repackedCache(), path.basename(pk3File) + 'dir', pk3InnerPath)
   if(fs.existsSync(repackedFile)) {
     return response.sendFile(repackedFile)
@@ -242,6 +241,8 @@ async function serveRepacked(request, response, next) {
     //   is redundant there's still less complexity overall
     return next()
   }
+
+
 
   let gamedir = await layeredDir(getGame())
   let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  

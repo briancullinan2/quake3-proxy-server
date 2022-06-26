@@ -276,15 +276,18 @@ async function renderImages(images, pk3name, basegame) {
   let imageHtml = ''
   // TODO: text in shaders, like Q3e renderer does
 
-
+  let composites = await Promise.all(images.map(i => {
+    if(i[0] == '*') {
+      return
+    }
+    return FindShaderInShaderText(i.replace(path.extname(i), ''))
+  }))
   for(let i = 0; i < images.length; i++) {
     if(images[i][0] == '*') {
       continue
     }
-    let composite = await FindShaderInShaderText(images[i]
-          .replace(path.extname(images[i]), ''))
-    if(composite && composite.length > 0) {
-      imageHtml += `<li>${composite.map(shader => `<img src="/${basegame}/${pk3name}dir/${shader}?alt" /><a href="">${shader}</a>`).join('')}</li>`
+    if(composites[i] && composites[i].length > 0) {
+      imageHtml += `<li>${composites[i].map(shader => `<img src="/${basegame}/${pk3name}dir/${shader}?alt" /><a href="">${shader}</a>`).join('')}</li>`
     } else
     if(await unsupportedImage(images[i])) {
       imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="">${images[i]}</a></li>`
