@@ -12,11 +12,6 @@ async function getIndex(pk3Path) {
     zip = pk3Path
   } else
   /* if(!fs.existsSync(pk3Path)) */ {
-    zip = new StreamZip({
-      file: pk3Path,
-      storeEntries: true,
-      skipEntryNameValidation: true,
-    })
     // if the index has already been loaded, use the
     //   loaded copy until the zip file changes
     let newMtime = fs.statSync(pk3Path).mtime.getTime()
@@ -26,6 +21,11 @@ async function getIndex(pk3Path) {
       return EXISTING_INDEX[pk3Path]
     }
     EXISTING_MTIME[pk3Path] = newMtime
+    zip = new StreamZip({
+      file: pk3Path,
+      storeEntries: true,
+      skipEntryNameValidation: true,
+    })
   }
   const index = await new Promise(resolve => {
     zip.on('ready', () => {
@@ -65,8 +65,7 @@ async function streamFile(file, stream) {
 }
 
 
-// async stream a file out of a zip matching the path
-async function streamFileKey(pk3Path, fileKey, stream) {
+async function fileKey(pk3Path, fileKey) {
   let index = await getIndex(pk3Path)
   for(let i = 0; i < index.length; i++) {
     // match the converted filename
@@ -74,7 +73,16 @@ async function streamFileKey(pk3Path, fileKey, stream) {
         || index[i].name.localeCompare( fileKey, 'en', { sensitivity: 'base' } ) != 0) {
       continue
     }
-    await streamFile(index[i], stream)
+    return index[i]
+  }
+}
+
+
+// async stream a file out of a zip matching the path
+async function streamFileKey(pk3Path, key, stream) {
+  let file = await fileKey(pk3Path, key)
+  if(file) {
+    await streamFile(file, stream)
     return true
   }
   return false
@@ -103,4 +111,5 @@ module.exports = {
   streamFileKey,
   streamFile,
   readFileKey,
+  fileKey,
 }

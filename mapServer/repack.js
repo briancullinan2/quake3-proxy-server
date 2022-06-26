@@ -256,6 +256,7 @@ async function serveRepacked(request, response, next) {
           console.log(e)
         }
       }
+
       for(let j = 0; j < IMAGE_FORMATS.length; j++) {
         try {
           let newFile = findFile(pk3files[i])

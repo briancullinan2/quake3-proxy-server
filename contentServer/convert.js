@@ -4,7 +4,7 @@ const fs = require('fs')
 const {PassThrough} = require('stream')
 const {repackedCache} = require('../utilities/env.js')
 const {execCmd} = require('../utilities/exec.js')
-const { streamFileKey } = require('../utilities/zip.js')
+const { fileKey, streamFile, streamFileKey } = require('../utilities/zip.js')
 
 const CURRENTLY_CONVERTING = {}
 
@@ -23,15 +23,17 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   let unsupportedExt = path.extname(unsupportedFormat)
   let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
   if(imagePath.endsWith('.pk3')) {
-    let passThrough = new PassThrough()
-    isOpaque = (await Promise.all([
-      streamFileKey(pk3File, unsupportedFormat, passThrough)
-          .then(result => {
-            if(!result) throw new Error('File not found: ' + unsupportedFormat)
-          }),
-      execCmd('identify', ['-format', '\'%[opaque]\'', 
-          unsupportedExt.substring(1) + ':-'], passThrough)
-    ]))[1]
+    let file = await fileKey(imagePath, unsupportedFormat)
+    if(file) {
+      let passThrough = new PassThrough()
+      isOpaque = (await Promise.all([
+        streamFile(file, passThrough),
+        execCmd('identify', ['-format', '\'%[opaque]\'', 
+            unsupportedExt.substring(1) + ':-'], passThrough)
+      ]))[1]
+    } else {
+      throw new Error('File not found: ' + unsupportedFormat)
+    }
   } else {
     isOpaque = await execCmd('identify',  '-format', '\'%[opaque]\'',  imagePath)
   }
