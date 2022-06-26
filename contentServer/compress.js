@@ -4,9 +4,7 @@ const { repackedCache } = require('../utilities/env.js')
 const { getIndex, streamFile } = require('../utilities/zip.js')
 const {PassThrough} = require('stream')
 
-const CURRENTLY_UNPACKING = {
-
-}
+const CURRENTLY_UNPACKING = {}
 
 
 async function extractPk3(pk3Path) {

@@ -23,17 +23,17 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   let unsupportedExt = path.extname(unsupportedFormat)
   let pk3File = imagePath.replace(/\.pk3.*/gi, '.pk3')
   if(imagePath.endsWith('.pk3')) {
-    //console.log(unsupportedFormat)
     let passThrough = new PassThrough()
     isOpaque = (await Promise.all([
       streamFileKey(pk3File, unsupportedFormat, passThrough)
           .then(result => {
             if(!result) throw new Error('File not found: ' + unsupportedFormat)
           }),
-      execCmd(`identify -format '%[opaque]' ${unsupportedExt.substring(1)}:-`, passThrough)
+      execCmd('identify', ['-format', '\'%[opaque]\'', 
+          unsupportedExt.substring(1) + ':-'], passThrough)
     ]))[1]
   } else {
-    isOpaque = await execCmd(`identify -format '%[opaque]' "${imagePath}"`)
+    isOpaque = await execCmd('identify',  '-format', '\'%[opaque]\'',  imagePath)
   }
   if(typeof isOpaque != 'string') {
     isOpaque = 'False'
@@ -52,24 +52,24 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
     newPath = path.join(repackedCache(), newFile)
   }
   if(fs.existsSync(newPath)) {
-    console.log('Skipping: ', newPath)
+    //console.log('Skipping: ', newPath)
     return newPath
   }
-  //console.assert(newFile.localeCompare(
-  //  request, 'en', { sensitivity: 'base' }) == 0)
   fs.mkdirSync(path.dirname(newPath), { recursive: true })
   if(imagePath.endsWith('.pk3')) {
     console.log('Converting: ', imagePath, unsupportedFormat)
     let passThrough = new PassThrough()
     streamFileKey(pk3File, unsupportedFormat, passThrough)
-    await execCmd(`convert -strip -interlace Plane \
-        -sampling-factor 4:2:0 -quality ${quality ? quality : '20%'} -auto-orient \
-        ${unsupportedExt.substring(1)}:- "${newPath}"`, passThrough)
+    await execCmd('convert', ['-strip', '-interlace', 
+        'Plane', '-sampling-factor', '4:2:0', '-quality', 
+        quality ? quality : '20%', '-auto-orient', 
+        unsupportedExt.substring(1) + ':-', newPath], passThrough)
   } else {
     console.log('Converting: ', imagePath)
-    await execCmd(`convert -strip -interlace Plane -sampling-factor 4:2:0 \
-    -quality ${quality ? quality : '20%'} -auto-orient \
-    "${imagePath}" "${newPath}"`)
+    await execCmd('convert', ['-strip', '-interlace',
+        'Plane', '-sampling-factor', '4:2:0', '-quality', 
+        quality ? quality : '20%', '-auto-orient', imagePath,
+        newPath])
     // ${isOpaque ? ' -colorspace RGB ' : ''} 
   }
   // TODO: don't wait for anything?

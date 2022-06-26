@@ -11,7 +11,7 @@ async function unsupportedImage(imagePath) {
   } else {
     isUnsupportedImage = imagePath.match(/\.tga$|\.dds$/gi)
   }
-  if(isUnsupportedImage) {
+  if(isUnsupportedImage || !imagePath.includes('.')) {
     return imagePath
   }
 
@@ -135,7 +135,7 @@ async function serveVirtual(request, response, next) {
   // TODO: if findFile() returns a pk3, pipe the file out replace a few files
   // TODO: on backend, convert formats on the fly to/from assets directory
   for (let i = 0; i < directory.length; i++) {
-    if (unsupportedImage(directory[i])) {
+    if (await unsupportedImage(directory[i])) {
       let alternateImages = [
         directory[i].replace(path.extname(directory[i]), '.jpg'),
         directory[i].replace(path.extname(directory[i]), '.png'),

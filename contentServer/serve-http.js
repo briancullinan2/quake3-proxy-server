@@ -131,7 +131,7 @@ function createApplication(features) {
     app.use('/maps/download', serveDownload)
     app.use(/\/maps\/[0-9]+\/[0-9]+/i, serveMapsRange)
     app.use(/\/maps\/.+/, serveMapInfo)
-    app.use('/maps/?', serveMaps)
+    app.use('/maps', serveMaps)
   }
 
   app.use('/*/*/levelshots/*.jpg', serveLevelshot)

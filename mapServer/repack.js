@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+
 const { PassThrough } = require('stream')
 const { findFile, modDirectory } = require('../contentServer/virtual.js')
 const { repackedCache } = require('../utilities/env.js')
@@ -9,6 +10,10 @@ const { execCmd } = require('../utilities/exec.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { extractPk3 } = require('../contentServer/compress.js')
 const { unsupportedImage } = require('../contentServer/content.js')
+const { getGame } = require('../utilities/env.js')
+const { layeredDir } = require('../contentServer/content.js')
+
+
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
@@ -50,7 +55,7 @@ async function unpackPk3(pk3Path) {
       continue;
     }
 
-    if (unsupportedImage(index[i].name)) {
+    if (await unsupportedImage(index[i].name)) {
       let newImage = await convertImage(outFile, index[i].name)
       directory.push(index[i].name.replace(path.extname(index[i].name, path.extname(newImage))))
     }
@@ -63,7 +68,7 @@ async function unpackPk3(pk3Path) {
       directory.push(index[i].name)
     }
   }
-  zip.close()
+
   return directory
 }
 
@@ -74,7 +79,7 @@ async function repackPk3(pk3Path) {
   let directory = await unpackPk3(pk3Path)
 
   for (let i = 0; i < directory.length; i++) {
-    if(unsupportedImage(directory[i])) {
+    if(await unsupportedImage(directory[i])) {
       continue
     }
   
@@ -90,7 +95,7 @@ async function repackPk3(pk3Path) {
 async function repackBasegame(pk3Path) {
   let newZip = path.join(repackedCache(), path.basename(pk3Path) + '.pk3')
   let promises = []
-  promises.push(Promise.resolve(unpackPk3(newZip)))
+  //promises.push(Promise.resolve(unpackPk3(newZip)))
   // start extracting other zips simultaneously,
   //   then wait for all of them to resolve
 
@@ -155,7 +160,7 @@ async function tryAltPath(newFile, pk3InnerPath, response) {
     if(index[i].isDirectory) {
       continue
     }
-    if(!unsupportedImage(index[i])) {
+    if(!await unsupportedImage(index[i])) {
       continue
     }
 
@@ -183,11 +188,16 @@ async function serveRepacked(request, response, next) {
     filename = filename.substr(1)
   }
 
-
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+  if(pk3File.length == filename.length) {
+    // not a virtual path inside a .pk3
+    return next()
+  }
+
+
   let repackedFile = path.join(repackedCache(), path.basename(pk3File) + 'dir', pk3InnerPath)
-  if(pk3File.length < filename.length && fs.existsSync(repackedFile)) {
+  if(fs.existsSync(repackedFile)) {
     return response.sendFile(repackedFile)
   }
 
@@ -199,20 +209,19 @@ async function serveRepacked(request, response, next) {
     }
   }
 
+  // TODO:
+  let isAlt = !!request.url.match(/\?alt/) && !!(await unsupportedImage(pk3InnerPath))
 
   let newFile = findFile(filename)
-  if (newFile && newFile.endsWith('.pk3')
-      && pk3File.length < filename.length) {
-
-    // TODO: serve unsupported images with ?alt in URL
-    let isAlt = request.url.match(/\?alt/)
-    if(isAlt && unsupportedImage(filename)) {
+  if (newFile && newFile.endsWith('.pk3')) {
+    // serve unsupported images with ?alt in URL
+    if(isAlt) {
       try {
         let newImage = await convertImage(newFile, pk3InnerPath)
         return response.sendFile(newImage)
       } catch (e) {
         if(!e.message.startsWith('File not found')) {
-          throw e
+          console.log(e)
         }
       }
     } else
@@ -225,47 +234,59 @@ async function serveRepacked(request, response, next) {
     return response.sendFile(newFile)
   }
 
-  // missing key!
-  if (newFile && newFile.endsWith('.pk3')
-    && !fs.statSync(newFile).isDirectory()) {
-
-    // always convert pk3s, remove media to load individually
-    if (!newFile.startsWith(repackedCache())) {
-      //newFile = await unpackPk3(newFile)
+  let altFile = pk3InnerPath.replace(path.extname(pk3InnerPath), '')
+  if(isAlt) {
+    let gamedir = await layeredDir(getGame())
+    let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
+    const IMAGE_FORMATS = ['.jpg', '.png', '.tga']
+    for(let i = 0; i < IMAGE_FORMATS.length; i++) {
+      let newFile = findFile(altFile + IMAGE_FORMATS[i])
+      if(newFile && !newFile.endsWith('.pk3')) {
+        return response.sendFile(newFile)
+      }
     }
 
-    newFile = findFile(filename)
-    if (pk3File.length < filename.length) {
-      if (await streamFileKey(newFile, pk3InnerPath, response)) {
-        return
-      } else {
-        return next()
+    for(let i = 0; i < pk3files.length; i++) {
+      try {
+        let newFile = findFile(pk3files[i])
+        let newImage = await convertImage(newFile, pk3InnerPath)
+        return response.sendFile(newImage)
+      } catch (e) {
+        if(!e.message.startsWith('File not found')) {
+          console.log(e)
+        }
       }
-    } else
-      if (!fs.statSync(newFile).isDirectory()) {
-        return response.sendFile(newFile)
-      } else {
-        return response.sendFile(newFile)
+      for(let j = 0; j < IMAGE_FORMATS.length; j++) {
+        try {
+          let newFile = findFile(pk3files[i])
+          let newImage = await convertImage(newFile, altFile + IMAGE_FORMATS[j])
+          return response.sendFile(newImage)
+        } catch (e) {
+          if(!e.message.startsWith('File not found')) {
+            console.log(e)
+          }
+        }
       }
-
-  } else {
-    return next()
-
-    /*
-    TODO: load base pk3 here, load alt-path images from loadImage()
-    TODO: load images/sounds async based on some sort of minimized compressed graph
-       of all 3,000+ maps.
-    TODO: validate pk3 data, remove QVMs, check for improper overrides,
-       reference all BSP textures, and re-merge working lazy load, trigger 
-       downloads from Sys_FOpen like before. 
-    TODO: Try to get this working through NextDownload() but with the download
-       progress displayed in latency graph, micro-manage Ranges to not affect ping. 
-       Add to native.
-    */
-    //if(builtQVMs) {
-
-    //}
+    }
   }
+
+
+  return next()
+
+  /*
+  TODO: load base pk3 here, load alt-path images from loadImage()
+  TODO: load images/sounds async based on some sort of minimized compressed graph
+      of all 3,000+ maps.
+  TODO: validate pk3 data, remove QVMs, check for improper overrides,
+      reference all BSP textures, and re-merge working lazy load, trigger 
+      downloads from Sys_FOpen like before. 
+  TODO: Try to get this working through NextDownload() but with the download
+      progress displayed in latency graph, micro-manage Ranges to not affect ping. 
+      Add to native.
+  */
+  //if(builtQVMs) {
+
+  //}
 
 }
 

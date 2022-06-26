@@ -283,10 +283,10 @@ async function renderImages(images, pk3name, basegame) {
     }
     let composite = await FindShaderInShaderText(images[i]
           .replace(path.extname(images[i]), ''))
-    if(composite) {
-
+    if(composite && composite.length > 0) {
+      imageHtml += `<li>${composite.map(shader => `<img src="/${basegame}/${pk3name}dir/${shader}?alt" /><a href="">${shader}</a>`).join('')}</li>`
     } else
-    if(unsupportedImage(images[i])) {
+    if(await unsupportedImage(images[i])) {
       imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="">${images[i]}</a></li>`
     } else {
       imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}" /><a href="">${images[i]}</a></li>`
