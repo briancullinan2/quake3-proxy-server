@@ -29,7 +29,7 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
       isOpaque = (await Promise.all([
         streamFile(file, passThrough),
         execCmd('identify', ['-format', '\'%[opaque]\'', 
-            unsupportedExt.substring(1) + ':-'], passThrough)
+            unsupportedExt.substring(1) + ':-'], {pipe: passThrough})
       ]))[1]
     } else {
       throw new Error('File not found: ' + unsupportedFormat)
@@ -65,13 +65,12 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
     await execCmd('convert', ['-strip', '-interlace', 
         'Plane', '-sampling-factor', '4:2:0', '-quality', 
         quality ? quality : '20%', '-auto-orient', 
-        unsupportedExt.substring(1) + ':-', newPath], passThrough)
+        unsupportedExt.substring(1) + ':-', newPath], {pipe: passThrough})
   } else {
     console.log('Converting: ', imagePath)
     await execCmd('convert', ['-strip', '-interlace',
         'Plane', '-sampling-factor', '4:2:0', '-quality', 
-        quality ? quality : '20%', '-auto-orient', imagePath,
-        newPath])
+        quality ? quality : '20%', '-auto-orient', imagePath, newPath])
     // ${isOpaque ? ' -colorspace RGB ' : ''} 
   }
   // TODO: don't wait for anything?

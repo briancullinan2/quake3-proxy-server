@@ -25,18 +25,8 @@ var fileTypes = [
   '.defi', // CPMA game mode definition
   '.arena', // map based game mode definition
   // these can be compiled in game to run bot AI
-  '.c', '.h', '.map', '.scc',
+  '.c', '.h', '.scc', // '.map',
 ]
-
-//  SOURCE: https://stackoverflow.com/questions/10623798/how-do-i-read-the-contents-of-a-node-js-stream-into-a-string-variable
-function streamToBuffer(stream) {
-  const chunks = [];
-  return new Promise((resolve, reject) => {
-    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-    stream.on('error', (err) => reject(err));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-  })
-}
 
 
 // same as extractPk3 but initiates conversions immediately
@@ -52,6 +42,14 @@ async function unpackPk3(pk3Path) {
       continue;
     }
     if (await unsupportedImage(index[i].name)) {
+      if(fs.existsSync(outFile.replace(path.extname(outFile), '.jpg'))) {
+        directory.push(index[i].name.replace(path.extname(index[i].name, 'jpg')))
+        continue
+      }
+      if(fs.existsSync(outFile.replace(path.extname(outFile), '.png'))) {
+        directory.push(index[i].name.replace(path.extname(index[i].name, 'png')))
+        continue
+      }
       let newImage = await convertImage(outFile, index[i].name)
       directory.push(index[i].name.replace(path.extname(index[i].name, path.extname(newImage))))
     }
@@ -73,10 +71,14 @@ async function repackPk3(directory, newZip) {
     if(await unsupportedImage(directory[i])) {
       continue
     }
-    await execCmd(process.env.SHELL, ['-c', 
-      `"cd ${newZip + 'dir'} && `
-      + `zip ${first ? '' : ' -u ' } \\"../${path.basename(newZip)}\\" `
-      + path.join('./', directory[i]) + '"'])
+    let newDir = directory[i].replace(/\.pk3.*/gi, '.pk3dir')
+    let pk3InnerPath = directory[i].replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+    let output = await execCmd(
+      //process.env.SHELL, ['-c', 'pwd'
+      'zip', [first ? '' : ' -u ',
+      '../' + path.basename(newZip), path.join('./', pk3InnerPath)
+    ], { cwd: newDir, shell: true })
+    //console.log(output)
     first = false
   }
   return newZip
@@ -92,6 +94,8 @@ async function repackBasegame() {
   let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
   for (let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(pk3files[j])
+    await unpackPk3(newFile)
+    let newZip = path.join(repackedCache(), path.basename(newFile))
     let index = await getIndex(newFile)
     for(let i = 0; i < index.length; i++) {
       if (!fileTypes.includes(path.extname(index[i].name))) {
@@ -101,7 +105,7 @@ async function repackBasegame() {
         || index[i].compressedSize > 1024 * 64) {
         continue
       }
-      directory.push(index[i].name)
+      directory.push(path.join(newZip, index[i].name))
     }
   }
   await repackPk3(directory, newZip)

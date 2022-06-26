@@ -1,23 +1,28 @@
 
 let LIMIT = 0
 
-async function execCmd(cmd, args, stdInPipe) {
+async function execCmd(cmd, args, options) {
   const {spawn} = require('child_process')
   LIMIT++
-  console.log(LIMIT, cmd, args.join(' '))
+  //console.log(LIMIT, cmd, args.join(' '))
   //console.log('Executing:', cmd)
   return await new Promise(function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
-    let ps = spawn(cmd, args)
+    let ps = spawn(cmd, args, {
+      timeout: 3600,
+      cwd: (options ? options.cwd : null) || process.cwd(),
+      shell: true,
+    })
     stderr = ''
     stdout = ''
     ps.stderr.on('data', (data) => stderr += data.toString('utf-8'));
     ps.stdout.on('data', (data) => stdout += data.toString('utf-8'));
-    if(stdInPipe) {
-      stdInPipe.pipe(ps.stdin)
+    if(options && options.pipe) {
+      options.pipe.pipe(ps.stdin)
     }
-    ps.on('close', (errCode) => {
+    ps.on('close', function (errCode) {
       if(errCode > 0) {
+        console.log(stdout + stderr)
         reject(new Error('Process failed: ' + errCode))
       } else {
         resolve(stdout + stderr)
