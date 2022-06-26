@@ -50,14 +50,8 @@ const MAP_SOURCES = {}
 async function sourcePk3Download(filename) {
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   let source
-
   if (typeof MAP_SOURCES[mapname] != 'undefined') {
     return MAP_SOURCES[mapname]
-  }
-
-  // TODO: remove for testing
-  if (mapname == 'sokam-bloody') {
-    source = path.join(downloadCache(), 'sokam-bloody.pk3')
   }
 
   if (typeof MAP_DICTIONARY[mapname] != 'undefined') {
@@ -77,14 +71,12 @@ async function sourcePk3Download(filename) {
   if (source) {
     MAP_SOURCES[mapname] = source
   }
-
   return source
 }
 
 
 async function existingMaps() {
   let basegame = getGame()
-  //let pk3names = Object.values(MAP_LIST_LOWER)
   let gamedir = await layeredDir(basegame)
   let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
   let maps = (await Promise.all(pk3files.map(async function (pk3name) {
@@ -100,7 +92,7 @@ async function existingMaps() {
   }))).flat(1)
   let mapsNames = maps.map(m => path.basename(m).toLocaleLowerCase())
   let uniqueMaps = maps.filter((m, i) => mapsNames
-      .indexOf(path.basename(m).toLocaleLowerCase()) == i)
+    .indexOf(path.basename(m).toLocaleLowerCase()) == i)
   uniqueMaps.sort()
   return uniqueMaps
 }
@@ -108,15 +100,15 @@ async function existingMaps() {
 
 async function serveDownload(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
-  if(filename.startsWith('/')) {
+  if (filename.startsWith('/')) {
     filename = filename.substr(1)
   }
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   await existingMaps()
-  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+  if (typeof MAP_DICTIONARY[mapname] == 'undefined') {
     return next(new Error('File not found: ' + filename))
   }
-  if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
+  if (MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
     && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
     return next(new Error('Won\'t serve base file: ' + MAP_DICTIONARY[mapname]))
   }
@@ -171,8 +163,8 @@ async function serveMaps(request, response, next) {
 async function renderMap(map) {
   let result = ''
   let bspname = path.basename(map).replace(path.extname(map), '')
-  let lvlshot = path.join(map.split('/').slice(0, -2).join('/'), 
-      '/levelshots/', bspname + '.jpg')
+  let lvlshot = path.join(map.split('/').slice(0, -2).join('/'),
+    '/levelshots/', bspname + '.jpg')
   let pakname = map.split('/').slice(0, -2).pop().replace(/\.pk3dir/ig, '.pk3')
   result += `<li style="background-image: url('${lvlshot}')">`
   result += `<h3><a href="/maps/${bspname}">`

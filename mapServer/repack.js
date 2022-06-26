@@ -43,23 +43,18 @@ function streamToBuffer(stream) {
 async function unpackPk3(pk3Path) {
   let newZip = path.join(repackedCache(), path.basename(pk3Path))
   let directory = []
-
   let index = await extractPk3(pk3Path)
-
   for (let i = 0; i < index.length; i++) {
     if (index[i].isDirectory)
       continue
-
     let outFile = path.join(newZip + 'dir', index[i].name)
     if (!fs.existsSync(outFile)) {
       continue;
     }
-
     if (await unsupportedImage(index[i].name)) {
       let newImage = await convertImage(outFile, index[i].name)
       directory.push(index[i].name.replace(path.extname(index[i].name, path.extname(newImage))))
     }
-
     if (fileTypes.includes(path.extname(index[i].name))
       // skip too big files
       || index[i].size < 1024 * 256
@@ -68,39 +63,48 @@ async function unpackPk3(pk3Path) {
       directory.push(index[i].name)
     }
   }
-
   return directory
 }
 
 
-async function repackPk3(pk3Path) {
-  let newZip = path.join(repackedCache(), path.basename(pk3Path))
-
-  let directory = await unpackPk3(pk3Path)
-
+async function repackPk3(directory, newZip) {
+  let first = true
   for (let i = 0; i < directory.length; i++) {
     if(await unsupportedImage(directory[i])) {
       continue
     }
-  
-    await execCmd(`cd ${newZip + 'dir'} && \
-      zip ${i == 0 ? ' -u ' : ''} "../${path.basename(pk3Path)}" \
-      "${path.join('./', directory[i])}"`)
+    await execCmd(process.env.SHELL, ['-c', 
+      `"cd ${newZip + 'dir'} && `
+      + `zip ${first ? '' : ' -u ' } \\"../${path.basename(newZip)}\\" `
+      + path.join('./', directory[i]) + '"'])
+    first = false
   }
-
   return newZip
 }
 
 
-async function repackBasegame(pk3Path) {
-  let newZip = path.join(repackedCache(), path.basename(pk3Path) + '.pk3')
-  let promises = []
-  //promises.push(Promise.resolve(unpackPk3(newZip)))
+async function repackBasegame() {
+  let newZip = path.join(repackedCache(), 'pak0.pk3')
   // start extracting other zips simultaneously,
   //   then wait for all of them to resolve
-
-
-
+  let directory = []
+  let gamedir = await layeredDir(getGame())
+  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
+  for (let j = 0; j < pk3files.length; j++) {
+    let newFile = findFile(pk3files[j])
+    let index = await getIndex(newFile)
+    for(let i = 0; i < index.length; i++) {
+      if (!fileTypes.includes(path.extname(index[i].name))) {
+        continue
+      }
+      if(index[i].size > 1024 * 256
+        || index[i].compressedSize > 1024 * 64) {
+        continue
+      }
+      directory.push(index[i].name)
+    }
+  }
+  await repackPk3(directory, newZip)
   return newZip
 }
 
@@ -124,32 +128,34 @@ async function serveFinished(request, response, next) {
     //      engine does and recompile)
     // TODO: get index of all pk3 in non-cache game directories,
     //   make a new pak with combined file-system
-    let newZip = path.join(repackedCache(), path.basename(pk3Path) + '.pk3')
+    let newZip = path.join(repackedCache(), 'pak0.pk3')
+    newZip = await repackBasegame()
+    return next()
     if(fs.existsSync(newZip)) {
-      return newZip
+      return response.sendFile(newZip)
     } else {
-      return repackBasegame()
+      return response.sendFile(newZip)
     }
-  } else {
-    // repack base-maps for web
-    if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
-      return next(new Error('File not found: ' + filename))
-    }
-    if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
-      && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
-      return repackBasemap(mapname)
-    }
-  
-
-    // download pk3 and repack
-    newFile = await sourcePk3Download(filename)
-    if (!newFile.startsWith((repackedCache()))) {
-      newFile = await repackPk3(newFile)
-    }
-    return response.sendFile(newFile, {
-      headers: { 'content-disposition': `attachment; filename="${path.basename(newFile)}"` }
-    })
   }
+
+  // repack base-maps for web
+  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+    return next(new Error('File not found: ' + filename))
+  }
+  if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
+    && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
+    return repackBasemap(mapname)
+  }
+
+  // download pk3 and repack
+  newFile = await sourcePk3Download(filename)
+  if (!newFile.startsWith(repackedCache())) {
+    newFile = await repackPk3(newFile)
+  }
+  return response.sendFile(newFile, {
+    headers: { 'content-disposition': 
+      `attachment; filename="${path.basename(newFile)}"` }
+  })
 }
 
 async function tryAltPath(newFile, pk3InnerPath, response) {
