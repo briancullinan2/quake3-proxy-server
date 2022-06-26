@@ -82,7 +82,7 @@ async function sourcePk3Download(filename) {
 }
 
 
-async function getExistingMaps() {
+async function existingMaps() {
   let basegame = getGame()
   //let pk3names = Object.values(MAP_LIST_LOWER)
   let gamedir = await layeredDir(basegame)
@@ -112,7 +112,7 @@ async function serveDownload(request, response, next) {
     filename = filename.substr(1)
   }
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-  await getExistingMaps()
+  await existingMaps()
   if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
     return next(new Error('File not found: ' + filename))
   }
@@ -147,7 +147,7 @@ async function serveMapsRange(request, response, next) {
 
 async function serveMaps(request, response, next) {
   let isJson = request.url.match(/\?json/)
-  let mapsAvailable = await getExistingMaps()
+  let mapsAvailable = await existingMaps()
   let start = 0
   let end = 100
   let maps = mapsAvailable.slice(start, end)
@@ -195,5 +195,5 @@ module.exports = {
   serveMaps,
   serveDownload,
   serveMapsRange,
-  getExistingMaps,
+  existingMaps,
 }

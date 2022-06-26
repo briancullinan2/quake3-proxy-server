@@ -2,7 +2,7 @@
 const path = require('path')
 const fs = require('fs')
 
-const {getExistingMaps, sourcePk3Download} = require('../mapServer/serve-download.js')
+const {existingMaps, sourcePk3Download} = require('../mapServer/serve-download.js')
 const { findFile } = require('../contentServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const {MAP_DICTIONARY} = require('../mapServer/serve-download.js')
@@ -10,6 +10,7 @@ const { repackedCache, INDEX } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
 const { layeredDir, unsupportedImage } = require('../contentServer/content.js')
 const {execLevelshot} = require('../mapServer/serve-lvlshot.js')
+const {ScanAndLoadShaderFiles, FindShaderInShaderText} = require('../mapServer/shaders.js')
 
 const GAME_ARENAS = {
 
@@ -24,6 +25,7 @@ async function getMapInfo(mapname) {
   // TODO: make sure BSP file is available synchronously first
   let newFile = await sourcePk3Download(mapname)
   await ScanAndLoadShaderFiles()
+
   let newZip = path.join(repackedCache(), path.basename(newFile))
   let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
   let pk3Path = `/${basegame}/${path.basename(newFile)}dir`
@@ -62,7 +64,6 @@ async function getMapInfo(mapname) {
   } else {
     console.error('WARNING: entities not found: ' + mapname)
   }
-
 
 
   let shaderFile = path.join(repackedCache(), '/maps/', mapname + '-shaders.txt')
@@ -158,7 +159,7 @@ async function getMapInfo(mapname) {
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()
-  await getExistingMaps()
+  await existingMaps()
   //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
@@ -280,12 +281,16 @@ async function renderImages(images, pk3name, basegame) {
     if(images[i][0] == '*') {
       continue
     }
+    let composite = await FindShaderInShaderText(images[i]
+          .replace(path.extname(images[i]), ''))
+    if(composite) {
+
+    } else
     if(unsupportedImage(images[i])) {
       imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="">${images[i]}</a></li>`
     } else {
       imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}" /><a href="">${images[i]}</a></li>`
     }
-
   }
   
   return `

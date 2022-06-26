@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const {PassThrough, Readable} = require('stream')
 
 const EXISTING_INDEX = {}
 const EXISTING_MTIME = {}
@@ -80,9 +81,26 @@ async function streamFileKey(pk3Path, fileKey, stream) {
 }
 
 
+async function readFileKey(pk3Path, fileKey) {
+  return await new Promise(async resolve => {
+    let passThrough = new PassThrough()
+    const readable = Readable.from(passThrough)
+    let file = ''
+    readable.on('data', (chunk) => {
+      file += chunk
+    })
+    readable.on('end', function () {
+      resolve(file)
+    })
+    await streamFileKey(pk3Path, fileKey, passThrough)
+  })
+}
+
+
 module.exports = {
   EXISTING_INDEX,
   getIndex,
   streamFileKey,
   streamFile,
+  readFileKey,
 }
