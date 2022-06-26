@@ -210,7 +210,8 @@ async function serveRepacked(request, response, next) {
   }
 
   // TODO:
-  let isAlt = !!request.url.match(/\?alt/) && !!(await unsupportedImage(pk3InnerPath))
+  let isAlt = !!request.url.match(/\?alt/) 
+        && !!(await unsupportedImage(pk3InnerPath))
 
   let newFile = findFile(filename)
   if (newFile && newFile.endsWith('.pk3')) {
@@ -234,43 +235,56 @@ async function serveRepacked(request, response, next) {
     return response.sendFile(newFile)
   }
 
+  // exit out early 
   let altFile = pk3InnerPath.replace(path.extname(pk3InnerPath), '')
-  if(isAlt) {
-    let gamedir = await layeredDir(getGame())
-    let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
-    const IMAGE_FORMATS = ['.jpg', '.png', '.tga']
-    for(let i = 0; i < IMAGE_FORMATS.length; i++) {
-      let newFile = findFile(altFile + IMAGE_FORMATS[i])
-      if(newFile && !newFile.endsWith('.pk3')) {
-        return response.sendFile(newFile)
+  if(!isAlt) {
+    // TODO: CODE REVIEW, reduce cascading curlys event though code
+    //   is redundant there's still less complexity overall
+    return next()
+  }
+
+  let gamedir = await layeredDir(getGame())
+  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
+  const IMAGE_FORMATS = ['.jpg', '.png', '.tga']
+  for(let i = 0; i < IMAGE_FORMATS.length; i++) {
+    let newFile = findFile(altFile + IMAGE_FORMATS[i])
+    if(newFile && !newFile.endsWith('.pk3')) {
+      return response.sendFile(newFile)
+    }
+  }
+
+  for(let i = 0; i < pk3files.length; i++) {
+    for(let j = 0; j < IMAGE_FORMATS.length; j++) {
+      let altPath = path.join(repackedCache(), path.basename(pk3files[i]) + 'dir', altFile + IMAGE_FORMATS[j])
+      if(fs.existsSync(altPath)) {
+        return response.sendFile(altPath)
+      }
+    }
+  }
+
+  for(let i = 0; i < pk3files.length; i++) {
+    try {
+      let newFile = findFile(pk3files[i])
+      let newImage = await convertImage(newFile, pk3InnerPath)
+      return response.sendFile(newImage)
+    } catch (e) {
+      if(!e.message.startsWith('File not found')) {
+        console.log(e)
       }
     }
 
-    for(let i = 0; i < pk3files.length; i++) {
+    for(let j = 0; j < IMAGE_FORMATS.length; j++) {
       try {
-        let newFile = findFile(pk3files[i])
-        let newImage = await convertImage(newFile, pk3InnerPath)
+        let newImage = await convertImage(findFile(pk3files[i]),
+        altFile + IMAGE_FORMATS[j])
         return response.sendFile(newImage)
       } catch (e) {
         if(!e.message.startsWith('File not found')) {
           console.log(e)
         }
       }
-
-      for(let j = 0; j < IMAGE_FORMATS.length; j++) {
-        try {
-          let newFile = findFile(pk3files[i])
-          let newImage = await convertImage(newFile, altFile + IMAGE_FORMATS[j])
-          return response.sendFile(newImage)
-        } catch (e) {
-          if(!e.message.startsWith('File not found')) {
-            console.log(e)
-          }
-        }
-      }
     }
   }
-
 
   return next()
 
@@ -285,9 +299,6 @@ async function serveRepacked(request, response, next) {
       progress displayed in latency graph, micro-manage Ranges to not affect ping. 
       Add to native.
   */
-  //if(builtQVMs) {
-
-  //}
 
 }
 
