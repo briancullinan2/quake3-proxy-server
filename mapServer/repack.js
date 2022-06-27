@@ -133,13 +133,13 @@ async function serveFinished(request, response, next) {
     // TODO: get index of all pk3 in non-cache game directories,
     //   make a new pak with combined file-system
     let newZip = path.join(repackedCache(), 'pak0.pk3')
-    newZip = await repackBasegame()
-    return next()
-    if(fs.existsSync(newZip)) {
-      return response.sendFile(newZip)
-    } else {
-      return response.sendFile(newZip)
+    if(!fs.existsSync(newZip)) {
+      newZip = await repackBasegame()
     }
+    return response.sendFile(newZip, {
+      headers: { 'content-disposition': 
+        `attachment; filename="pak0.pk3"` }
+    })
   }
 
   // repack base-maps for web
@@ -158,7 +158,7 @@ async function serveFinished(request, response, next) {
   }
   return response.sendFile(newFile, {
     headers: { 'content-disposition': 
-      `attachment; filename="${path.basename(newFile)}"` }
+        `attachment; filename="${path.basename(newFile)}"` }
   })
 }
 

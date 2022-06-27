@@ -108,12 +108,11 @@ Server admin control over pk3 content is a long
 */
 async function serveVirtual(request, response, next) {
   let isJson = request.url.match(/\?json/)
-  //    || request.
   let filename = request.url.replace(/\?.*$/, '')
-
-  // TODO: server a file from inside a pk3 to the pk3dirs
   let directory = layeredDir(filename)
+  // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
+
   if (filename.includes('.pk3')) {
     let pk3directory = await serveVirtualPk3dir(filename)
     if (!directory) {
@@ -130,8 +129,8 @@ async function serveVirtual(request, response, next) {
   if (!directory || directory.length == 0) {
     return next()
   }
-  console.log('wtf? ', directory)
 
+  /*
   // TODO: if findFile() returns a pk3, pipe the file out replace a few files
   // TODO: on backend, convert formats on the fly to/from assets directory
   for (let i = 0; i < directory.length; i++) {
@@ -173,6 +172,7 @@ async function serveVirtual(request, response, next) {
     // TODO: remove lightmaps from BSPs and rely on vertext lighting
 
   }
+  */
 
   directory.sort()
 
