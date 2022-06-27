@@ -1,9 +1,12 @@
+const fs = require('fs')
+const path = require('path')
 
 const {serveGames} = require('../gameServer/serve-games.js')
 const {serveMaps, serveDownload, serveMapsRange} = require('../mapServer/serve-download.js')
 const {serveLevelshot} = require('../mapServer/serve-lvlshot.js')
 const {serveMapInfo} = require('../mapServer/review.js')
 const {serveVirtual} = require('../contentServer/content.js')
+const {findFile} = require('../contentServer/virtual.js')
 const {serveRepacked, serveFinished} = require('../mapServer/repack.js')
 const {STYLES, UNKNOWN, SCRIPTS} = require('../utilities/env.js')
 const { downloadAllMeta } = require('../utilities/metadata.js')
@@ -51,7 +54,12 @@ function serveLive(request, response, next) {
     let indexFile = findFile(path.join(filename, 'index.html'))
     if(indexFile && indexFile.endsWith('.pk3') 
         && pk3File.length < filename.length) {
+      // let repackaging service handle it
       return next()
+    } else
+    if (indexFile && path.basename(indexFile).match(/index\.html/gi)) {
+      // inject engine init
+      
     } else
     if(indexFile) {
       return response.sendFile(indexFile)

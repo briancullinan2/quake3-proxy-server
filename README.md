@@ -4,6 +4,15 @@ There's a lot of hidden source code around hosting, rankings, and
 uploaded content. This is an effort to mainstream some of the
 features I've found exploring many idTech3-based game communities.
 
+Personally, I've attempted to rewrite this manifest.json concept inherited 
+from QuakeJS 3 times. It never felt quite right. There are too many parts of
+the puzzle to keep them all in a single project.
+
+For testing purposes, this server provides a good interface for testing each of
+these components individually, or using the master server to mock connections and
+launch the newly built client for automated integration testing.
+
+
 ## Components
 
 - contentServer - serve traditional HTTP content using a layered file-system
