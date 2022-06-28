@@ -87,12 +87,18 @@ async function existingMaps() {
     return bsps.map(function (bsp) {
       let mapname = path.basename(bsp.key).replace(/\.bsp/ig, '').toLocaleLowerCase()
       MAP_DICTIONARY[mapname] = basename
-      return `/${basegame}/${pakname}dir/maps/${mapname}.bsp`
+      return {
+        levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
+        pakname: basename.replace('map-', '').replace('map_', ''),
+        title: mapname,
+        bsp: mapname,
+        have: true,
+      }
+      //return `/${basegame}/${pakname}dir/maps/${mapname}.bsp`
     })
   }))).flat(1)
-  let mapsNames = maps.map(m => path.basename(m).toLocaleLowerCase())
-  let uniqueMaps = maps.filter((m, i) => mapsNames
-    .indexOf(path.basename(m).toLocaleLowerCase()) == i)
+  let mapsNames = maps.map(m => m.bsp)
+  let uniqueMaps = maps.filter((m, i) => mapsNames.indexOf(m.bsp) == i)
   uniqueMaps.sort()
   return uniqueMaps
 }
@@ -154,7 +160,7 @@ async function serveMaps(request, response, next) {
       + `<ol id="map-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(maps)}</script>
       <script>window.sessionLength=${total}</script>
-      <!--<script async defer src="index.js"></script>-->
+      <script async defer src="index.js"></script>
       ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)
 }
@@ -162,18 +168,15 @@ async function serveMaps(request, response, next) {
 
 async function renderMap(map) {
   let result = ''
-  let bspname = path.basename(map).replace(path.extname(map), '')
-  let lvlshot = path.join(map.split('/').slice(0, -2).join('/'),
-    '/levelshots/', bspname + '.jpg')
-  let pakname = map.split('/').slice(0, -2).pop().replace(/\.pk3dir/ig, '.pk3')
-  result += `<li style="background-image: url('${lvlshot}')">`
-  result += `<h3><a href="/maps/${bspname}">`
-  result += `<span>${bspname}</span>`
-  result += bspname != bspname ? `<small>${title}</small>` : '<small>&nbsp;</small>'
+  result += `<li style="background-image: url('${map.levelshot}')">`
+  result += `<h3><a href="/maps/${map.bsp}">`
+  result += `<span>${map.title}</span>`
+  result += map.title != map.bsp
+    ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
   result += `</a></h3>`
-  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${lvlshot}" />`
-  result += `<a href="/maps/download/${bspname}">Download: ${pakname}`
-  result += '</a></li>'
+  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
+  result += `<a href="/maps/download/${map.bsp}">Download: ${map.pakname}`
+  //result += map.pakname.includes('.pk3') ? '' : '.pk3'
   return result
 }
 

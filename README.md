@@ -70,4 +70,21 @@ I'm not going to reinvent the process running wheel. But I
 want this project to be an all-in-one solution for game
 content, without being "over-engineered".
 
+## Asynchrounous image loader
+
+It's worth calling out this issue with Emscripten, WebAssembly, but also specifically
+in the context of Quake 3. One of the most awkwards APIs is OpenGL, there's something
+like `reserveImage(); loadImage(); mipmapImage();` all in sequence. But web-browsers
+load images asynchronously, so you have to reserve the spot for the image, and then
+load it into GPU memory later. To make WebGL worse, if the image doesn't load, it
+repeats a pattern of millions of transparent 1x1 pixels across the entire scene and
+this slows down the GPU and the web browser to a crawl. Such an easy mistake can ruin
+a gaming experience if it landed in production.
+
+Because of all this, I have only converted the images to use a "manifest" file. In the form of an extra shader program that takes RGBA values from `palette.shader` and
+replaces those nasty missing transparent images with solid plain colors to match
+the average of the full (missing) image.
+
+
+
 
