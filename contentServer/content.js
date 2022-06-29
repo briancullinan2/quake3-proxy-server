@@ -5,11 +5,11 @@ const { findFile, gameDirectories } = require('../contentServer/virtual.js')
 const { FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
 
-async function unsupportedImage(imagePath) {
+function unsupportedImage(imagePath) {
   if (imagePath.match(/levelshots\//i)) {
-    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.png/gi)
+    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.bmp$|\.png$/gi)
   } else {
-    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$/gi)
+    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.bmp$/gi)
   }
   if(isUnsupportedImage || !imagePath.includes('.')) {
     return imagePath
@@ -129,50 +129,6 @@ async function serveVirtual(request, response, next) {
   if (!directory || directory.length == 0) {
     return next()
   }
-
-  /*
-  // TODO: if findFile() returns a pk3, pipe the file out replace a few files
-  // TODO: on backend, convert formats on the fly to/from assets directory
-  for (let i = 0; i < directory.length; i++) {
-    if (await unsupportedImage(directory[i])) {
-      let alternateImages = [
-        directory[i].replace(path.extname(directory[i]), '.jpg'),
-        directory[i].replace(path.extname(directory[i]), '.png'),
-      ]
-      if (directory.includes(alternateImages[0])
-        || directory.includes(alternateImages[1])) {
-        directory.splice(i, 1)
-        i--
-        continue
-      }
-      let imagePath = findFile(directory[i])
-      await convertImage(imagePath, directory[i])
-      directory.splice(i, 1)
-      i--
-      if (!directory.includes(newFile)) {
-        directory.push(newFile)
-      }
-      continue
-    }
-
-    let isUnsupportedAudio = directory[i].match(/\.wav$|\.mp3$/gi)
-    if (isUnsupportedAudio) {
-    }
-
-    // create a virtual directory that makes the pk3 but with files converted
-    //   individual files can be served dynamically. I did this kind of stuff 
-    //   with this media-server I worked on for 10 years.
-    let isPk3 = directory[i].match(/\.pk3$/gi)
-    if (isPk3) {
-      if (!directory.includes(directory[i] + 'dir')) {
-        directory.push(directory[i] + 'dir')
-      }
-    }
-
-    // TODO: remove lightmaps from BSPs and rely on vertext lighting
-
-  }
-  */
 
   directory.sort()
 

@@ -157,7 +157,7 @@ async function serveMaps(request, response, next) {
   let list = (await Promise.all(maps.map(map => renderMap(map)))).join('')
   let offset = INDEX.match('<body>').index + 6
   let index = INDEX.substring(0, offset)
-      + `<ol id="map-list">${list}</ol>
+      + `<ol id="map-list" class="stream-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(maps)}</script>
       <script>window.sessionLength=${total}</script>
       <script async defer src="index.js"></script>

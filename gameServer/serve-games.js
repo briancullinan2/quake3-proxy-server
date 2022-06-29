@@ -131,7 +131,7 @@ async function serveGames(request, response, next) {
   }
   let offset = INDEX.match('<body>').index + 6
   let index = INDEX.substring(0, offset)
-      + `<ol id="game-list">${list}</ol>
+      + `<ol id="game-list" class="stream-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(json)}</script>
       <script>window.sessionLength=${total}</script>
       <script async defer src="index.js"></script>

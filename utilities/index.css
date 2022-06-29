@@ -116,7 +116,7 @@ body > img {
   max-height: unset;
 }
 
-#map-list, #game-list {
+#map-list, #game-list, .stream-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -125,7 +125,7 @@ body > img {
   flex-wrap: wrap;
 }
 
-#map-list li, #game-list li {
+#map-list li, #game-list li, .stream-list li {
   width: 300px;
   white-space: normal;
   display:flex;
@@ -140,7 +140,8 @@ body > img {
   background-position: -1px -1px;
 }
 
-#map-list li::before, #game-list li::before {
+#map-list li::before, #game-list li::before
+, .stream-list li::before {
   content: "";
   height: 100%;
   width: 100%;
@@ -155,7 +156,8 @@ body > img {
   border-radius: 10px 10px 0 0;
 }
 
-#map-list li::after, #game-list li::after {
+#map-list li::after, #game-list li::after
+, .stream-list::after {
   content: "";
   height: 100%;
   width: 100%;
@@ -167,7 +169,8 @@ body > img {
   border-radius: 10px 10px 0 0;
 }
 
-#map-list img, #game-list img {
+#map-list img, #game-list img
+, .stream-list img {
   display:block;
   margin: 0 auto;
   flex-grow: 1;
@@ -177,12 +180,21 @@ body > img {
   width: auto;
 }
 
-#map-list img.unknownmap, #game-list img.unknownmap {
+.palette-block {
+  position:absolute;
+  width: 50px;
+  height: 50px;
+
+}
+
+#map-list img.unknownmap, #game-list img.unknownmap
+, .stream-list img.unknownmap {
   /* height: 150px; */
   width: 180px;
 }
 
-#map-list h3, #game-list h3 {
+#map-list h3, #game-list h3
+, .stream-list h3 {
   background-color: rgb(68 21 169);
   border-radius: 10px 10px 0 0;
   margin: 0;
@@ -201,8 +213,10 @@ body > img {
   box-shadow: none;
 }
 
+
 .shaders li a,
-#map-list h3 span, #game-list h3 span {
+#map-list h3 span, #game-list h3 span
+, .stream-list h3 span {
   white-space: nowrap;
   transform: translateX(0);
   transition: 1s;

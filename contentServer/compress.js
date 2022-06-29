@@ -6,7 +6,7 @@ const {PassThrough} = require('stream')
 
 const CURRENTLY_UNPACKING = {}
 
-
+/*
 //  SOURCE: https://stackoverflow.com/questions/10623798/how-do-i-read-the-contents-of-a-node-js-stream-into-a-string-variable
 function streamToBuffer(stream) {
   const chunks = [];
@@ -16,7 +16,11 @@ function streamToBuffer(stream) {
     stream.on('end', () => resolve(Buffer.concat(chunks)));
   })
 }
+*/
 
+// TODO: convert this setTimeout pattern to a utility for any server function to use
+
+/*
 async function extractPk3(pk3Path) {
   const StreamZip = require('node-stream-zip')
   const zip = new StreamZip({
@@ -62,26 +66,6 @@ async function extractPk3(pk3Path) {
     console.log('Extracting', index[i].key, '->', outFile)
     fs.mkdirSync(path.dirname(outFile), { recursive: true })
 
-    // stupid TGAs
-    if (outFile.match(/\.tga$/i)) {
-      let passThrough = new PassThrough()
-      let tgaFile = (await Promise.all([
-        streamFile(index[i], passThrough),
-        streamToBuffer(passThrough)
-      ]))[1]
-      //fs.writeFileSync(outFile + '_orig', tgaFile)
-      if (tgaFile[0] > 0) {
-        tgaFile = Array.from(tgaFile)
-        tgaFile.splice(18, tgaFile[0])
-        tgaFile[0] = 0
-        tgaFile = Buffer.from(tgaFile)
-      }
-      fs.writeFileSync(outFile, tgaFile)
-    } else {
-      const file = fs.createWriteStream(outFile)
-      await streamFile(index[i], file)
-      file.close()
-    }
   }
 
   return await new Promise(resolve => {
@@ -92,6 +76,7 @@ async function extractPk3(pk3Path) {
     CURRENTLY_UNPACKING[newZip].splice(0)
   })
 }
+*/
 
 
 module.exports = {

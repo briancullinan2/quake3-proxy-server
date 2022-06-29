@@ -3,8 +3,6 @@ const fs = require('fs')
 
 // use WASM renderer to screenshot uploaded maps
 const { findFile, modDirectory } = require('../contentServer/virtual.js')
-//const { execCmd } = require('../utilities/exec.js')
-//const { extractPk3 } = require('../contentServer/compress.js')
 const {EXE_NAME, FS_BASEPATH, FS_GAMEHOME, LVLSHOTS} = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
 const {getGame} = require('../utilities/env.js')

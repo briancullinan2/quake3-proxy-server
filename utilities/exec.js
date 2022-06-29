@@ -12,8 +12,8 @@ async function execCmd(cmd, args, options) {
       cwd: (options ? options.cwd : null) || process.cwd(),
       shell: options ? options.shell : false || false,
     })
-    stderr = ''
-    stdout = ''
+    let stderr = ''
+    let stdout = ''
     ps.stderr.on('data', (data) => stderr += data.toString('utf-8'));
     ps.stdout.on('data', (data) => stdout += data.toString('utf-8'));
     if(options && options.pipe) {

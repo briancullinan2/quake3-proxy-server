@@ -4,7 +4,8 @@
   "scripts": {
     "start": "node ./index.js",
     "proxy": "node ./index.js",
-    "debug": "node --inspect-brk ./index.js"
+    "debug": "node --inspect-brk ./index.js",
+    "palette": "node -e \"require('./mapServer/repack.js').rebuildPalette()\""
   },
   "bin": {
     "quakejs-content": "bin/content.js",

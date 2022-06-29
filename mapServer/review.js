@@ -49,7 +49,7 @@ async function getMapInfo(mapname) {
   let scripts = await layeredDir(path.join(pk3Path, '/scripts/'))
   if(typeof GAME_ARENAS[basegame] == 'undefined') {
     let baseArenas = findFile( path.join(basegame, '/pak0.pk3/scripts/arenas.txt') )
-
+    
   }
 
 
