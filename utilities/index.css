@@ -274,3 +274,14 @@ body > img {
   /* padding-top:22px; */
   flex-direction: row;
 }
+
+#viewport-frame canvas {
+  background-color: rgba(0, 0, 0, 0.0);
+  width: 0;
+  height: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: auto;
+  display:inline-block;
+}
+

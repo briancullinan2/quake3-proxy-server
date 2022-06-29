@@ -17,15 +17,17 @@ const { layeredDir } = require('../contentServer/content.js')
 
 var fileTypes = [
   '.cfg', '.qvm', '.bot',
-  '.txt', '.bsp', '.aas',
-  '.md3', '.md5', '.iqm',
-  '.mdr', '.shader', '.shaderx',
+  '.txt', 
+  '.shader', '.shaderx',
   '.crosshair', '.skin', '.font',
   '.config', '.menu',
   '.defi', // CPMA game mode definition
   '.arena', // map based game mode definition
   // these can be compiled in game to run bot AI
-  '.c', '.h', '.scc', // '.map',
+  '.c', '.h', '.scc', 
+  // can load async
+  // '.map', '.aas', '.md5', 
+  //  '.bsp', '.md3',  '.iqm', '.mdr',
 ]
 
 
@@ -71,14 +73,15 @@ async function repackPk3(directory, newZip) {
     if(await unsupportedImage(directory[i])) {
       continue
     }
+    console.log(directory[i])
     let newDir = directory[i].replace(/\.pk3.*/gi, '.pk3dir')
     let pk3InnerPath = directory[i].replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
     let output = await execCmd(
       //process.env.SHELL, ['-c', 'pwd'
-      'zip', [first ? '' : ' -u ',
+      'zip', [first ? '' : '-u',
       '../' + path.basename(newZip), path.join('./', pk3InnerPath)
-    ], { cwd: newDir, shell: true })
-    //console.log(output)
+    ], { cwd: newDir, /* shell: true */ })
+    console.log(output)
     first = false
   }
   return newZip
@@ -90,7 +93,9 @@ async function repackBasegame() {
   // start extracting other zips simultaneously,
   //   then wait for all of them to resolve
   let directory = []
+  let virtualPaths = []
   let gamedir = await layeredDir(getGame())
+  // TODO: automatically add palette and built QVMs
   let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
   for (let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(pk3files[j])
@@ -98,17 +103,23 @@ async function repackBasegame() {
     let newZip = path.join(repackedCache(), path.basename(newFile))
     let index = await getIndex(newFile)
     for(let i = 0; i < index.length; i++) {
-      if (!fileTypes.includes(path.extname(index[i].name))) {
+      if(index[i].isDirectory) {
         continue
       }
-      if(index[i].size > 1024 * 256
-        || index[i].compressedSize > 1024 * 64) {
+      if (
+        !fileTypes.includes(path.extname(index[i].name))
+        && index[i].size > 64 * 64
+        && index[i].compressedSize > 64 * 64) {
         continue
       }
+      console.log(path.join(newZip, index[i].name))
+      virtualPaths.push(index[i].name.toLocaleLowerCase())
       directory.push(path.join(newZip, index[i].name))
     }
   }
-  await repackPk3(directory, newZip)
+  let filtered = directory.filter((a, i, arr) => 
+      virtualPaths.indexOf(virtualPaths[i]) == i)
+  await repackPk3(filtered, newZip)
   return newZip
 }
 
