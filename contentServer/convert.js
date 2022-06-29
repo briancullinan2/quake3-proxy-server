@@ -52,7 +52,7 @@ async function convertAudio(audioPath, unsupportedFormat, quality) {
 
   let newFile = unsupportedFormat.replace(path.extname(unsupportedFormat), '.ogg')
   let newPath
-  if(imagePath.includes('.pk3')) {
+  if(audioPath.includes('.pk3')) {
     newPath = path.join(repackedCache(), path.basename(pk3File) + 'dir', newFile)
   } else {
     newPath = path.join(repackedCache(), newFile)
@@ -86,18 +86,21 @@ async function convertAudio(audioPath, unsupportedFormat, quality) {
       startArgs.push(audioPath)
     }
     startArgs.push.apply(startArgs, [
-      '-n', newPath
+      '-o', newPath
     ])
   }
 
+  console.log('Transcoding: ', audioPath, unsupportedFormat)
+  let logs
   if(passThrough) {
-    (await Promise.all([
+    logs = (await Promise.all([
       streamFile(file, passThrough),
       execCmd(cmd, startArgs, {pipe: passThrough})
     ]))[1]
   } else {
-    await execCmd(cmd, startArgs, {pipe: passThrough})
+    logs = await execCmd(cmd, startArgs)
   }
+  //console.log(logs)
   return newPath
 }
 

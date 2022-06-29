@@ -7,6 +7,7 @@ const { layeredDir } = require('../contentServer/content.js')
 const { IMAGE_FORMATS, INDEX, getGame, repackedCache } = require('../utilities/env.js')
 const { getIndex, streamFileKey } = require('../utilities/zip.js')
 const {execCmd} = require('../utilities/exec.js')
+const { unsupportedImage } = require('../contentServer/content.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig
 
@@ -38,8 +39,9 @@ function parsePalette(shaderPath) {
   let palette = {}
   let m
   let existingPalette = fs.readFileSync(shaderPath).toString('utf-8')
-  while((m = (MATCH_PALETTE).exec(existingPalette)) !== null) {
-    palette[m[1]] = m[2]
+  let match = MATCH_PALETTE
+  while((m = (match).exec(existingPalette)) !== null) {
+    palette[m[1].toLocaleLowerCase()] = m[2]
   }
   return palette
 }
@@ -54,6 +56,7 @@ async function parseExisting(pk3files) {
   }
   let existingPalette = {}
   let palettesNeeded = []
+  let virtualPaths = []
   for(let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(path.join(getGame(), path.basename(pk3files[j])))
     let index = await getIndex(newFile)
@@ -61,13 +64,30 @@ async function parseExisting(pk3files) {
       if(index[i].isDirectory) {
         continue
       }
+      if(virtualPaths.includes(index[i].name)) {
+        continue
+      }
       if(IMAGE_FORMATS.includes(path.extname(index[i].name))) {
-        palettesNeeded.push(path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name))
+        let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
+        palettesNeeded.push(outFile)
+        virtualPaths.push(index[i].name)
+        /*
+        if (unsupportedImage(index[i].name)) {
+          if(fs.existsSync(outFile.replace(path.extname(outFile), '.jpg'))) {
+            palettesNeeded.push(outFile.replace(path.extname(outFile), '.jpg'))
+            virtualPaths.push(index[i].name.replace(path.extname(outFile), '.jpg'))
+          } else
+          if(fs.existsSync(outFile.replace(path.extname(outFile), '.png'))) {
+            palettesNeeded.push(outFile.replace(path.extname(outFile), '.png'))
+            virtualPaths.push(index[i].name.replace(path.extname(outFile), '.jpg'))
+          }
+        }
+        */
       }
     }
 
     let localShader = path.join(repackedCache(), 
-        path.basename(newFile), '/scripts/palette.shader')
+        path.basename(newFile) + 'dir', '/scripts/palette.shader')
     if(fs.existsSync(localShader)) {
       existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
     }
@@ -82,10 +102,10 @@ async function parseExisting(pk3files) {
 function makePalette(palettesNeeded, existingPalette) {
   return Promise.all(palettesNeeded.map(async function (p) {
     let localPath = p.replace(/^.*?\.pk3.*?\//gi, '')
-    if(typeof existingPalette[p] != 'undefined') {
-      return `  palette "${localPath}" ${existingPalette[localPath]}`
+    if(typeof existingPalette[localPath.toLocaleLowerCase()] != 'undefined') {
+      return `  palette "${localPath}" ${existingPalette[localPath.toLocaleLowerCase()]}`
     }
-    return `  palette "${localPath}" "${await paletteCmd(p)}"`
+    return `  palette "${localPath}" ${await paletteCmd(p)}`
   }))
 }
 

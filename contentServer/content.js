@@ -2,10 +2,13 @@ const fs = require('fs')
 const path = require('path')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../contentServer/virtual.js')
-const { AUDIO_FORMATS, FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
+const { AUDIO_FORMATS, IMAGE_FORMATS, FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
 
 
 function unsupportedImage(imagePath) {
+  if(!IMAGE_FORMATS.includes(path.extname(imagePath))) {
+    return
+  }
   if (imagePath.match(/levelshots\//i)) {
     isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.bmp$|\.png$/gi)
   } else {
@@ -17,8 +20,10 @@ function unsupportedImage(imagePath) {
 }
 
 function unsupportedAudio(audioPath) {
-  let isUnsupportedAudio = AUDIO_FORMATS.includes(path.extname(audioPath)) 
-      && !audioPath.match(/\.ogg$/gi)
+  if(!AUDIO_FORMATS.includes(path.extname(audioPath))) {
+    return
+  }
+  let isUnsupportedAudio = !audioPath.match(/\.ogg$/gi)
   if(isUnsupportedAudio || !audioPath.includes('.')) {
     return audioPath
   }
@@ -118,6 +123,7 @@ async function serveVirtual(request, response, next) {
   let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
   let directory = layeredDir(filename)
+
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
   if (filename.includes('.pk3')) {

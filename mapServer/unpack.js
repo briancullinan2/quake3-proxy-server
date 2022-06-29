@@ -3,10 +3,10 @@ const path = require('path')
 
 const { IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS, repackedCache } = require('../utilities/env.js')
 const { findFile } = require('../contentServer/virtual.js')
-const { convertImage } = require('../contentServer/convert.js')
+const { convertImage, convertAudio } = require('../contentServer/convert.js')
 const { getGame } = require('../utilities/env.js')
 const { layeredDir, unsupportedImage, unsupportedAudio } = require('../contentServer/content.js')
-const { getIndex } = require('../utilities/zip.js')
+const { getIndex, streamFile } = require('../utilities/zip.js')
 
 
 async function alternateAudio(pk3InnerPath, response, next) {
@@ -20,6 +20,7 @@ async function alternateAudio(pk3InnerPath, response, next) {
     }
     let newFile = findFile(altFile + AUDIO_FORMATS[i])
     if(newFile && !newFile.endsWith('.pk3')) {
+      console.log(newFile)
       return response.sendFile(newFile)
     }
   }
@@ -31,6 +32,7 @@ async function alternateAudio(pk3InnerPath, response, next) {
       }
       let altPath = path.join(repackedCache(), path.basename(pk3files[i]) + 'dir', altFile + AUDIO_FORMATS[j])
       if(fs.existsSync(altPath)) {
+        console.log(altPath)
         return response.sendFile(altPath)
       }
     }
@@ -154,16 +156,47 @@ async function unpackBasegame(newZip) {
       }
       if (
         !SUPPORTED_FORMATS.includes(path.extname(index[i].name))
-        && index[i].size > 128 * 128
+        //&& index[i].size > 128 * 128
+        && index[i].size >  64 * 64
         && index[i].compressedSize > 64 * 64) {
         continue
       }
       let pk3Path = path.join(repackedCache(), path.basename(newFile))
       let outFile = path.join(pk3Path + 'dir', index[i].name)
-      if (!fs.existsSync(outFile) && await unsupportedImage(index[i].name)) {
-        let newImage = await convertImage(newFile, index[i].name)
-        directory.push(newImage)
+      if (unsupportedImage(index[i].name)) {
+        if(fs.existsSync(outFile.replace(path.extname(outFile), '.jpg'))) {
+          virtualPaths.push(index[i].name.replace(path.extname(outFile), '.jpg'))
+          directory.push(outFile.replace(path.extname(outFile), '.jpg'))
+        } else
+        if(fs.existsSync(outFile.replace(path.extname(outFile), '.png'))) {
+          virtualPaths.push(index[i].name.replace(path.extname(outFile), '.png'))
+          directory.push(outFile.replace(path.extname(outFile), '.png'))
+        } else {
+          let newImage = await convertImage(newFile, index[i].name)
+          virtualPaths.push(index[i].name.replace(path.extname(index[i].name), path.extname(newImage)))
+          directory.push(newImage)
+        }
       }
+      if(unsupportedAudio(index[i].name)) {
+        if(fs.existsSync(outFile.replace(path.extname(outFile), '.ogg'))) {
+          virtualPaths.push(index[i].name.replace(path.extname(outFile), '.ogg'))
+          directory.push(outFile.replace(path.extname(outFile), '.ogg'))
+        } else {
+          let newAudio = await convertAudio(newFile, index[i].name)
+          virtualPaths.push(index[i].name.replace(path.extname(outFile), '.ogg'))
+          directory.push(newAudio)
+        }
+      }
+      //if(SUPPORTED_FORMATS.includes(path.extname(index[i].name))
+      //    || IMAGE_FORMATS.includes(path.extname(index[i].name))
+      //    || AUDIO_FORMATS.includes(path.extname(index[i].name))) {
+      if(!fs.existsSync(outFile)) {
+        fs.mkdirSync(path.dirname(outFile), { recursive: true })
+        const file = fs.createWriteStream(outFile)
+        await streamFile(index[i], file)
+        file.close()
+      }
+      //}
       //console.log(path.join(newZip, index[i].name))
       virtualPaths.push(index[i].name.toLocaleLowerCase())
       directory.push(outFile)

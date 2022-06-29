@@ -4,7 +4,7 @@ let LIMIT = 0
 async function execCmd(cmd, args, options) {
   const {spawn} = require('child_process')
   LIMIT++
-  //console.log('Executing:', LIMIT, cmd, args.join(' '))
+  console.log('Executing:', LIMIT, cmd, args.join(' '))
   return await new Promise(function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
     let ps = spawn(cmd, args, {

@@ -21,10 +21,10 @@ async function repackPk3(directory, newZip) {
     if(await unsupportedAudio(directory[i])) {
       continue
     }
-
-    console.log(directory[i])
     let newDir = directory[i].replace(/\.pk3.*/gi, '.pk3dir')
     let pk3InnerPath = directory[i].replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+    //console.log(directory[i])
+
     let startArgs = []
     if(!first) {
       startArgs.push('-u')
@@ -35,7 +35,7 @@ async function repackPk3(directory, newZip) {
     let output = await execCmd(
       //process.env.SHELL, ['-c', 'pwd'
       'zip', startArgs, { cwd: newDir, /* shell: true */ })
-    console.log(output)
+    //console.log(output)
     first = false
   }
   return newZip
@@ -65,7 +65,7 @@ async function serveFinished(request, response, next) {
     if(!fs.existsSync(newZip)) {
       let newZip = path.join(repackedCache(), 'pak0.pk3')
       let filtered = await unpackBasegame(newZip)
-      filtered.push(await rebuildPalette(filtered))
+      //filtered.push(await rebuildPalette(filtered))
       newZip = await repackPk3(filtered, newZip)
     }
     return response.sendFile(newZip, {
@@ -97,7 +97,7 @@ async function serveFinished(request, response, next) {
 
 
 async function serveRepacked(request, response, next) {
-  let filename = request.url.replace(/\?.*$/, '')
+  let filename = request.originalUrl.replace(/\?.*$/, '')
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
   }
@@ -109,18 +109,13 @@ async function serveRepacked(request, response, next) {
     return next()
   }
 
-  // TODO:
-  //let isAltImage = !!request.url.match(/\?alt/) 
-  //      && !!(await unsupportedImage(pk3InnerPath))
-
-  if(IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
+  if(!!request.url.match(/\?alt/) 
+      && IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
     return alternateImage(pk3InnerPath, response, next)
   }
 
-  //let isAltAudio = !!request.url.match(/\?alt/) 
-  //      && !!(await unsupportedAudio(pk3InnerPath))
-
-  if(AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
+  if(!!request.url.match(/\?alt/) 
+      && AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
     return alternateAudio(pk3InnerPath, response, next)
   }
 
@@ -146,12 +141,11 @@ async function serveRepacked(request, response, next) {
   } else
   if (newFile && newFile.includes('.pk3dir\/')) {
     return response.sendFile(newFile)
-  } else {
-    // TODO: CODE REVIEW, reduce cascading curlys event though code
-    //   is redundant there's still less complexity overall
-    return next()
   }
-
+  
+  // TODO: CODE REVIEW, reduce cascading curlys event though code
+  //   is redundant there's still less complexity overall
+  return next(new Error('Not in repack: ' + filename))
 }
 
 

@@ -40,7 +40,6 @@ function serveLive(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   let newFile = findFile(filename)
-  debugger
 
   if(newFile && newFile.endsWith('.pk3') 
       && pk3File.length < filename.length) {
