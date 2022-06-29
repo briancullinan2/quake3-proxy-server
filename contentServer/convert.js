@@ -35,6 +35,74 @@ async function cleanTGA() {
 }
 
 
+async function convertAudio(audioPath, unsupportedFormat, quality) {
+  let pk3File = audioPath.replace(/\.pk3.*/gi, '.pk3')
+  let cmd
+  let file
+  let passThrough
+  let startArgs = []
+  if(audioPath.endsWith('.pk3')) {
+    file = await fileKey(audioPath, unsupportedFormat)
+    if(file) {
+      passThrough = new PassThrough()
+    } else {
+      throw new Error('File not found: ' + unsupportedFormat)
+    }
+  }
+
+  let newFile = unsupportedFormat.replace(path.extname(unsupportedFormat), '.ogg')
+  let newPath
+  if(imagePath.includes('.pk3')) {
+    newPath = path.join(repackedCache(), path.basename(pk3File) + 'dir', newFile)
+  } else {
+    newPath = path.join(repackedCache(), newFile)
+  }
+  if(fs.existsSync(newPath)) {
+    //console.log('Skipping: ', newPath)
+    return newPath
+  }
+
+
+  if(path.extname(audioPath).match(/\.mp3/gi)) {
+    cmd = 'ffmpeg'
+    startArgs = ['-i', file]
+    if(passThrough) {
+      startArgs.push('-')
+    } else {
+      startArgs.push(audioPath)
+    }
+    startArgs.push.apply(startArgs, [
+      '-c:a', 'libvorbis', '-q:a', '4', newPath
+    ])
+  } else {
+    cmd = 'oggenc'
+    startArgs = [
+      '-q', '7', '--downmix', '--resample',
+      '11025', '--quiet'
+    ]
+    if(passThrough) {
+      startArgs.push('-')
+    } else {
+      startArgs.push(audioPath)
+    }
+    startArgs.push.apply(startArgs, [
+      '-n', newPath
+    ])
+  }
+
+  if(passThrough) {
+    (await Promise.all([
+      streamFile(file, passThrough),
+      execCmd(cmd, startArgs, {pipe: passThrough})
+    ]))[1]
+  } else {
+    await execCmd(cmd, startArgs, {pipe: passThrough})
+  }
+  return newPath
+}
+
+
+
 async function convertImage(imagePath, unsupportedFormat, quality) {
   // TODO: only convert the same output image once at a time not to clobber
   
@@ -102,4 +170,5 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
 
 module.exports = {
   convertImage,
+  convertAudio,
 }

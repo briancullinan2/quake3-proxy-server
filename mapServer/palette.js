@@ -4,9 +4,8 @@ const {PassThrough} = require('stream')
 
 const { findFile } = require('../contentServer/virtual.js')
 const { layeredDir } = require('../contentServer/content.js')
-const { INDEX, getGame, repackedCache } = require('../utilities/env.js')
+const { IMAGE_FORMATS, INDEX, getGame, repackedCache } = require('../utilities/env.js')
 const { getIndex, streamFileKey } = require('../utilities/zip.js')
-const {IMAGE_FORMATS} = require('../mapServer/unpack.js')
 const {execCmd} = require('../utilities/exec.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig

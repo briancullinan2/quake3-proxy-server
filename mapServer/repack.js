@@ -2,12 +2,12 @@ const fs = require('fs')
 const path = require('path')
 
 const { findFile, modDirectory } = require('../contentServer/virtual.js')
-const { repackedCache } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS, repackedCache } = require('../utilities/env.js')
 const { MAP_DICTIONARY, sourcePk3Download } = require('../mapServer/serve-download.js')
 const { streamFileKey } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
-const { unsupportedImage } = require('../contentServer/content.js')
-const { unpackBasegame, alternateImage } = require('../mapServer/unpack.js')
+const { unsupportedImage, unsupportedAudio } = require('../contentServer/content.js')
+const { unpackBasegame, alternateImage, alternateAudio } = require('../mapServer/unpack.js')
 const { rebuildPalette } = require('../mapServer/palette.js')
 
 
@@ -18,6 +18,10 @@ async function repackPk3(directory, newZip) {
     if(await unsupportedImage(directory[i])) {
       continue
     }
+    if(await unsupportedAudio(directory[i])) {
+      continue
+    }
+
     console.log(directory[i])
     let newDir = directory[i].replace(/\.pk3.*/gi, '.pk3dir')
     let pk3InnerPath = directory[i].replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
@@ -106,11 +110,18 @@ async function serveRepacked(request, response, next) {
   }
 
   // TODO:
-  let isAltImage = !!request.url.match(/\?alt/) 
-        || !!(await unsupportedImage(pk3InnerPath))
+  //let isAltImage = !!request.url.match(/\?alt/) 
+  //      && !!(await unsupportedImage(pk3InnerPath))
 
-  if(isAltImage) {
+  if(IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
     return alternateImage(pk3InnerPath, response, next)
+  }
+
+  //let isAltAudio = !!request.url.match(/\?alt/) 
+  //      && !!(await unsupportedAudio(pk3InnerPath))
+
+  if(AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
+    return alternateAudio(pk3InnerPath, response, next)
   }
 
   let repackedFile = path.join(repackedCache(), path.basename(pk3File) + 'dir', pk3InnerPath)

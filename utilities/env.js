@@ -89,7 +89,28 @@ if(fs.existsSync(FS_BASEPATH)
 }
 
 
+const SUPPORTED_FORMATS = [
+  '.cfg', '.qvm', '.bot',
+  '.txt', 
+  '.shader', '.shaderx',
+  '.crosshair', '.skin', '.font',
+  '.config', '.menu',
+  '.defi', // CPMA game mode definition
+  '.arena', // map based game mode definition
+  // these can be compiled in game to run bot AI
+  '.c', '.h', '.scc', 
+  // can load async
+  // '.map', '.aas', '.md5', 
+  // '.bsp', '.md3',  '.iqm', '.mdr',
+]
+const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
+const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
+
+
 module.exports = {
+  SUPPORTED_FORMATS,
+  IMAGE_FORMATS,
+  AUDIO_FORMATS,
   EXE_NAME,
   WEB_DIRECTORY,
   ASSETS_DIRECTORY,

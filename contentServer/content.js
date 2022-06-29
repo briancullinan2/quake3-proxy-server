@@ -2,8 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../contentServer/virtual.js')
-const { FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
-const { convertImage } = require('../contentServer/convert.js')
+const { AUDIO_FORMATS, FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
+
 
 function unsupportedImage(imagePath) {
   if (imagePath.match(/levelshots\//i)) {
@@ -14,7 +14,14 @@ function unsupportedImage(imagePath) {
   if(isUnsupportedImage || !imagePath.includes('.')) {
     return imagePath
   }
+}
 
+function unsupportedAudio(audioPath) {
+  let isUnsupportedAudio = AUDIO_FORMATS.includes(path.extname(audioPath)) 
+      && !audioPath.match(/\.ogg$/gi)
+  if(isUnsupportedAudio || !audioPath.includes('.')) {
+    return audioPath
+  }
 }
 
 // TODO: would be cool if a virtual directory could span say: 
@@ -39,13 +46,14 @@ async function serveVirtualPk3dir(filename) {
     let relativePath = newPath.substr(pk3InnerPath.length + 1)
     let isSubdir = relativePath.indexOf('/')
 
-    if ((pk3InnerPath.length == 0 || currentPath.localeCompare(
-      pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
-      && relativePath.length && newPath[pk3InnerPath.length] == '/'
+    if ((pk3InnerPath.length == 0 
+      || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
+      && relativePath.length && newPath[pk3InnerPath.length] == '/')
       // recursive directory inside pk3?
       && (isSubdir == -1 || isSubdir == relativePath.length - 1)
-      && newPath.length > currentPath.length) {
-        console.log(newPath, currentPath)
+      && newPath.length > currentPath.length
+    ) {
+      console.log(newPath, currentPath)
       directory.push(path.join(pk3File + 'dir', newPath))
     }
   }
@@ -112,7 +120,6 @@ async function serveVirtual(request, response, next) {
   let directory = layeredDir(filename)
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
-
   if (filename.includes('.pk3')) {
     let pk3directory = await serveVirtualPk3dir(filename)
     if (!directory) {
@@ -121,6 +128,15 @@ async function serveVirtual(request, response, next) {
     for (let i = 0; i < pk3directory.length; i++) {
       if (!directory.includes(pk3directory[i])) {
         directory.push(pk3directory[i])
+      }
+    }
+  }
+  
+
+  for (let i = 0; i < directory.length; i++) {
+    if(directory[i].endsWith('.pk3')) {
+      if (!directory.includes(directory[i] + 'dir')) {
+        directory.push(directory[i] + 'dir')
       }
     }
   }
@@ -138,7 +154,7 @@ async function serveVirtual(request, response, next) {
   } else {
     return '<ol>'
       + response.send(directory.map(node =>
-        `<li><a href="/${node}">${node}</a></li>`).join('\n'))
+        `<li><a href="/${node}?alt">${node}</a></li>`).join('\n'))
       + '</ol>'
   }
 }
@@ -148,6 +164,6 @@ module.exports = {
   serveVirtual,
   layeredDir,
   unsupportedImage,
-
+  unsupportedAudio,
 }
 

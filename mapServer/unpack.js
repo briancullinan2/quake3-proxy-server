@@ -1,29 +1,67 @@
 const fs = require('fs')
 const path = require('path')
 
-const { repackedCache } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS, repackedCache } = require('../utilities/env.js')
 const { findFile } = require('../contentServer/virtual.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { getGame } = require('../utilities/env.js')
-const { layeredDir, unsupportedImage } = require('../contentServer/content.js')
+const { layeredDir, unsupportedImage, unsupportedAudio } = require('../contentServer/content.js')
 const { getIndex } = require('../utilities/zip.js')
 
-const SUPPORTED_FORMATS = [
-  '.cfg', '.qvm', '.bot',
-  '.txt', 
-  '.shader', '.shaderx',
-  '.crosshair', '.skin', '.font',
-  '.config', '.menu',
-  '.defi', // CPMA game mode definition
-  '.arena', // map based game mode definition
-  // these can be compiled in game to run bot AI
-  '.c', '.h', '.scc', 
-  // can load async
-  // '.map', '.aas', '.md5', 
-  // '.bsp', '.md3',  '.iqm', '.mdr',
-]
-const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
-const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
+
+async function alternateAudio(pk3InnerPath, response, next) {
+  let altFile = pk3InnerPath.replace(path.extname(pk3InnerPath), '')
+
+  let gamedir = await layeredDir(getGame())
+  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
+  for(let i = 0; i < AUDIO_FORMATS.length; i++) {
+    if(unsupportedAudio(AUDIO_FORMATS[i])) {
+      continue
+    }
+    let newFile = findFile(altFile + AUDIO_FORMATS[i])
+    if(newFile && !newFile.endsWith('.pk3')) {
+      return response.sendFile(newFile)
+    }
+  }
+
+  for(let i = 0; i < pk3files.length; i++) {
+    for(let j = 0; j < AUDIO_FORMATS.length; j++) {
+      if(unsupportedAudio(AUDIO_FORMATS[j])) {
+        continue
+      }
+      let altPath = path.join(repackedCache(), path.basename(pk3files[i]) + 'dir', altFile + AUDIO_FORMATS[j])
+      if(fs.existsSync(altPath)) {
+        return response.sendFile(altPath)
+      }
+    }
+  }
+
+  for(let i = 0; i < pk3files.length; i++) {
+    try {
+      let newFile = findFile(pk3files[i])
+      let newImage = await convertAudio(newFile, pk3InnerPath)
+      return response.sendFile(newImage)
+    } catch (e) {
+      if(!e.message.startsWith('File not found')) {
+        console.log(e)
+      }
+    }
+
+    for(let j = 0; j < AUDIO_FORMATS.length; j++) {
+      try {
+        let newImage = await convertAudio(findFile(pk3files[i]), altFile + AUDIO_FORMATS[j])
+        return response.sendFile(newImage)
+      } catch (e) {
+        if(!e.message.startsWith('File not found')) {
+          console.log(e)
+        }
+      }
+    }
+  }
+
+  return next()
+}
+
 
 async function alternateImage(pk3InnerPath, response, next) {
   let altFile = pk3InnerPath.replace(path.extname(pk3InnerPath), '')
@@ -44,8 +82,6 @@ async function alternateImage(pk3InnerPath, response, next) {
     let newFile = findFile(altFile + IMAGE_FORMATS[i])
     if(newFile && !newFile.endsWith('.pk3')) {
       return response.sendFile(newFile)
-    } else if (newFile) {
-      
     }
   }
 
@@ -141,7 +177,5 @@ async function unpackBasegame(newZip) {
 module.exports = {
   unpackBasegame,
   alternateImage,
-  SUPPORTED_FORMATS,
-  IMAGE_FORMATS,
-  AUDIO_FORMATS,
+  alternateAudio,
 }
