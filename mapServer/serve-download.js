@@ -132,6 +132,7 @@ async function serveDownload(request, response, next) {
 
 
 async function serveMapsRange(request, response, next) {
+  let isJson = request.url.match(/\?json/)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let start = 0
   let end = 100
@@ -140,14 +141,12 @@ async function serveMapsRange(request, response, next) {
     start = parseInt(rangeString.split('\/')[0])
     end = parseInt(rangeString.split('\/')[1])
   }
+  return await serveMapsReal(start, end, isJson, response)
 }
 
 
-async function serveMaps(request, response, next) {
-  let isJson = request.url.match(/\?json/)
+async function serveMapsReal(start, end, isJson, response) {
   let mapsAvailable = await existingMaps()
-  let start = 0
-  let end = 100
   let maps = mapsAvailable.slice(start, end)
   if (isJson) {
     return response.json(maps)
@@ -160,9 +159,18 @@ async function serveMaps(request, response, next) {
       + `<ol id="map-list" class="stream-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(maps)}</script>
       <script>window.sessionLength=${total}</script>
+      <script>window.sessionCallback='/maps/'</script>
       <script async defer src="index.js"></script>
       ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)
+}
+
+
+async function serveMaps(request, response, next) {
+  let isJson = request.url.match(/\?json/)
+  let start = 0
+  let end = 100
+  return await serveMapsReal(start, end, isJson, response)
 }
 
 
@@ -171,7 +179,7 @@ async function renderMap(map) {
   result += `<li style="background-image: url('${map.levelshot}')">`
   result += `<h3><a href="/maps/${map.bsp}">`
   result += `<span>${map.title}</span>`
-  result += map.title != map.bsp
+  result +=  map.bsp && map.title != map.bsp
     ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
   result += `</a></h3>`
   result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`

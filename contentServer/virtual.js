@@ -63,7 +63,6 @@ function buildDirectories() {
   const BUILD_ORDER = BUILD_MODES
     .map(mode => path.join(BUILD_DIRECTORY, mode))
     .concat([
-      repackedCache(), // TODO: 
       ASSETS_DIRECTORY,
       WEB_DIRECTORY, // last because least reliable
     ])

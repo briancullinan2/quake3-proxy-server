@@ -10,7 +10,14 @@ window.addEventListener('load', (event) => {
     setInterval(refreshMaps, 20)
     setInterval(function () { previousLine = -1 }, 500)
   }
+
+  mapList = document.getElementById('shader-list')
+  if(mapList) {
+    setInterval(refreshMaps, 20)
+    setInterval(function () { previousLine = -1 }, 500)
+  }
   
+
   
   gameList = document.getElementById('game-list')
   if(gameList) {
@@ -42,6 +49,10 @@ async function refreshMaps() {
   }
 
   let lineHeight = mapList.children[0].clientHeight
+  if(!lineHeight) {
+    mapList.children[0].style.display = ''
+    return
+  }
   let count = mapList.children.length
   let itemsPerLine = 0
   for(let i = 0; i < mapList.children.length; i++) {
@@ -66,7 +77,7 @@ async function refreshMaps() {
   let halfway = Math.ceil(count / itemsPerLine / 2)
   let halfwareMark = Math.floor(window.scrollY / (halfway * lineHeight))
   if(halfwareMark != previousHalf) {
-    loadNextPage('/maps/', halfwareMark)
+    loadNextPage(window.sessionCallback, halfwareMark)
   }
 
 

@@ -134,6 +134,7 @@ async function serveGames(request, response, next) {
       + `<ol id="game-list" class="stream-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(json)}</script>
       <script>window.sessionLength=${total}</script>
+      <script>window.sessionCallback='/games/'</script>
       <script async defer src="index.js"></script>
       ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)

@@ -26,7 +26,7 @@ async function paletteCmd(imagePath) {
     : imagePath, 
     '-resize', '1x1\!', 
     '-format', 
-    '%[fx:int(255*a+.5)],%[fx:int(255*r+.5)],%[fx:int(255*g+.5)],%[fx:int(255*b+.5)]', 
+    '%[fx:int(255*r+.5)],%[fx:int(255*g+.5)],%[fx:int(255*b+.5)],%[fx:int(255*a+.5)]', 
     'info:-'
   ], {pipe: passThrough})).replace(/%/gi, '')
 }
@@ -48,9 +48,10 @@ function parsePalette(shaderPath) {
 
 
 async function parseExisting(pk3files) {
+  let basegame = getGame()
   // TODO: CODE REVIEW: some sort of @Preamble template that handles type checking?
   if(!pk3files || pk3files.length == 0) {
-    let gamedir = await layeredDir(getGame())
+    let gamedir = await layeredDir(basegame)
     // TODO: automatically add palette and built QVMs
     pk3files = gamedir.filter(file => file.endsWith('.pk3')).map(p => path.basename(p)).sort().reverse()
   }
@@ -68,8 +69,14 @@ async function parseExisting(pk3files) {
         continue
       }
       if(IMAGE_FORMATS.includes(path.extname(index[i].name))) {
-        let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
-        palettesNeeded.push(outFile)
+        let outFile = path.join(repackedCache(), path.basename(newFile) 
+            + 'dir', index[i].name)
+        palettesNeeded.push({
+          absolute: outFile,
+          title: index[i].name,
+          levelshot: `${basegame}/pak0.pk3dir/${index[i].name}?alt`,
+          pakname:  path.basename(newFile),
+        })
         virtualPaths.push(index[i].name)
         /*
         if (unsupportedImage(index[i].name)) {
@@ -92,6 +99,10 @@ async function parseExisting(pk3files) {
       existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
     }
   }
+  let localShader = path.join(repackedCache(), '/scripts/palette.shader')
+  if(fs.existsSync(localShader)) {
+    existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
+  }
   return {
     palettesNeeded,
     existingPalette
@@ -100,12 +111,12 @@ async function parseExisting(pk3files) {
 
 
 function makePalette(palettesNeeded, existingPalette) {
-  return Promise.all(palettesNeeded.map(async function (p) {
-    let localPath = p.replace(/^.*?\.pk3.*?\//gi, '')
+  return Promise.all(palettesNeeded.map(async function ({absolute}) {
+    let localPath = absolute.replace(/^.*?\.pk3.*?\//gi, '')
     if(typeof existingPalette[localPath.toLocaleLowerCase()] != 'undefined') {
       return `  palette "${localPath}" ${existingPalette[localPath.toLocaleLowerCase()]}`
     }
-    return `  palette "${localPath}" ${await paletteCmd(p)}`
+    return `  palette "${localPath}" ${await paletteCmd(absolute)}`
   }))
 }
 
@@ -116,7 +127,8 @@ async function rebuildPalette(pk3files) {
   if(pk3sOnly.length == 0) {
     let gamedir = await layeredDir(getGame())
     // TODO: automatically add palette and built QVMs
-    pk3sOnly = gamedir.filter(file => file.endsWith('.pk3')).map(p => path.basename(p)).sort().reverse()
+    pk3sOnly = gamedir.filter(file => file.endsWith('.pk3'))
+        .map(p => path.basename(p)).sort().reverse()
   }
 
   let paletteFile = path.join(repackedCache(), pk3sOnly[0] + 'dir', '/scripts/palette.shader')
@@ -135,57 +147,94 @@ async function rebuildPalette(pk3files) {
   return paletteFile
 }
 
-
-async function servePalette(request, response, next) {
-  let isJson = request.url.match(/\?json/)
+async function servePaletteReal(start, end, isJson, response) {
   let {palettesNeeded, existingPalette} = await parseExisting()
-  let start = 0
-  let end = 100
   let palettes = palettesNeeded.slice(start, end)
-  if (isJson) {
-  //  return response.json(maps)
-  }
+  await Promise.all(palettes.map(shader => 
+      formatPalette(shader, existingPalette)))
 
+  let paletteFile = path.join(repackedCache(), '/scripts/palette.shader')
+  let existingNeeded = palettesNeeded.filter(p => typeof existingPalette[p.title.toLocaleLowerCase()] != 'undefined')
+  let newPixels = await makePalette(palettes.concat(existingNeeded), existingPalette)
+  let newPalette = `palettes\/${getGame()}\n
+  {\n
+    ${newPixels.join('\n')}\n
+  }\n`
+  fs.writeFileSync(paletteFile, newPalette)
+    
+  
+  if (isJson) {
+    return response.json(palettes)
+  }
+      
   let total = palettesNeeded.length
-  let list = (await Promise.all(palettes
-      .map(shader => renderShader(shader, existingPalette)))).join('')
+  let list = (await Promise.all(palettes.map(shader => 
+      renderShader(shader)))).join('')
   let offset = INDEX.match('<body>').index + 6
   let index = INDEX.substring(0, offset)
       + `<ol id="shader-list" class="stream-list">${list}</ol>
       <script>window.sessionLines=${JSON.stringify(palettes)}</script>
       <script>window.sessionLength=${total}</script>
+      <script>window.sessionCallback='/palette/'</script>
       <script async defer src="index.js"></script>
       ` + INDEX.substring(offset, INDEX.length)
   return response.send(index)
 }
 
 
-async function renderShader(shader, existingPalette) {
-  let pk3Path = shader.replace(/\.pk3.*?$/gi, '.pk3')
-  let pk3InnerPath = shader.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let levelshot = `${getGame()}/pak0.pk3dir/${pk3InnerPath}?alt`
+async function servePalette(request, response, next) {
+  let isJson = request.url.match(/\?json/)
+  let start = 0
+  let end = 100
+  return await servePaletteReal(start, end, isJson, response)
+}
+
+async function servePaletteRange(request, response, next) {
+  let isJson = request.url.match(/\?json/)
+  let filename = request.originalUrl.replace(/\?.*$/, '')
+  let start = 0
+  let end = 100
+  let rangeString = filename.split(/\/palette\//i)[1]
+  if (rangeString && rangeString.includes('\/')) {
+    start = parseInt(rangeString.split('\/')[0])
+    end = parseInt(rangeString.split('\/')[1])
+  }
+  return await servePaletteReal(start, end, isJson, response)
+}
+
+async function formatPalette(shader, existingPalette) {
   let palette
-  if(typeof existingPalette[pk3Path] != 'undefined') {
-    palette = existingPalette[pk3Path]
+  if(typeof existingPalette[shader.title.toLocaleLowerCase()] != 'undefined') {
+    palette = existingPalette[shader.title.toLocaleLowerCase()]
   } else {
-    palette = await paletteCmd(shader)
+    palette = await paletteCmd(shader.absolute)
+    existingPalette[shader.title.toLocaleLowerCase()] = palette
   }
   let formattedPalette = palette.split(',')
   formattedPalette[3] = Math.round(parseInt(formattedPalette[3]) / 255.0 * 10.0) / 10.0
   formattedPalette = formattedPalette.join(',')
+  shader.palette = formattedPalette
+}
+
+
+// TODO: if I could generilize this, I wouldn't have to rewrite it for every list
+async function renderShader(shader) {
   let result = ''
-  result += `<li style="background-image: url('/${levelshot}')">`
-  result += `<h3><a href="/${levelshot}">`
-  result += `<span>${pk3InnerPath}</span>`
+
+  result += `<li style="background-image: url('/${shader.levelshot}')">`
+  result += `<h3 style="background-color: rgba(${shader.palette})"><a href="/${shader.levelshot}">`
+  result += `<span>${shader.title}</span>`
+  result += shader.bsp && shader.title != shader.bsp
+    ? '<small>' + shader.bsp + '</small>' : '<small>&nbsp;</small>'
   result += `</a></h3>`
-  result += `<img src="/${levelshot}" />`
-  result += `<div class="palette-block" style="background-color: rgba(${formattedPalette})">&nbsp;</div>`
-  result += `<a href="/maps/download/">Download: ${path.basename(pk3Path)}`
+  result += `<img src="/${shader.levelshot}" />`
+  result += `<a href="/maps/download/">Download: ${shader.pakname}`
   return result
 }
 
 module.exports = {
   rebuildPalette,
+  servePaletteRange,
   servePalette,
 }
 

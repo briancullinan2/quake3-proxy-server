@@ -10,7 +10,7 @@ const {findFile} = require('../contentServer/virtual.js')
 const {serveRepacked, serveFinished} = require('../mapServer/repack.js')
 const {STYLES, UNKNOWN, SCRIPTS} = require('../utilities/env.js')
 const { downloadAllMeta } = require('../utilities/metadata.js')
-const { servePalette } = require('../mapServer/palette.js')
+const { servePalette, servePaletteRange } = require('../mapServer/palette.js')
 
 // < 100 LoC
 const express = require('express')
@@ -119,7 +119,7 @@ function createApplication(features) {
 
   if(features.includes('repack')) {
     app.use('/maps/repacked', serveFinished) // /maps/download/%1
-    app.use('/*/palette', servePalette)
+    app.use(/\/palette\/[0-9]+\/[0-9]+/i, servePaletteRange)
     app.use('/palette', servePalette)
     app.use(serveRepacked) // /maps/download/%1
   }
