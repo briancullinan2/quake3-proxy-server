@@ -125,6 +125,10 @@ body > img {
   flex-wrap: wrap;
 }
 
+#shader-list li {
+  width: 200px;
+}
+
 #map-list li, #game-list li, .stream-list li {
   width: 300px;
   white-space: normal;
@@ -205,8 +209,17 @@ body > img {
   overflow: hidden;
 }
 
+#map-info ol.tracemaps li {
+  max-width: 100px;
+}
+#map-info ol.shaders li {
+  max-width: 100px;
+}
+
 #map-info ol.shaders li img {
   box-shadow: none;
+  max-height: 100px;
+  max-width: 100px;
 }
 
 
@@ -223,18 +236,20 @@ body > img {
 
 .shaders li a:hover {
   width: auto;
-  transform: translateX(calc(200px - 100%));
+  transform: translateX(calc(100px - 100%));
 }
 
 #map-info ol.shaders li img + a + img {
-  position:absolute;
+  position:
+  absolute;
   top: 20px;
   left: 20px;
   right: 20px;
   bottom: 20px;
   min-width: 70%;
   min-height: 0;
-  width:auto;
+  width:
+  auto;
 }
 
 #map-info ol.shaders li img + a + img + a + img {
@@ -249,12 +264,16 @@ body > img {
 }
 
 
-#map-list a:hover span, #game-list a:hover span {
+#map-list a:hover span, #game-list a:hover span, .stream-list a:hover span {
   width: auto;
   transform: translateX(calc(300px - 100%));
 }
 
-#map-list li a, #game-list li a {
+#shader-list a:hover span {
+  transform: translateX(calc(200px - 100%));
+}
+
+#map-list li a, #game-list li a, .stream-list li a {
   color: #CCC;
   text-decoration: none;
   display: block;
@@ -263,7 +282,7 @@ body > img {
   overflow: hidden;
 }
 
-#map-list li > a, #game-list li > a {
+#map-list li > a, #game-list li > a, .stream-list li > a {
   text-shadow: 1px 2px 3px rgba(0, 0, 0, 1), 0px 1px 6px rgba(255, 255, 255, 1);
 }
 

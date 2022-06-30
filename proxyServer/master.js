@@ -92,6 +92,12 @@ async function getserversResponse(socket, message, rinfo) {
       address: buffer[1] + '.' + buffer[2] + '.' + buffer[3] + '.' + buffer[4],
       port: (buffer[5] << 8) + buffer[6],
     }
+    if(rinfo.port == 0) {
+      rinfo.port = 27960
+    }
+    if(rinfo.address == '0.0.0.0') {
+      rinfo.address = '127.0.0.1'
+    }
     GAME_SERVERS[challenge] = rinfo
     //console.log(rinfo)
     sendOOB(socket, msg, rinfo)

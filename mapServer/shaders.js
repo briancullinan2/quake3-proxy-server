@@ -97,11 +97,11 @@ async function FindShaderInShaderText(shaderName) {
   for(let l = 0; l < SHADER_BODY[lower].length; l++) {
     let line = SHADER_BODY[lower][l]
     let match
-    if((match = (/map ([\/\w-]+)/gi).exec(line))) {
-      result.push(match[1])
+    if((match = (/map ([\/\w-\._]+)/gi).exec(line))) {
+      result.push(match[1] + (match[1].includes('.') ? '' : '.tga'))
     }
     if(line.match(/implicit/gi) && !result.includes(shaderName)) {
-      result.push(shaderName)
+      result.push(shaderName + (shaderName.includes('.') ? '' : '.tga'))
     }
   }
 

@@ -42,6 +42,7 @@ async function refreshMapinfo() {
 //window.addEventListener('scroll', refreshMaps)
 let previousLine = 0
 let previousHalf = 0
+let loading = 0
 
 async function refreshMaps() {
   if(!mapList || !mapList.children[0]) {
@@ -112,7 +113,7 @@ async function refreshMaps() {
     let object = window.sessionLines[ariaId]
 
     let item = mapList.children[i]
-    if(!object) {
+    if(!object && !loading) {
       item.style.display = 'none'
       continue
     } else 
@@ -122,7 +123,9 @@ async function refreshMaps() {
     if(updateVisibility && parseInt(item.getAttribute('aria-id')) == ariaId) {
       continue
     }
-
+    if(!object) {
+      continue
+    }
     item.style.backgroundImage = `url(${object.levelshot})`
 
     let title = item.children[0].children[0].children[0]
@@ -169,14 +172,24 @@ async function loadNextPage(page, halfwareMark) {
     return
   }
 
-  let response = await fetch( page
-      + (halfwareMark * 50 - 50) + '/' 
-      + (halfwareMark * 50 + 150) + '?json', {
-    mode: 'cors',
-    responseType: 'json',
-    credentials: 'omit',
-  })
-  let json = await response.json()
+  let json
+  loading++
+  try {
+    let response = await fetch( page
+        + (halfwareMark * 50 - 50) + '/' 
+        + (halfwareMark * 50 + 150) + '?json', {
+      mode: 'cors',
+      responseType: 'json',
+      credentials: 'omit',
+    })
+    json = await response.json()
+    loading--
+  } catch (e) {
+    console.error(e)
+    loading--
+    return
+  }
+
   for(let i = 0; i < json.length; i++) {
     window.sessionLines[(halfwareMark * 50 - 50) + i] = json[i]
   }
