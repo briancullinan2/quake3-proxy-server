@@ -1,3 +1,12 @@
+
+const SUPPORTED_SERVICES = [
+  'proxy', 'maps', 'master', 'mirror', 'dedicated',
+  'redirect', 'games', 'content', 'repack', 'discord',
+  'virtual', 'live', 'mods', 'palette', 'process', 
+  'assets', 'metadata',
+  'all'
+]
+
 const CONTENT_FEATURES = {
   'maps': {
     title: 'Pk3 Server / Map upload',
@@ -6,32 +15,32 @@ const CONTENT_FEATURES = {
   },
   'games': {
     title: 'Game Server / Live spectate',
-    links: 'games',
+    link: 'games',
     levelshot: ``,
   },
-  'palettes': {
+  'palette': {
     title: 'List Shaders / Palettes',
-    links: 'palette',
+    link: 'palette',
     levelshots: ``,
   },
   'mods': {
     title: 'Mods List / Supported games',
-    links: 'mods',
+    link: 'mods',
     levelshot: ``,
   },
   'metadata': {
     title: 'Metadata / List datas',
-    links: 'metadata',
+    link: 'metadata',
     levelshot: ``,
   },
   'process': {
     title: 'Process server / Transcoding',
-    links: 'process',
+    link: 'process',
     levelshot: ``,
   },
   'assets': {
     title: 'Asset server / Virtual pk3s',
-    links: 'assets',
+    link: 'assets',
     levelshot: ``,
   }
 }
@@ -39,5 +48,6 @@ const CONTENT_FEATURES = {
 // TODO: some sort of registration system?
 
 module.exports = {
-  CONTENT_FEATURES
+  SUPPORTED_SERVICES,
+  CONTENT_FEATURES,
 }

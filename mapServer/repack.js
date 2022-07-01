@@ -4,7 +4,6 @@ const path = require('path')
 const { findFile } = require('../assetServer/virtual.js')
 const { MAP_DICTIONARY } = require('../mapServer/serve-download.js')
 const { streamFileKey } = require('../utilities/zip.js')
-const { execCmd } = require('../utilities/exec.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/serve-virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
@@ -19,21 +18,7 @@ async function repackPk3(directory, newZip) {
     if(await unsupportedAudio(directory[i])) {
       continue
     }
-    let newDir = directory[i].replace(/\.pk3.*/gi, '.pk3dir')
-    let pk3InnerPath = directory[i].replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-    //console.log(directory[i])
-
-    let startArgs = []
-    if(!first) {
-      startArgs.push('-u')
-    }
-    startArgs.push.apply(startArgs, [
-      '../' + path.basename(newZip), path.join('./', pk3InnerPath)
-    ])
-    let output = await execCmd(
-      //process.env.SHELL, ['-c', 'pwd'
-      'zip', startArgs, { cwd: newDir, /* shell: true */ })
-    //console.log(output)
+    await zipCmd(directory[i], !first, newZip)
     first = false
   }
   return newZip
@@ -73,7 +58,6 @@ async function repackBasemap(mapname) {
 
 
 module.exports = {
-  serveRepacked,
-  serveFinished,
+  repackBasemap,
   repackPk3,
 }

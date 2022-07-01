@@ -3,12 +3,10 @@ const { serveMaps, serveDownload, serveMapsRange } = require('../mapServer/serve
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
 const { downloadAllMeta } = require('../utilities/metadata.js')
-const { CONTENT_FEATURES } = require('../contentServer/features.js')
-const { renderFeature, renderIndex } = require('../utilities/render.js')
+const { serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
 
 
 function setupExtensions(features, app) {
-
 
   if (features.includes('all')
     || features.includes('games')) {
@@ -18,10 +16,19 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('maps')) {
-    app.use(/\/maps\/[0-9]+\/[0-9]+/i, serveMapsRange)
-    app.use(/\/maps\/.+/, serveMapInfo)
-    app.use('/maps', serveMaps)
+    app.use(/\/maps\/[0-9]+\/[0-9]+$/i, serveMapsRange)
+    app.use(/\/maps\/[^\/]+$/i, serveMapInfo)
+    app.use(/\/maps\/?$/i, serveMaps)
   }
+
+  if (features.includes('all')
+    || features.includes('mods')) {
+    app.use(/\/mods\/[0-9]+\/[0-9]+/i, serveModsRange)
+    app.use('/mods', serveMods)
+  }
+
+
+
   return
 
   if (features.includes('all')
@@ -60,13 +67,6 @@ function setupExtensions(features, app) {
 }
 
 
-async function serveIndex(features, response) {
-  let index = renderIndex(
-    `<ol id="feature-list" class="stream-list">${features
-      .map(f => renderFeature(CONTENT_FEATURES[f]))}</ol>`)
-  return response.send(index)
-}
-
 /*
 // TODO: if I could generilize this, I wouldn't have to rewrite it for every list
 async function renderShader(shader) {
@@ -86,6 +86,5 @@ async function renderShader(shader) {
 */
 
 module.exports = {
-  serveIndex,
   setupExtensions,
 }

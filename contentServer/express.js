@@ -1,5 +1,7 @@
 const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
-const {setupExtensions} = require('../contentServer/serve-http.js')
+const { setupExtensions } = require('../contentServer/serve-http.js')
+const { CONTENT_FEATURES, SUPPORTED_SERVICES } = require('../contentServer/features.js')
+const { renderFeature, renderIndex } = require('../utilities/render.js')
 
 // < 100 LoC
 const express = require('express')
@@ -26,7 +28,13 @@ function createApplication(features) {
       return res.sendFile(SCRIPTS)
     }
     if (filename.length <= 1 || filename.match('/index.html')) {
-      return serveIndex(features, res)
+      let featureList = features.concat(SUPPORTED_SERVICES)
+          .filter((s, i, arr) => arr.indexOf(s) == i)
+          .map(f => renderFeature(CONTENT_FEATURES[f]))
+          .filter(f => f).join('\n')
+      let index = renderIndex(
+        `<ol id="feature-list" class="stream-list">${featureList}</ol>`)
+      return res.send(index)
     }
     next()
   })

@@ -10,8 +10,7 @@ async function getIndex(pk3Path) {
   let zip
   if(pk3Path instanceof StreamZip) {
     zip = pk3Path
-  } else
-  /* if(!fs.existsSync(pk3Path)) */ {
+  } else /* if(!fs.existsSync(pk3Path)) */ {
     // if the index has already been loaded, use the
     //   loaded copy until the zip file changes
     let newMtime = fs.statSync(pk3Path).mtime.getTime()

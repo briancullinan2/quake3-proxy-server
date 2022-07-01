@@ -13,12 +13,8 @@ const { serveDedicated } = require('./gameServer/serve-process.js')
 const { 
   setDownload, setRepack, downloadCache, repackedCache, setGame 
 } = require('./utilities/env.js')
+const { SUPPORTED_SERVICES } = require('./contentServer/features.js')
 
-const SUPPORTED_SERVICES = [
-  'proxy', 'maps', 'master', 'mirror', 'dedicated',
-  'redirect', 'games', 'content', 'repack', 'discord',
-  'virtual', 'live', 'mods', 'all'
-]
 const START_SERVICES = ['all']
 
 let forwardIP = ''

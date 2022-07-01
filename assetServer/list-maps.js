@@ -19,7 +19,7 @@ async function existingMaps() {
       let mapname = path.basename(bsp.key).replace(/\.bsp/ig, '').toLocaleLowerCase()
       MAP_DICTIONARY[mapname] = basename
       return {
-        link: `maps/download/${mapname}`,
+        link: `maps/${mapname}`,
         levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
         pakname: basename.replace('map-', '').replace('map_', ''),
         title: mapname,
