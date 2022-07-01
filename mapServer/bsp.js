@@ -4,10 +4,10 @@ const fs = require('fs')
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
-const { sourcePk3Download } = require('../mapServer/serve-download.js')
+const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackedCache } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
-const { layeredDir } = require('../contentServer/serve-virtual.js')
+const { layeredDir } = require('../assetServer/layered.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { ScanAndLoadShaderFiles } = require('../assetServer/shaders.js')
 
@@ -20,7 +20,7 @@ const MAP_ARENAS = {
 }
 
 
-async function listImages() {
+async function listImages(mapname) {
 
   let imagesFile = path.join(repackedCache(), '/maps/', mapname + '-images.txt')
   if (!fs.existsSync(imagesFile)) {
@@ -94,7 +94,7 @@ async function getMapInfo(mapname) {
     console.error('WARNING: shaders not found: ' + mapname)
   }
 
-
+  let images = await listImages(mapname)
 
   let worldspawn = []
   let entityStr = entities

@@ -1,16 +1,13 @@
 const fs = require('fs')
 const path = require('path')
 
-const { findFile, modDirectory } = require('../assetServer/virtual.js')
-const { IMAGE_FORMATS, AUDIO_FORMATS, repackedCache } = require('../utilities/env.js')
-const { MAP_DICTIONARY, existingMaps, sourcePk3Download } = require('../mapServer/serve-download.js')
+const { findFile } = require('../assetServer/virtual.js')
+const { MAP_DICTIONARY } = require('../mapServer/serve-download.js')
 const { streamFileKey } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/serve-virtual.js')
-const { unpackBasegame, alternateImage, alternateAudio } = require('../mapServer/unpack.js')
 const { getGame } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
-
 
 
 async function repackPk3(directory, newZip) {

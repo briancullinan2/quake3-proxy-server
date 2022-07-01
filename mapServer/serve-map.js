@@ -1,12 +1,13 @@
+// TODO: way to complicated of rendering
+
 // TODO: rank, comment, review, like lvlworld
 const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
-const {MAP_DICTIONARY, existingMaps} = require('./serve-download.js')
-const { INDEX } = require('../utilities/env.js')
-const { unsupportedImage } = require('../contentServer/serve-virtual.js')
-const {FindShaderInShaderText} = require('../assetServer/shaders.js')
+const { INDEX, getGame } = require('../utilities/env.js')
+const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
+const { unsupportedImage } = require('../contentServer/unsupported.js')
+const { FindShaderInShaderText } = require('../assetServer/shaders.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 
 
@@ -18,10 +19,10 @@ async function serveMapInfo(request, response, next) {
   //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
-  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
+  if (typeof MAP_DICTIONARY[mapname] == 'undefined') {
     return next(new Error('Map not found ' + mapname))
   }
-  
+
   let newFile = findFile(basegame + '/' + MAP_DICTIONARY[mapname])
   if (!newFile) {
     return next(new Error('Map not found ' + mapname))
@@ -139,26 +140,26 @@ async function renderImages(images, pk3name, basegame) {
   } */)
   // text in shaders, like Q3e renderer does
   let composites = await Promise.all(images.map(i => {
-    if(i[0] == '*') {
+    if (i[0] == '*') {
       return
     }
     return FindShaderInShaderText(i.replace(path.extname(i), ''))
   }))
   let previousGroup = ''
-  for(let i = 0; i < images.length; i++) {
-    if(images[i][0] == '*') {
+  for (let i = 0; i < images.length; i++) {
+    if (images[i][0] == '*') {
       continue
     }
-    if(!images[i].includes('.')) {
+    if (!images[i].includes('.')) {
       images[i] += '.tga'
     }
     let ai = images[i].indexOf('/')
     let left = ai > -1 ? images[i].substring(ai + 1) : images[i]
-    if(previousGroup.localeCompare(images[i].substring(0, ai), 'en', {sensitivity: 'base'}) != 0) {
+    if (previousGroup.localeCompare(images[i].substring(0, ai), 'en', { sensitivity: 'base' }) != 0) {
       previousGroup = images[i].substring(0, ai)
       imageHtml += `<li class="title"><span>${images[i].substring(0, ai)}</span></li>`
     }
-    if(composites[i] && composites[i].length > 0) {
+    if (composites[i] && composites[i].length > 0) {
       imageHtml += `<li>${composites[i].map(function (shader) {
         let bi = shader.indexOf('/')
         return `
@@ -166,13 +167,13 @@ async function renderImages(images, pk3name, basegame) {
           <a href="">${bi > -1 ? shader.substring(bi + 1) : shader}</a>`
       }).join('')}</li>`
     } else
-    if(await unsupportedImage(images[i])) {
-      imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="/${basegame}/${pk3name}dir/${images[i]}?alt">${left}</a></li>`
-    } else {
-      imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}" /><a href="/${basegame}/${pk3name}dir/${images[i]}">${left}</a></li>`
-    }
+      if (await unsupportedImage(images[i])) {
+        imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}?alt" /><a href="/${basegame}/${pk3name}dir/${images[i]}?alt">${left}</a></li>`
+      } else {
+        imageHtml += `<li><img src="/${basegame}/${pk3name}dir/${images[i]}" /><a href="/${basegame}/${pk3name}dir/${images[i]}">${left}</a></li>`
+      }
   }
-  
+
   return `
   <li class="title"><span>World</span></li>
   <li class="title"><span>Overrides</span></li>

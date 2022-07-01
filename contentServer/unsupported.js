@@ -1,3 +1,6 @@
+const path = require('path')
+const { AUDIO_FORMATS, IMAGE_FORMATS } = require('../utilities/env.js')
+
 
 function unsupportedImage(imagePath) {
   if(!IMAGE_FORMATS.includes(path.extname(imagePath))) {

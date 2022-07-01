@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const {PassThrough, Readable} = require('stream')
 
-const EXISTING_INDEX = {}
+const EXISTING_ZIPS = {}
 const EXISTING_MTIME = {}
 
 async function getIndex(pk3Path) {
@@ -17,8 +17,8 @@ async function getIndex(pk3Path) {
     let newMtime = fs.statSync(pk3Path).mtime.getTime()
     if(typeof EXISTING_MTIME[pk3Path] != 'undefined'
       && EXISTING_MTIME[pk3Path] >= newMtime
-      && typeof EXISTING_INDEX[pk3Path] != 'undefined') {
-      return EXISTING_INDEX[pk3Path]
+      && typeof EXISTING_ZIPS[pk3Path] != 'undefined') {
+      return EXISTING_ZIPS[pk3Path]
     }
     EXISTING_MTIME[pk3Path] = newMtime
     zip = new StreamZip({
@@ -46,7 +46,7 @@ async function getIndex(pk3Path) {
     entry.zip = zip
   }
   EXISTING_MTIME[pk3Path] = Date.now()
-  return (EXISTING_INDEX[pk3Path] = index)
+  return (EXISTING_ZIPS[pk3Path] = index)
 }
 
 
@@ -106,7 +106,7 @@ async function readFileKey(pk3Path, fileKey) {
 
 
 module.exports = {
-  EXISTING_INDEX,
+  EXISTING_ZIPS,
   getIndex,
   streamFileKey,
   streamFile,

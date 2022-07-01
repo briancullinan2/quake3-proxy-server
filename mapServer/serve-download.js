@@ -27,11 +27,12 @@
 const fs = require('fs')
 const path = require('path')
 
-const { findFile } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
-const { downloadCache, INDEX } = require('../utilities/env.js')
+const { LVLWORLD_DB, downloadCache } = require('../utilities/env.js')
+const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
+const { renderList, renderIndex } = require('../utilities/render.js')
+const { existingMaps } = require('../assetServer/list-maps.js')
 
-const { LVLWORLD_DB } = require('../utilities/env.js')
+
 const MAP_LIST = require(path.join(LVLWORLD_DB, 'maplist.json'))
   .reduce((obj, item) => {
     obj[item.id] = item.fileName
@@ -42,35 +43,6 @@ const MAP_LIST_LOWER = Object.keys(MAP_LIST)
     obj[key] = MAP_LIST[key].toLocaleLowerCase()
     return obj
   }, {})
-const MAP_SOURCES = {}
-
-
-async function sourcePk3Download(filename) {
-  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-  let source
-  if (typeof MAP_SOURCES[mapname] != 'undefined') {
-    return MAP_SOURCES[mapname]
-  }
-
-  if (typeof MAP_DICTIONARY[mapname] != 'undefined') {
-    let pk3name = MAP_DICTIONARY[mapname]
-    let cached = findFile(getGame() + '/' + pk3name)
-    if (cached) {
-      source = cached
-    } else
-      if ((cached = findFile('baseq3/' + pk3name))) {
-        source = cached
-      } else
-        if (fs.existsSync(path.join(downloadCache(), pk3name))) {
-          source = path.join(downloadCache(), pk3name)
-        }
-  }
-
-  if (source) {
-    MAP_SOURCES[mapname] = source
-  }
-  return source
-}
 
 
 
@@ -123,15 +95,7 @@ async function serveMapsReal(start, end, isJson, response) {
   }
 
   let total = mapsAvailable.length
-  let list = (await Promise.all(maps.map(map => renderMap(map)))).join('')
-  let offset = INDEX.match('<body>').index + 6
-  let index = INDEX.substring(0, offset)
-      + `<ol id="map-list" class="stream-list">${list}</ol>
-      <script>window.sessionLines=${JSON.stringify(maps)}</script>
-      <script>window.sessionLength=${total}</script>
-      <script>window.sessionCallback='/maps/'</script>
-      <script async defer src="index.js"></script>
-      ` + INDEX.substring(offset, INDEX.length)
+  let index = renderIndex(renderList('/maps/', maps, total))
   return response.send(index)
 }
 
@@ -144,27 +108,7 @@ async function serveMaps(request, response, next) {
 }
 
 
-async function renderMap(map) {
-  let result = ''
-  result += `<li style="background-image: url('${map.levelshot}')">`
-  result += `<h3><a href="/${map.link}">`
-  result += `<span>${map.title}</span>`
-  result +=  map.bsp && map.title != map.bsp
-          ? `<small>${map.bsp}</small>` 
-          : '<small>&nbsp;</small>'
-  result += `</a></h3>`
-  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
-  result += `<a href="/maps/download/${map.bsp}">Download: ${map.pakname}`
-  //result += map.pakname.includes('.pk3') ? '' : '.pk3'
-  return result
-}
-
-
-
 module.exports = {
-  //MAP_TITLES,
-  //MAP_SOURCES,
-  sourcePk3Download,
   serveMaps,
   serveDownload,
   serveMapsRange,

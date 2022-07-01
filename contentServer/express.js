@@ -1,5 +1,5 @@
-const { STYLES, UNKNOWN, SCRIPTS } = require('../utilities/env.js')
-const {serveExtensions} = require('../contentServer/serve-http.js')
+const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
+const {setupExtensions} = require('../contentServer/serve-http.js')
 
 // < 100 LoC
 const express = require('express')
@@ -31,19 +31,19 @@ function createApplication(features) {
     next()
   })
 
-  serveExtensions(features, app)
+  setupExtensions(features, app)
 
   return app
 }
 
-function createRedirect(forward) {
+function createRedirect() {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
 
   app.use(function (request, response, next) {
-    let newLocation = forward
-    if (!forward) {
+    let newLocation = redirectAddress()
+    if (!newLocation) {
       newLocation = request.headers['host']
         .replace(/\:[0-9]+$/, '') + http[0]
     }
@@ -53,8 +53,31 @@ function createRedirect(forward) {
   return app
 }
 
+const HTTP_PORTS = [8080]
+const HTTP_LISTENERS = []
+const WEB_SOCKETS = []
+
+function createWebServers(services) {
+  const { createServer } = require('http')
+  let virtualApp = createApplication(services)
+
+  for (let i = 0; i < HTTP_PORTS.length; i++) {
+    // http
+    let httpServer = createServer(virtualApp).listen(HTTP_PORTS[i])
+    HTTP_LISTENERS[HTTP_PORTS[i]] = httpServer
+    if (services.includes('socks')) {
+      const { Server } = require('ws')
+      WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
+      WEB_SOCKETS[HTTP_PORTS[i]].on('connection', createSOCKS)
+    }
+  }
+
+}
+
 module.exports = {
+  HTTP_PORTS,
+  HTTP_LISTENERS,
+  createWebServers,
   createRedirect,
   createApplication,
-
 }

@@ -176,6 +176,15 @@ async function parseSOCKS(socket, message) {
   throw new Error('should forward')
 }
 
+// tcp
+function createTCP(port) {
+  const { createServer } = require('net')
+  let tcp = createServer().listen(port)
+  tcp.on('connection', createSOCKS)
+  return tcp
+}
+
+
 async function sendMessage(socket, messageBuffer) {
   let {buffer, address} = await parseAddress(messageBuffer)
   let port = (buffer[0] << 8) + buffer[1]

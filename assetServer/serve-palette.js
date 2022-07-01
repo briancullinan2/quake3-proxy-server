@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const { INDEX, getGame, repackedCache } = require('../utilities/env.js')
+const { getGame, repackedCache } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { existingMaps } = require('../mapServer/serve-download.js')
 const { parseExisting } = require('./list-palettes.js')
@@ -42,16 +42,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
   }
 
   let total = palettesNeeded.length
-  let list = (await Promise.all(palettes.map(shader =>
-    renderShader(shader)))).join('')
-  let offset = INDEX.match('<body>').index + 6
-  let index = INDEX.substring(0, offset)
-    + `<ol id="shader-list" class="stream-list">${list}</ol>
-      <script>window.sessionLines=${JSON.stringify(palettes)}</script>
-      <script>window.sessionLength=${total}</script>
-      <script>window.sessionCallback='/palette/'</script>
-      <script async defer src="index.js"></script>
-      ` + INDEX.substring(offset, INDEX.length)
+  let index = renderIndex(renderList('/palette/', palettes, total))
   return response.send(index)
 }
 
@@ -104,22 +95,6 @@ async function formatPalette(shader, existingPalette) {
   shader.palette = formattedPalette
 }
 
-
-// TODO: if I could generilize this, I wouldn't have to rewrite it for every list
-async function renderShader(shader) {
-  let result = ''
-  result += `<li style="background-image: url('/${shader.levelshot}')">`
-  result += `<h3 style="background-color: rgba(${shader.palette})">`
-  result += `<a href="/${shader.link}">`
-  result += `<span>${shader.title}</span>`
-  result += shader.bsp && shader.title != shader.bsp
-    ? `<small>${shader.bsp}</small>`
-    : '<small>&nbsp;</small>'
-  result += `</a></h3>`
-  result += `<img src="/${shader.levelshot}" />`
-  result += `<a href="/maps/download/">Download: ${shader.pakname}`
-  return result
-}
 
 module.exports = {
   servePaletteRange,

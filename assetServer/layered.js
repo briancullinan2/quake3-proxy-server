@@ -1,3 +1,8 @@
+const path = require('path')
+const fs = require('fs')
+const { MODS_NAMES, MODS } = require('../utilities/env.js')
+const { gameDirectories } = require('../assetServer/virtual.js')
+
 
 // virtual directory
 //  TODO: use in /home/ path for async game assets

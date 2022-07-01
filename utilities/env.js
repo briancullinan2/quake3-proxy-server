@@ -52,6 +52,16 @@ function downloadCache() {
 }
 
 
+let PUBLIC_REDIRECT = 'http://locahost:8080'
+
+function setRedirect(redirect) {
+  PUBLIC_REDIRECT = redirect
+}
+
+function redirectAddress() {
+  return PUBLIC_REDIRECT
+}
+
 if(os.platform == 'win32') {
   FS_BASEPATH = 'C:/Program\ Files/Quake\ III\ Arena'
   STEAMPATH = path.join(PROGRAMPATH, '\/Steam\/steamapps\/common')
@@ -134,5 +144,6 @@ module.exports = {
   downloadCache,
   setRepack,
   setDownload,
-
+  redirectAddress,
+  setRedirect,
 }

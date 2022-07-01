@@ -189,7 +189,7 @@ body > img {
 
 #map-list img.unknownmap, #game-list img.unknownmap
 , .stream-list img.unknownmap {
-  /* height: 150px; */
+  height: 120px;
   width: 180px;
 }
 

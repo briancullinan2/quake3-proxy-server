@@ -1,6 +1,8 @@
-const {MASTER_PORTS} = require('../gameServer/serve-games.js')
-const { createUDP } = require('../proxyServer/serve-udp.js')
+const { lookupDNS } = require('../utilities/dns.js')
+const { serveMaster, sendOOB } = require('./master.js')
+const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
 
+const MASTER_PORTS = [27950]
 const UDP_SOCKETS = []
 const MASTER_SERVERS = [
   'ws://master.quakejs.com:27950',
@@ -9,9 +11,16 @@ const MASTER_SERVERS = [
 ]
 
 function createMasters(mirror) {
-  // udp
+  const { createServer } = require('http')
+  const { createSocket } = require('dgram')
+  let redirectApp
+  if (HTTP_PORTS.length > 0) {
+    redirectApp = createRedirect()
+  }
   for (let i = 0; i < MASTER_PORTS.length; i++) {
-    UDP_SOCKETS[MASTER_PORTS[i]] = createUDP(MASTER_PORTS[i])
+    // udp
+    UDP_SOCKETS[MASTER_PORTS[i]] = createSocket('udp4')
+    UDP_SOCKETS[MASTER_PORTS[i]].bind(MASTER_PORTS[i], '0.0.0.0')
     UDP_SOCKETS[MASTER_PORTS[i]].on('message',
       async function (message, rinfo) {
         try {
@@ -20,6 +29,12 @@ function createMasters(mirror) {
           console.log(e)
         }
       })
+    // since we have an http server to redirect to, if someone visits a service
+    //   port redirect them to a web interface, for their convenience
+    if (HTTP_PORTS.length > 0) {
+      // http
+      HTTP_LISTENERS[MASTER_PORTS[i]] = createServer(redirectApp).listen(MASTER_PORTS[i])
+    }
   }
 
   // I think it would be very fullfuling for our species
@@ -57,5 +72,6 @@ async function queryMaster(master) {
 }
 
 module.exports = {
+  MASTER_PORTS,
   createMasters,
 }

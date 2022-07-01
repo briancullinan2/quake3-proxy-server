@@ -3,6 +3,7 @@
 // serve-finished are pk3 files, 
 //   serve-repacked are virtual files that would only exist after conversion
 
+const { sourcePk3Download } = require('../mapServer/download.js')
 
 
 async function serveFinished(request, response, next) {
