@@ -3,9 +3,9 @@ const path = require('path')
 const fs = require('fs')
 
 const { getGame } = require('../utilities/env.js')
-const { layeredDir } = require('../contentServer/content.js')
+const { layeredDir } = require('../contentServer/serve-virtual.js')
 const { getIndex } = require('../utilities/zip.js')
-const { findFile } = require('../contentServer/virtual.js')
+const { findFile } = require('./virtual.js')
 const { readFileKey } = require('../utilities/zip.js')
 
 

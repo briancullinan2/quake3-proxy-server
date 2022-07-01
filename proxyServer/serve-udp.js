@@ -72,5 +72,6 @@ function createUDP(port) {
 }
 
 module.exports = {
+  serveUDP,
   createUDP,
 }

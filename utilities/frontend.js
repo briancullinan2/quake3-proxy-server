@@ -129,7 +129,12 @@ async function refreshMaps() {
     item.style.backgroundImage = `url(${object.levelshot})`
 
     let title = item.children[0].children[0].children[0]
-    if(title.parentElement.href != '/maps/' + object.bsp) {
+    if(object.link
+      && title.parentElement.href != object.link) {
+      title.parentElement.href = object.link
+    } else
+    if(object.bsp 
+      && title.parentElement.href != '/maps/' + object.bsp) {
       title.parentElement.href = '/maps/' + object.bsp
     }
     if(title.innerText != object.title) {
@@ -137,7 +142,7 @@ async function refreshMaps() {
     }
 
     let mapname = item.children[0].children[0].children[1]
-    if(mapname.innerText != object.bsp) {
+    if(object.bsp && mapname.innerText != object.bsp) {
       mapname.innerText = object.bsp
     }
 

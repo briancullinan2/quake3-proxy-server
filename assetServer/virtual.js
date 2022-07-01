@@ -2,8 +2,8 @@
 const fs = require('fs')
 const path = require('path')
 const {
-  BUILD_DIRECTORY, repackedCache, WEB_DIRECTORY,
-  ASSETS_DIRECTORY, FS_BASEPATH, FS_GAMEHOME, STEAMPATH,
+  BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME,
+  ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
   MODS_NAMES, MODS,
 } = require('../utilities/env.js')
 

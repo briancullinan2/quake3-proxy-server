@@ -1,5 +1,5 @@
 
-const {RESOLVE_DEDICATED, serveDedicated} = require('../gameServer/serve-process.js')
+const {RESOLVE_DEDICATED, serveDedicated} = require('./serve-process.js')
 const {parseOOB} = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1

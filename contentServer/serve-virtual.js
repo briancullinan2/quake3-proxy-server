@@ -1,33 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 const { getIndex } = require('../utilities/zip.js')
-const { findFile, gameDirectories } = require('../contentServer/virtual.js')
-const { AUDIO_FORMATS, IMAGE_FORMATS, FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
+const { findFile } = require('../assetServer/virtual.js')
 
 
-function unsupportedImage(imagePath) {
-  if(!IMAGE_FORMATS.includes(path.extname(imagePath))) {
-    return
-  }
-  if (imagePath.match(/levelshots\//i)) {
-    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.bmp$|\.png$/gi)
-  } else {
-    isUnsupportedImage = imagePath.match(/\.tga$|\.dds$|\.bmp$/gi)
-  }
-  if(isUnsupportedImage || !imagePath.includes('.')) {
-    return imagePath
-  }
-}
-
-function unsupportedAudio(audioPath) {
-  if(!AUDIO_FORMATS.includes(path.extname(audioPath))) {
-    return
-  }
-  let isUnsupportedAudio = !audioPath.match(/\.ogg$/gi)
-  if(isUnsupportedAudio || !audioPath.includes('.')) {
-    return audioPath
-  }
-}
 
 // TODO: would be cool if a virtual directory could span say: 
 //   https://github.com/xonotic/xonotic-data.pk3dir
@@ -64,50 +40,6 @@ async function serveVirtualPk3dir(filename) {
   }
   return directory
 }
-
-// virtual directory
-//  TODO: use in /home/ path for async game assets
-//  like switching mods, downloading skins / maps
-function layeredDir(filepath) {
-  if (filepath.startsWith('/')) {
-    filepath = filepath.substr(1)
-  }
-  let result = []
-  if (filepath.length == 0) {
-    // list available mods
-    if (fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
-      result.push.apply(result, fs.readdirSync(FS_BASEPATH))
-    }
-  }
-  /*
-  let BUILD_ORDER = buildDirectories()
-  for(let i = 0; i < BUILD_ORDER.length; i++) {
-    let newPath = path.join(BUILD_ORDER[i], filepath)
-    if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
-      result.push.apply(result, fs.readdirSync(newPath))
-    }
-  }
-  */
-  let basename = MODS_NAMES.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
-  if (basename > -1) {
-    let GAME_ORDER = gameDirectories(MODS[basename])
-    for (let i = 0; i < GAME_ORDER.length; i++) {
-      let newPath = path.join(GAME_ORDER[i], filepath.substr(MODS[basename].length))
-      if (fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
-        result.push.apply(result, fs.readdirSync(newPath))
-      }
-    }
-  }
-  // because even if its empty, there will be a link to parent ..
-  if (result.length) {
-    return result.filter((r, i, arr) =>
-      !r.startsWith('.') && arr.indexOf(r) === i)
-      .map(dir => path.join(filepath, dir))
-  } else {
-    return false
-  }
-}
-
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -158,18 +90,13 @@ async function serveVirtual(request, response, next) {
   if (isJson) {
     return response.json(directory)
   } else {
-    return '<ol>'
-      + response.send(directory.map(node =>
+    return '<ol>' + response.send(directory.map(node =>
         `<li><a href="/${node}?alt">${node}</a></li>`).join('\n'))
-      + '</ol>'
+        + '</ol>'
   }
 }
 
 module.exports = {
-  gameDirectories,
   serveVirtual,
-  layeredDir,
-  unsupportedImage,
-  unsupportedAudio,
 }
 

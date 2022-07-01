@@ -7,8 +7,9 @@
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
 const fs = require('fs')
-const {createProxies} = require('./proxyServer/serve-web.js')
-const {createMasters, MASTER_PORTS} = require('./gameServer/serve-games.js')
+const {createProxies} = require('./proxyServer/serve-proxy.js')
+const {MASTER_PORTS} = require('./gameServer/serve-games.js')
+const {createMasters} = require('./gameServer/serve-master.js')
 const {serveDedicated} = require('./gameServer/serve-process.js')
 const {setDownload, setRepack, downloadCache, repackedCache, 
   setGame } = require('./utilities/env.js')
@@ -16,9 +17,9 @@ const {setDownload, setRepack, downloadCache, repackedCache,
 const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated', 
   'redirect', 'games', 'content', 'repack', 'discord',
-  'virtual', 'live', 'mods',
+  'virtual', 'live', 'mods', 'all'
 ]
-const START_SERVICES = []
+const START_SERVICES = ['all']
 
 let forward = 'http://locahost:8080'
 let forwardIP = ''
@@ -88,7 +89,8 @@ function parseAguments() {
 function main() {
   parseAguments()
 
-  if(START_SERVICES.includes('master')) {
+  if(START_SERVICES.includes('all')
+      || START_SERVICES.includes('master')) {
     createMasters(START_SERVICES.includes('mirror'))
   }
 
@@ -96,9 +98,11 @@ function main() {
     createProxies(START_SERVICES, forward)
   }
 
-  if(START_SERVICES.includes('dedicated')) {
+  if(START_SERVICES.includes('all')
+      || START_SERVICES.includes('dedicated')) {
     serveDedicated()
   }
+  
 }
 
 
@@ -115,6 +119,9 @@ for(let i = 0; i < process.argv.length; i++) {
     runServer = true
   } else
   if(SUPPORTED_SERVICES.includes(a)) {
+    if(START_SERVICES.length == 1 && START_SERVICES[0] == 'all') {
+      START_SERVICES.pop()
+    }
     START_SERVICES.push(a)
   }
 }

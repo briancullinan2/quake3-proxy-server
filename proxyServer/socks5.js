@@ -1,4 +1,6 @@
 
+const {serveUDP} = require('../proxyServer/serve-udp.js')
+
 const WS_CONNECTIONS = []
 
 const CMD = {
@@ -190,6 +192,7 @@ async function sendMessage(socket, messageBuffer) {
 }
 
 module.exports = {
-  parseOOB
+  createSOCKS,
+  parseOOB,
 }
 

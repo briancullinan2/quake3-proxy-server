@@ -26,11 +26,10 @@
 //   on Github will be reset.
 const fs = require('fs')
 const path = require('path')
-const { findFile } = require('../contentServer/virtual.js')
+
+const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { downloadCache, INDEX } = require('../utilities/env.js')
-const { layeredDir } = require('../contentServer/content.js')
-const { getIndex } = require('../utilities/zip.js')
 
 const { LVLWORLD_DB } = require('../utilities/env.js')
 const MAP_LIST = require(path.join(LVLWORLD_DB, 'maplist.json'))
@@ -43,7 +42,6 @@ const MAP_LIST_LOWER = Object.keys(MAP_LIST)
     obj[key] = MAP_LIST[key].toLocaleLowerCase()
     return obj
   }, {})
-const MAP_DICTIONARY = {}
 const MAP_SOURCES = {}
 
 
@@ -74,34 +72,6 @@ async function sourcePk3Download(filename) {
   return source
 }
 
-
-async function existingMaps() {
-  let basegame = getGame()
-  let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
-  let maps = (await Promise.all(pk3files.map(async function (pk3name) {
-    let basename = path.basename(pk3name)
-    let index = await getIndex(findFile(pk3name))
-    let bsps = index.filter(item => item.key.endsWith('.bsp'))
-    let pakname = basename.replace('map-', '').replace('map_', '')
-    return bsps.map(function (bsp) {
-      let mapname = path.basename(bsp.key).replace(/\.bsp/ig, '').toLocaleLowerCase()
-      MAP_DICTIONARY[mapname] = basename
-      return {
-        levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
-        pakname: basename.replace('map-', '').replace('map_', ''),
-        title: mapname,
-        bsp: mapname,
-        have: true,
-      }
-      //return `/${basegame}/${pakname}dir/maps/${mapname}.bsp`
-    })
-  }))).flat(1)
-  let mapsNames = maps.map(m => m.bsp)
-  let uniqueMaps = maps.filter((m, i) => mapsNames.indexOf(m.bsp) == i)
-  uniqueMaps.sort()
-  return uniqueMaps
-}
 
 
 async function serveDownload(request, response, next) {
@@ -177,10 +147,11 @@ async function serveMaps(request, response, next) {
 async function renderMap(map) {
   let result = ''
   result += `<li style="background-image: url('${map.levelshot}')">`
-  result += `<h3><a href="/maps/${map.bsp}">`
+  result += `<h3><a href="/${map.link}">`
   result += `<span>${map.title}</span>`
   result +=  map.bsp && map.title != map.bsp
-    ? '<small>' + map.bsp + '</small>' : '<small>&nbsp;</small>'
+          ? `<small>${map.bsp}</small>` 
+          : '<small>&nbsp;</small>'
   result += `</a></h3>`
   result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
   result += `<a href="/maps/download/${map.bsp}">Download: ${map.pakname}`
@@ -191,12 +162,10 @@ async function renderMap(map) {
 
 
 module.exports = {
-  MAP_DICTIONARY,
   //MAP_TITLES,
   //MAP_SOURCES,
   sourcePk3Download,
   serveMaps,
   serveDownload,
   serveMapsRange,
-  existingMaps,
 }

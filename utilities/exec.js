@@ -1,28 +1,35 @@
 
 let LIMIT = 0
 let RUNNING = 0
-const PROCESS_TIMEOUT = 10000
+const PROCESS_TIMEOUT = 20000 // 20 seconds?
 const PROCESS_INTERVAL = 100
+const PROCESS_LIMIT = 5
 
 async function execCmd(cmd, args, options) {
   const {spawn} = require('child_process')
   LIMIT++
-  if(RUNNING >= 10) {
+  if(RUNNING >= PROCESS_LIMIT) {
     let waitCounter = 0
     let waitInterval
-    waitInterval = await new Promise(function (resolve, reject) {
-      setInterval(function () {
-        if(waitCounter > PROCESS_TIMEOUT / PROCESS_INTERVAL) {
-          reject(new Error('Too many running processes!'))
-        } else
-        if(RUNNING < 10) {
-          clearInterval(waitInterval)
-          resolve()
-        } else {
-          waitCounter++
-        }
-      }, PROCESS_INTERVAL)
-    })
+    try {
+      waitInterval = await new Promise(
+      function (resolve, reject) {
+        setInterval(function () {
+          if(waitCounter > PROCESS_TIMEOUT / PROCESS_INTERVAL) {
+            reject(new Error('Too many running processes!'))
+          } else
+          if(RUNNING < PROCESS_LIMIT) {
+            clearInterval(waitInterval)
+            resolve()
+          } else {
+            waitCounter++
+          }
+        }, PROCESS_INTERVAL)
+      })
+    } catch (e) {
+      console.error(e)
+      return
+    }
   }
   console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   return await new Promise(function (resolve, reject) {
