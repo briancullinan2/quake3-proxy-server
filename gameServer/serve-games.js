@@ -3,7 +3,8 @@ const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { GAME_SERVERS } = require('./master.js')
 const { getGame } = require('../utilities/env.js')
-const { renderList, renderIndex } = require('../utilities/render.js')
+const { renderList } = require('../utilities/render.js')
+const { renderIndex } = require('../utilities/render.js')
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -66,7 +67,7 @@ async function serveGamesReal(start, end, isJson, response, next) {
     return response.json(json)
   }
   let total = Object.values(GAME_SERVERS).length
-  let index = renderIndex(renderList('/games/', games, total))
+  let index = renderIndex(renderList('/games/', games, total, 'game-list'))
   return response.send(index)
 }
 

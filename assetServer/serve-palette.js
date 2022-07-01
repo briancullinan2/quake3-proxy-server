@@ -5,10 +5,19 @@ const { getGame, repackedCache } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { existingMaps } = require('../mapServer/serve-download.js')
 const { parseExisting } = require('./list-palettes.js')
+const { renderIndex, renderList } = require('../utilities/render.js')
+const { paletteCmd } = require('../cmdServer/cmd-palette.js')
+const { makePalette } = require('../assetServer/make-palette.js')
+const { parsePalette } = require('../assetServer/list-palettes.js')
 
+let CACHED_PALETTE = ''
 
 async function servePaletteReal(start, end, filterMap, isJson, response) {
   let { palettesNeeded, existingPalette } = await parseExisting()
+  if(CACHED_PALETTE) {
+    existingPalette = Object.assign({}, await parsePalette(CACHED_PALETTE), existingPalette)
+  }
+
   // TODO: filterMap
   if (filterMap) {
     await existingMaps()
@@ -26,15 +35,10 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
   await Promise.all(palettes.map(shader =>
     formatPalette(shader, existingPalette)))
 
-  let paletteFile = path.join(repackedCache(), '/scripts/palette.shader')
+
   // only palettize the current range, not to do too much work per request
   let existingNeeded = palettesNeeded.filter(shader => typeof existingPalette[shader.title.replace(path.extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
-  let newPixels = await makePalette(palettes.concat(existingNeeded), existingPalette)
-  let newPalette = `palettes\/${getGame()}\n
-  {\n
-    ${newPixels.join('\n')}\n
-  }\n`
-  fs.writeFileSync(paletteFile, newPalette)
+  CACHED_PALETTE = await makePalette(palettes.concat(existingNeeded), existingPalette)
 
 
   if (isJson) {

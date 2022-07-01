@@ -1,9 +1,7 @@
+const path = require('path')
 
-const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
-const { sourcePk3Download } = require('../mapServer/download.js')
-const { GAME_SERVERS } = require('./master.js')
 const { MODS_NAMES, getGame } = require('../utilities/env.js')
-const { renderList, renderIndex } = require('../utilities/render.js')
+const { renderIndex, renderList } = require('../utilities/render.js')
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -57,7 +55,30 @@ async function serveModsReal(start, end, isJson, response, next) {
 }
 
 
+async function serveModInfo(request, response, next) {
+  let filename = request.originalUrl.replace(/\?.*$/, '')
+  let isJson = request.originalUrl.match(/\?json/)
+  let modname = path.basename(filename).toLocaleLowerCase()
+
+  return response.send(renderIndex(
+    + `<div id="mod-info" class="info-layout">
+    <h2>${modname}</h2>
+    <h3>Screenshots</h3>
+    <h3>Links</h3>`
+    + renderList('/menu/', [
+      {
+        title: 'Play',
+        link: 'quake3e.html?set%20fs_game%20' + modname,
+      },
+      {
+        title: 'Assets',
+        link: getGame() + '/' + modname,
+      },
+    ], 3)))
+}
+
 module.exports = {
   serveMods,
   serveModsRange,
+  serveModInfo,
 }

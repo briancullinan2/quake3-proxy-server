@@ -3,18 +3,20 @@ const path = require('path')
 
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
-const { layeredDir } = require('../contentServer/serve-virtual.js')
+const { layeredDir } = require('../assetServer/layered.js')
 const { IMAGE_FORMATS, getGame, repackedCache } = require('../utilities/env.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig
 
 function parsePalette(shaderPath) {
+  let existingPalette
   if(!fs.existsSync(shaderPath)) {
-    return {}
+    existingPalette = shaderPath + ''
+  } else {
+    existingPalette = fs.readFileSync(shaderPath).toString('utf-8')
   }
   let palette = {}
   let m
-  let existingPalette = fs.readFileSync(shaderPath).toString('utf-8')
   let match = MATCH_PALETTE
   while((m = (match).exec(existingPalette)) !== null) {
     palette[m[1].replace(path.extname(m[1]), '').toLocaleLowerCase()] = m[2]
@@ -47,8 +49,7 @@ async function parseExisting(pk3files) {
         continue
       }
       if(IMAGE_FORMATS.includes(path.extname(index[i].name))) {
-        let outFile = path.join(repackedCache(), path.basename(newFile) 
-            + 'dir', index[i].name)
+        let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
         palettesNeeded.push({
           size: index[i].compressedSize,
           absolute: outFile,
@@ -91,4 +92,5 @@ async function parseExisting(pk3files) {
 
 module.exports = {
   parseExisting,
+  parsePalette,
 }

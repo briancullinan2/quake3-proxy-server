@@ -13,9 +13,7 @@ const { serveDedicated } = require('./gameServer/serve-process.js')
 const { 
   setDownload, setRepack, downloadCache, repackedCache, setGame 
 } = require('./utilities/env.js')
-const { SUPPORTED_SERVICES } = require('./contentServer/features.js')
-
-const START_SERVICES = ['all']
+const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
 
 let forwardIP = ''
 let noFS = false
@@ -129,10 +127,10 @@ function addCommands(features) {
     terminal: false
   })
   process.stdout.write(': ')
-  console.log = function (...args) {
-    REDIRECTED_LOGS.push(args)
+  //console.log = function (...args) {
+  //  REDIRECTED_LOGS.push(args)
     //previousLog(...args)
-  }
+  //}
   console.error = function (...args) {
     REDIRECTED_ERRORS.push(args)
     previousError(REDIRECTED_ERRORS.length, 'errors:', 

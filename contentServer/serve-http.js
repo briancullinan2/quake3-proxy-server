@@ -3,7 +3,8 @@ const { serveMaps, serveDownload, serveMapsRange } = require('../mapServer/serve
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
 const { downloadAllMeta } = require('../utilities/metadata.js')
-const { serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
+const { serveModInfo, serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
+const { servePalette, servePaletteMap, servePaletteRange} = require('../assetServer/serve-palette.js')
 
 
 function setupExtensions(features, app) {
@@ -11,7 +12,7 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('games')) {
     app.use(/\/games\/[0-9]+\/[0-9]+/i, serveGamesRange)
-    app.use('/games', serveGames)
+    app.use(/\/games\/?$/i, serveGames)
   }
 
   if (features.includes('all')
@@ -24,19 +25,22 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('mods')) {
     app.use(/\/mods\/[0-9]+\/[0-9]+/i, serveModsRange)
-    app.use('/mods', serveMods)
+    app.use(/\/mods\/[^\/]+$/i, serveModInfo)
+    app.use(/\/mods\/?$/i, serveMods)
   }
 
-
+  if (features.includes('all')
+    || features.includes('shaders')) {
+    app.use(/\/palette\/[0-9]+\/[0-9]+/i, servePaletteRange)
+    app.use(/\/palette\/.+/i, servePaletteMap)
+    app.use(/\/palette\/?$/i, servePalette)
+  }
 
   return
 
   if (features.includes('all')
     || features.includes('repack')) {
     app.use('/maps/repacked', serveFinished) // /maps/download/%1
-    app.use(/\/palette\/[0-9]+\/[0-9]+/i, servePaletteRange)
-    app.use(/\/palette\/.+/, servePaletteMap)
-    app.use('/palette', servePalette)
     app.use(serveRepacked) // /maps/download/%1
   }
 
@@ -66,24 +70,6 @@ function setupExtensions(features, app) {
 
 }
 
-
-/*
-// TODO: if I could generilize this, I wouldn't have to rewrite it for every list
-async function renderShader(shader) {
-  let result = ''
-  result += `<li style="background-image: url('/${shader.levelshot}')">`
-  result += `<h3 style="background-color: rgba(${shader.palette})">`
-  result += `<a href="/${shader.link}">`
-  result += `<span>${shader.title}</span>`
-  result += shader.bsp && shader.title != shader.bsp
-    ? `<small>${shader.bsp}</small>`
-    : '<small>&nbsp;</small>'
-  result += `</a></h3>`
-  result += `<img src="/${shader.levelshot}" />`
-  result += `<a href="/maps/download/">Download: ${shader.pakname}`
-  return result
-}
-*/
 
 module.exports = {
   setupExtensions,

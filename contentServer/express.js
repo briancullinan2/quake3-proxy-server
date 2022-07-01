@@ -1,13 +1,22 @@
-const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
+const { INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
 const { setupExtensions } = require('../contentServer/serve-http.js')
-const { CONTENT_FEATURES, SUPPORTED_SERVICES } = require('../contentServer/features.js')
-const { renderFeature, renderIndex } = require('../utilities/render.js')
+const { renderIndex, renderFeature } = require('../utilities/render.js')
+const { getFeatureFilter } = require('../contentServer/features.js')
 
 // < 100 LoC
 const express = require('express')
 express.static.mime.types['wasm'] = 'application/wasm'
 express.static.mime.types['pk3'] = 'application/octet-stream'
 express.static.mime.types['bsp'] = 'application/octet-stream'
+
+// circular dependency
+function serveFeatures(features, response) {
+  let featureList = getFeatureFilter(features)
+  let index = renderIndex(
+    `<ol id="feature-list" class="stream-list">${featureList
+      .map(f => renderFeature(f)).join('')}</ol>`)
+  return response.send(index)
+}
 
 // basic application with a default function to share index files
 // TODO: list included features in it's own index
@@ -16,7 +25,7 @@ function createApplication(features) {
   app.enable('etag')
   app.set('etag', 'strong')
 
-  app.use(function (req, res, next) {
+  app.use(function serveIndex(req, res, next) {
     let filename = req.url.replace(/\?.*$/, '')
     if (filename.match('/index.css')) {
       return res.sendFile(STYLES)
@@ -28,18 +37,21 @@ function createApplication(features) {
       return res.sendFile(SCRIPTS)
     }
     if (filename.length <= 1 || filename.match('/index.html')) {
-      let featureList = features.concat(SUPPORTED_SERVICES)
-          .filter((s, i, arr) => arr.indexOf(s) == i)
-          .map(f => renderFeature(CONTENT_FEATURES[f]))
-          .filter(f => f).join('\n')
-      let index = renderIndex(
-        `<ol id="feature-list" class="stream-list">${featureList}</ol>`)
-      return res.send(index)
+      return serveFeatures(features, res)
     }
     next()
   })
 
+  app.use(/\/features\/?$/i, function (req, res, next) {
+    return serveFeatures(features, res)
+  })
+
   setupExtensions(features, app)
+
+  app.use('*', function (req, res, next) {
+    let index = renderIndex(`Cannot ${req.method} ${req.originalUrl}`)
+    return res.status(404).send(index)
+  })
 
   return app
 }

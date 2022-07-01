@@ -29,7 +29,8 @@ const path = require('path')
 
 const { LVLWORLD_DB, downloadCache } = require('../utilities/env.js')
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
-const { renderList, renderIndex } = require('../utilities/render.js')
+const { renderList } = require('../utilities/render.js')
+const { renderIndex } = require('../utilities/render.js')
 const { existingMaps } = require('../assetServer/list-maps.js')
 
 
@@ -95,7 +96,7 @@ async function serveMapsReal(start, end, isJson, response) {
   }
 
   let total = mapsAvailable.length
-  let index = renderIndex(renderList('/maps/', maps, total))
+  let index = renderIndex(renderList('/maps/', maps, total, 'map-list'))
   return response.send(index)
 }
 

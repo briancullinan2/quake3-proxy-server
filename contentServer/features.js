@@ -1,53 +1,93 @@
 
+const START_SERVICES = ['all']
+
 const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated',
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 
-  'assets', 'metadata',
+  'assets', 'metadata', 'logs', 'users', 'features',
   'all'
 ]
 
 const CONTENT_FEATURES = {
+  'features': {
+    title: 'Features',
+    subtitle: 'Feature List / Site map',
+    link: 'features',
+    levelshot: ``,
+  },
   'maps': {
-    title: 'Pk3 Server / Map upload',
+    title: 'Pk3s',
+    subtitle: 'Pk3 Server / Map upload',
     link: 'maps',
     levelshot: ``,
   },
   'games': {
-    title: 'Game Server / Live spectate',
+    title: 'Games',
+    subtitle: 'Game Server / Live spectate',
     link: 'games',
     levelshot: ``,
   },
   'palette': {
-    title: 'List Shaders / Palettes',
+    title: 'Shaders',
+    subtitle: 'List Shaders / Palettes',
     link: 'palette',
     levelshots: ``,
   },
   'mods': {
-    title: 'Mods List / Supported games',
+    title: 'Mods',
+    subtitle: 'Mods List / Supported games',
     link: 'mods',
     levelshot: ``,
   },
   'metadata': {
-    title: 'Metadata / List datas',
+    title: 'Data',
+    subtitle: 'Metadata / List datas',
     link: 'metadata',
     levelshot: ``,
   },
   'process': {
-    title: 'Process server / Transcoding',
+    title: 'Tasks',
+    subtitle: 'Process Server / Transcoding',
     link: 'process',
     levelshot: ``,
   },
   'assets': {
-    title: 'Asset server / Virtual pk3s',
+    title: 'Assets',
+    subtitle: 'Asset Server / Virtual pk3s',
     link: 'assets',
+    levelshot: ``,
+  },
+  'logs': {
+    title: 'Logs',
+    subtitle: 'Error Logs / Notifications',
+    link: 'logs',
+    levelshot: ``,
+  },
+  'users': {
+    title: 'Users',
+    subtitle: 'Users / Groups / Access',
+    link: 'users',
     levelshot: ``,
   }
 }
 
 // TODO: some sort of registration system?
 
+function getFeatureFilter(features) {
+  let featureList = (features || [])
+  .concat(!features ? START_SERVICES : [])
+  .concat((features || START_SERVICES).includes('all') ? SUPPORTED_SERVICES : [])
+  .filter((s, i, arr) => arr.indexOf(s) == i)
+  .map(f => CONTENT_FEATURES[f])
+  .filter(f => f)
+  return featureList
+}
+
+
 module.exports = {
+  START_SERVICES,
   SUPPORTED_SERVICES,
   CONTENT_FEATURES,
+  getFeatureFilter,
 }
