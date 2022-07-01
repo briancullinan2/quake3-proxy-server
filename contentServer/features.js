@@ -77,7 +77,8 @@ const CONTENT_FEATURES = {
 function getFeatureFilter(features) {
   let featureList = (features || [])
   .concat(!features ? START_SERVICES : [])
-  .concat((features || START_SERVICES).includes('all') ? SUPPORTED_SERVICES : [])
+  .concat((features || START_SERVICES).includes('all') 
+      ? SUPPORTED_SERVICES : [])
   .filter((s, i, arr) => arr.indexOf(s) == i)
   .map(f => CONTENT_FEATURES[f])
   .filter(f => f)

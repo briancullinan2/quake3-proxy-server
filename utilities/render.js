@@ -26,11 +26,11 @@ function renderFeature(map) {
 }
 
 
-function renderMenu(jsonView) {
+function renderMenu(jsonView, id) {
   let list = jsonView.map(game => {
     return `<li><a href="/${game.link}"><span>${game.title}</span></a></li>`
   }).join('')
-  return `<ol class="main-menu">${list}</ol>`
+  return `<ol ${id ? `id="${id}"` : ''} class="main-menu">${list}</ol>`
 }
 
 

@@ -1,7 +1,6 @@
 const { INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
-const { setupExtensions } = require('../contentServer/serve-http.js')
-const { renderIndex, renderFeature } = require('../utilities/render.js')
-const { getFeatureFilter } = require('../contentServer/features.js')
+const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
+const { renderIndex } = require('../utilities/render.js')
 
 // < 100 LoC
 const express = require('express')
@@ -9,14 +8,7 @@ express.static.mime.types['wasm'] = 'application/wasm'
 express.static.mime.types['pk3'] = 'application/octet-stream'
 express.static.mime.types['bsp'] = 'application/octet-stream'
 
-// circular dependency
-function serveFeatures(features, response) {
-  let featureList = getFeatureFilter(features)
-  let index = renderIndex(
-    `<ol id="feature-list" class="stream-list">${featureList
-      .map(f => renderFeature(f)).join('')}</ol>`)
-  return response.send(index)
-}
+
 
 // basic application with a default function to share index files
 // TODO: list included features in it's own index
@@ -49,6 +41,17 @@ function createApplication(features) {
   setupExtensions(features, app)
 
   app.use('*', function (req, res, next) {
+    if(req.headers['accept'] 
+      && !req.headers['accept'].includes('text/html')
+      && req.headers['accept'].includes('application/json')) {
+      return res.json({error: `Cannot ${req.method} ${req.originalUrl}`})
+    } else
+    if(req.headers['accept'] 
+      && !req.headers['accept'].includes('text/html')
+      && req.headers['accept'].includes('image/')) {
+      return res.sendFile(UNKNOWN)
+    }
+    // index page
     let index = renderIndex(`Cannot ${req.method} ${req.originalUrl}`)
     return res.status(404).send(index)
   })

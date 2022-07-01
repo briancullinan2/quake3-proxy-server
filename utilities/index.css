@@ -50,7 +50,8 @@ body > img {
 }
 
 #map-info ol, .info-layout ol {
-  display:flex;
+  display:
+  flex;
   flex-wrap: wrap;
 }
 
@@ -59,26 +60,6 @@ body > img {
   margin:0;
   padding:0;
   max-width: 100%;
-}
-
-.main-menu {
-  flex-wrap: wrap;
-  display: flex;
-}
-
-.main-menu li {
-  background-color: rgb(169, 147, 21);
-  border-radius: 10px;
-  padding: 10px 20px;
-  margin: 0;
-  flex-shrink: 0;
-  color: white;
-  text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);
-}
-
-.main-menu li a {
-  color: white;
-  text-decoration: none;
 }
 
 
@@ -91,21 +72,61 @@ body > img {
   position: relative;
 }
 
+#map-info ol li, .info-layout ol li {
+  flex-shrink: 0;
+}
+
 #map-info ol a, .info-layout ol a {
   display: inline-block;
   color: #CCC;
   text-decoration: none;
 }
 
+.main-menu {
+  flex-wrap: wrap;
+  display: flex;
+  position: relative;
+  z-index: 1;
+}
+
+.main-menu li {
+  background-color: rgb(169, 147, 21);
+  border-radius: 10px;
+  padding: 10px 20px;
+  flex-shrink: 0;
+  color: white;
+  text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#map-info ol.screenshots,
+#map-info ol.tracemaps {
+  flex-wrap: nowrap;
+  overflow-x: scroll;
+}
+
+#map-menu li {
+  background-color: rgb(127, 16, 22);
+}
+
+.main-menu li a {
+  color: white;
+  text-decoration: none;
+}
+
 #map-info ol .title, .info-layout ol .title {
-  width: 200px;
-  display:flex;
+  width: 100px;
+  display:
+  flex;
   /* flex-direction: column; */
   text-align: center;
   vertical-align: middle;
   align-items: center;
-  height: 150px;
+  height: auto;
   justify-content: center;
+  padding-bottom: 40px;
 }
 
 #map-info ol .title span, .info-layout ol .title span {
@@ -118,10 +139,11 @@ body > img {
 
 #map-info ol img, .info-layout ol img {
   width: 100%;
-  max-height: 200px;
+  max-height: 160px;
   max-width: 200px;
   box-shadow: 0px 0px 10px rgb(255 255 255 / 50%);
-  margin:auto;
+  margin:
+  auto;
 }
 
 #map-info .code {
@@ -187,7 +209,7 @@ body > img {
 
 #map-list li::after, 
 #game-list li::after, 
-.stream-list::after {
+.stream-list li::after {
   content: "";
   height: 100%;
   width: 100%;
@@ -203,7 +225,7 @@ body > img {
   display:
   block;
   margin: 0 auto;
-  flex-grow: 0;
+  flex-grow: 1;
   flex-shrink: 0;
   flex-basis: 0;
   height: auto;
@@ -235,6 +257,9 @@ body > img {
   background-color: rgb(127, 16, 22);
 }
 
+#feature-list h3 {
+  background-color: rgb(169, 147, 21);
+}
 
 .shaders li {
   overflow: hidden;

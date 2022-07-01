@@ -4,18 +4,18 @@
 const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
-const { INDEX, getGame } = require('../utilities/env.js')
+const { getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { FindShaderInShaderText } = require('../assetServer/shaders.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
-
+const { renderIndex, renderMenu } = require('../utilities/render.js')
 
 
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()
-  await existingMaps()
+  let mapsAvailable = await existingMaps()
   //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
@@ -28,6 +28,8 @@ async function serveMapInfo(request, response, next) {
     return next(new Error('Map not found ' + mapname))
   }
 
+  let previousMap = mapsAvailable[mapsAvailable.map(map => map.bsp).indexOf(mapname)-1]
+  let nextMap = mapsAvailable[mapsAvailable.map(map => map.bsp).indexOf(mapname)+1]
   let mapInfo
   try {
     mapInfo = await getMapInfo(mapname)
@@ -36,35 +38,96 @@ async function serveMapInfo(request, response, next) {
     return next(e)
   }
 
-  let offset = INDEX.match('<body>').index + 6
-  let index = INDEX.substring(0, offset)
+  let MAP_MENU = [{
+    title: 'Play Now',
+    link: 'index.html?map%20' + mapname,
+  }, {
+    title: 'Download',
+    link: 'maps/download/' + mapname,
+  }, {
+    title: 'Screenshots',
+    link: 'maps/' + mapname + '#screenshots',
+  }, {
+    title: 'Arenas',
+    link: 'maps/' + mapname + '#arenas',
+  }, {
+    title: 'Models',
+    link: 'maps/' + mapname + '#models',
+  }, {
+    title: 'Sounds',
+    link: 'maps/' + mapname + '#sounds',
+  }, {
+    title: 'Shaders',
+    link: 'maps/' + mapname + '#shaders',
+  }, {
+    title: 'Entities',
+    link: 'maps/' + mapname + '#entities',
+  }]
+
+  if(previousMap) {
+    MAP_MENU.push({
+      title: 'Previous: ' + (previousMap.title || previousMap.bsp),
+      link: 'maps/' + previousMap.bsp,
+    })
+  }
+  if(nextMap) {
+    MAP_MENU.push({
+      title: 'Next: ' + (nextMap.title || nextMap.bsp),
+      link: 'maps/' + nextMap.bsp,
+    })
+  }
+
+  let index = renderIndex(
+    renderMenu(MAP_MENU, 'map-menu')
     + `<div class="loading-blur"><img src="${mapInfo.levelshot}" /></div>
     <div id="map-info">
     <h2>${mapInfo.title}</h2>
-    <h3>Screenshots</h3>
+    <h3><a name="screenshots">Screenshots</a></h3>
     <ol class="screenshots">
       <li class="title"><span>Levelshot</span></li>
-      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0001.jpg" /><a href="">Full resolution levelshot</a></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0001.jpg" /><a href="/${basegame}/screenshots/${mapname}_screenshot0001.jpg">Full resolution levelshot</a></li>
       <li class="title"><span>Birds-eye</span></li>
-      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0002.jpg" /><a href="">Top-down Full color</a></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0002.jpg" /><a href="/${basegame}/screenshots/${mapname}_screenshot0002.jpg">Top-down Full color</a></li>
     </ol>
+    <h3><a name="arenas">Arenas</a></h3>
+    <ol class="models">
+      <li class="title"><span>Bots</span></li>
+      <li class="title"><span>Gametypes</span></li>
+    </ol>
+    <h3><a name="models">Models</a></h3>
+    <ol class="models">
+      <li class="title"><span>Inline</span></li>
+      <li class="title"><span>Model2</span></li>
+    </ol>
+    <h3><a name="sounds">Sounds</a></h3>
+    <ol class="models">
+      <li class="title"><span>Background</span></li>
+      <li class="title"><span>Overrides</span></li>
+      <li class="title"><span>Other</span></li>
+    </ol>
+    <h3><a name="shaders">Shaders</a></h3>
+    <ol class="shaders">${await renderImages(mapInfo.images, mapInfo.pakname, basegame)}</ol>
+    <h3>Voxelized</h3>
+    <p>Coming soon. Reconstructed maps using only X/Y image data.</p>
+    <h3><a name="entities">Entities</a></h3>
+    <pre contenteditable="true" class="code">${mapInfo.entities}</pre>
     <h3>Trace-maps</h3>
     <ol class="tracemaps">
     <li class="title"><span>Single pass</span></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0001.jpg" /><a href="">Area mask</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0002.jpg" /><a href="">Basic top-down</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="">Skybox height-map</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0004.jpg" /><a href="">Skybox bottom-up</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0005.jpg" /><a href="">Ground height-map</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0001.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0001.jpg">Area mask</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0002.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0002.jpg">Basic top-down</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">Skybox height-map</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0004.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0004.jpg">Skybox bottom-up</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0005.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0005.jpg">Ground height-map</a></li>
     <li class="title"><span>Occupyable Spaces</span></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0007.jpg" /><a href="">Skybox volumes (monochrome)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0006.jpg" /><a href="">Skybox volumes (RGB = top, bottom, diff)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0008.jpg" /><a href="">Skybox volumes (45 degrees)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0007.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0007.jpg">Skybox volumes (monochrome)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0006.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0006.jpg">Skybox volumes (RGB = top, bottom, diff)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0008.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0008.jpg">Skybox volumes (45 degrees)</a></li>
 
     <!--<li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="">X-Ray (2-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="">X-Ray (4-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="">X-Ray (8-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href=""></a></li>-->
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (4-samples)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (8-samples)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg"></a></li>-->
     <li class="title"><span>Mins/Maxs</span></li>
     <li class="title"><span>Scaled</span></li>
     <li class="title"><span>Multipass</span></li>
@@ -77,28 +140,8 @@ async function serveMapInfo(request, response, next) {
     <li class="title"><span>Heatmaps</span></li>
     <li class="title"><span>Predator</span></li>
     </ol>
-    <h3>Models</h3>
-    <ol class="models">
-      <li class="title"><span>Inline</span></li>
-      <li class="title"><span>Model2</span></li>
-    </ol>
-    <h3>Shaders</h3>
-    <ol class="shaders">${await renderImages(mapInfo.images, mapInfo.pakname, basegame)}</ol>
-    <h3>Voxelized</h3>
-    <p>Coming soon. Reconstructed maps using only X/Y image data.</p>
-    <h3>Entities</h3>
-    <pre contenteditable="true" class="code">${mapInfo.entities}</pre>
-    <h3>Palette</h3>
-    <ol class="palette">
-      <li class="title"><span>World</span></li>
-      <li class="title"><span>Overrides</span></li>
-      <li class="title"><span>Base</span></li>
-    </ol>
-    </div>`
-    + INDEX.substring(offset, INDEX.length)
+    </div>`)
   return response.send(index)
-
-  console.log(mapInfo)
   /*
   Mapname	Decidia
   Filename	wvwq3dm7.bsp [ readme ]

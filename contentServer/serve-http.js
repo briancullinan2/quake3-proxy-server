@@ -5,6 +5,18 @@ const { serveMapInfo } = require('../mapServer/serve-map.js')
 const { downloadAllMeta } = require('../utilities/metadata.js')
 const { serveModInfo, serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
 const { servePalette, servePaletteMap, servePaletteRange} = require('../assetServer/serve-palette.js')
+const { getFeatureFilter } = require('../contentServer/features.js')
+const { renderIndex, renderFeature } = require('../utilities/render.js')
+
+
+// circular dependency
+function serveFeatures(features, response) {
+  let featureList = getFeatureFilter(features)
+  let index = renderIndex(
+    `<ol id="feature-list" class="stream-list">${featureList
+      .map(f => renderFeature(f)).join('')}</ol>`)
+  return response.send(index)
+}
 
 
 function setupExtensions(features, app) {
@@ -73,4 +85,5 @@ function setupExtensions(features, app) {
 
 module.exports = {
   setupExtensions,
+  serveFeatures,
 }
