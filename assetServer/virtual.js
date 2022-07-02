@@ -45,7 +45,7 @@ function gameDirectories(basegame) {
   if(fs.existsSync(path.join(STEAMPATH, basegame.toLocaleLowerCase()))) {
     GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame.toLocaleLowerCase()))
   }
-  return GAME_DIRECTORIES
+  return GAME_DIRECTORIES.filter((g, i, arr) => arr.indexOf(g) == i)
 }
 
 // virtual file-system

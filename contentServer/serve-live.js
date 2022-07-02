@@ -2,8 +2,9 @@
 //   use node watcher
 const path = require('path')
 const fs = require('fs')
-const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
+const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories } = require('../assetServer/virtual.js')
+const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
 
 // TODO: send refresh signal over websocket/proxy
 //   in a POSIX similar way? This would be cool
@@ -54,7 +55,7 @@ async function listFiles(filename) {
       if(stat.isDirectory()) {
         directory.push({
           name: subdirectory[s] + '/',
-          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}?index`,
+          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
           absolute: path.join(path.basename(path.dirname(newPath)), path.basename(newPath), subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
@@ -63,7 +64,7 @@ async function listFiles(filename) {
         directory.push({
           name: subdirectory[s],
           size: stat.size,
-          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}?alt`,
+          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
           absolute: path.join(path.basename(path.dirname(newPath)), path.basename(newPath), subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
@@ -75,40 +76,9 @@ async function listFiles(filename) {
     .filter((d, i) => d.name && !d.name.startsWith('.') 
       && lowercasePaths.indexOf(d.name.toLocaleLowerCase()) == i)
   directoryFiltered.sort(function (a, b) {
-    return a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
+    return b.mtime - a.mtime // a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
   })
   return directoryFiltered
-}
-
-
-function renderFilelist(node) {
-  let result = '<li>'
-  result += `<a href="${node.link}">${node.name}</a>`
-  if(node.name.endsWith('/')) {
-    result += `<span>&nbsp;</span>`
-  } else {
-    result += `<span>${formatSize(node.size)}</span>`
-  }
-  result += `<span>${node.mtime.getMonth() + 1}/${node.mtime.getDay()} `
-  result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</span>`
-  result += `<span>${path.dirname(node.absolute)}</span>`
-  result += '</li>'
-  return result
-}
-
-
-function formatSize(size) {
-  if(size > 1024 * 1024 * 1024) {
-   return Math.round(size / 1024 / 1024 / 1024 * 10) / 10 + 'GB'
-  } else
-  if(size > 1024 * 1024) {
-    return Math.round(size / 1024 / 1024 * 10) / 10 + 'MB'
-  } else
-  if(size > 1024) {
-    return Math.round(size / 1024 * 10) / 10 + 'KB'
-  } else {
-    return size + 'B'
-  }
 }
 
 
@@ -125,18 +95,19 @@ async function serveLive(request, response, next) {
 
   let directoryFiltered = await listFiles(filename)
 
+  if(filename.length > 1) {
+    directoryFiltered.unshift({
+      name: '../',
+      link: `/build/${path.dirname(filename)}`,
+      mtime: new Date(),
+      absolute: 'build/' + filename,
+    })
+  }
 
   if (isIndex) {
-    if(filename.length > 1) {
-      directoryFiltered.unshift({
-        name: '../',
-        link: `/build/${path.dirname(filename)}?index`,
-        mtime: new Date(),
-        absolute: ''
-      })
-    }
     return response.send(renderIndex(
-    `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+    renderMenu(SETTINGS_MENU, 'asset-menu')
+    + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <a class="close-files" href="/build/${filename}${filename.length > 1 ? '/' : ''}">X</a>
     <div class="info-layout">
     <h2>Directory: /${filename}${filename.length > 1 ? '/' : ''}</h2>
@@ -146,13 +117,13 @@ async function serveLive(request, response, next) {
     `))
   } else {
     return response.send('<ol>' + directoryFiltered.map(node =>
-    `<li><a href="/${node}?alt">${node}</a></li>`).join('\n')
+    `<li><a href="${node.link}?alt">${node.name}</a></li>`).join('\n')
     + '</ol>')
   }
 }
 
 module.exports = {
-
+  serveVersion,
   serveLive,
 }
 

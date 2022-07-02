@@ -10,6 +10,7 @@ const { renderIndex, renderFeature } = require('../utilities/render.js')
 const { serveAssets } = require('../assetServer/serve-assets.js')
 const { serveMetadata } = require('../assetServer/serve-metadata.js')
 const { serveLive } = require('../contentServer/serve-live.js')
+const { serveSettings } = require('../contentServer/serve-settings.js')
 
 
 // circular dependency
@@ -72,6 +73,12 @@ function setupExtensions(features, app) {
     app.use('/build', serveLive) // version.json and /build
   }
 
+  if (features.includes('all')
+    || features.includes('live')
+    || features.includes('repack')
+    || features.includes('virtual')) {
+    app.use('/settings', serveSettings) // version.json and /build
+    }
   return
 
   if (features.includes('all')
