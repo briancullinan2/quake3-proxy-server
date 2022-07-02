@@ -21,6 +21,10 @@ async function serveAssets(request, response, next) {
       title: 'Directories',
       subtitle: 'Settings / Auto-detect',
       link: 'settings',
+    }, {
+      title: 'Downloads',
+      subtitle: 'Find Remote content',
+      link: 'downloads',
     }
   ]
 

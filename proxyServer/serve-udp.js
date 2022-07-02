@@ -1,14 +1,13 @@
-
-const { redirectAddress } = require('../utilities/env.js')
+const { lookupDNS } = require('../utilities/dns.js')
 
 const UDP_SERVERS = []
 const UDP_CLIENTS = []
 const WS_FORWARDS = []
 
-async function serveUDP(socket, address, port) {
+async function serveUDP(socket, address, port, redirectApp) {
+  const { Server } = require('ws')
   const { createServer } = require('http')
   const { createSocket } = require('dgram')
-  const redirectApp = createRedirect(redirectAddress())
   console.log('UDP associate: ' + address + ':' + port)
 
   if (typeof UDP_SERVERS[port] == 'undefined') {
@@ -18,8 +17,7 @@ async function serveUDP(socket, address, port) {
       return forwardMessage(port, false /* isWS */, message, rinfo)
     })
     let httpServer = createServer(redirectApp).listen(port)
-    HTTP_LISTENERS[port] = httpServer
-    WS_FORWARDS[port] = createWebsocket(httpServer)
+    WS_FORWARDS[port] = new Server({ server: httpServer })
     WS_FORWARDS[port].on('message', function (message, rinfo) {
       return forwardMessage(port, true /* isWS */, message, rinfo)
     })
@@ -32,7 +30,7 @@ async function serveUDP(socket, address, port) {
   console.log(bindIP)
 
   return [
-    0x05, REP.SUCCESS, 0x00, ATYP.IPv4
+    0x05, 0x00 /* REP.SUCCESS */, 0x00, 0x01 /* ATYP.IPv4 */
     // for simplicity, the mock DNS service inside the browser
     //   only deals in IPv4, so addresses are converted back.
   ].concat(IPsegments).concat([
@@ -48,14 +46,14 @@ function forwardMessage(port, isWS, message, rinfo) {
     let localbytes = rinfo.address.replace('::ffff:', '')
       .split('.').map(seg => parseInt(seg))
     buffer = Buffer.alloc(4 + localbytes.length + 2 /* port */).fill(0)
-    buffer[3] = ATYP.IPv4
+    buffer[3] = 0x01 // ATYP.IPv4
     for (let i = 0, p = 4; i < localbytes.length; ++i, ++p) {
       buffer[p] = localbytes[i]
     }
     buffer.writeUInt16LE(rinfo.port, 8, true)
   } else {
     buffer = Buffer.alloc(4 + 1 /* for strlen */ + domain.length + 1 /* \0 null */ + 2 /* port */).fill(0)
-    buffer[3] = ATYP.NAME
+    buffer[3] = 0x03 // ATYP.NAME
     buffer[4] = domain.length + 1
     buffer.write(domain, 5)
     buffer.writeUInt16LE(rinfo.port, 5 + buffer[4], true)

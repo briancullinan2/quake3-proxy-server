@@ -31,6 +31,8 @@ window.addEventListener('load', (event) => {
     setInterval(refreshMapinfo, 20)
     setInterval(function () { previousLine = -1 }, 2000)
   }
+
+  startLive()
 })
 
 
@@ -200,3 +202,181 @@ async function loadNextPage(page, halfwareMark) {
   }
   previousLine = -1
 }
+
+let reconnect = false
+let queue
+let socket1
+let socket2
+let heartbeat
+
+function sendHeartbeat(sock) {
+  if(sock.readyState == WebSocket.OPEN) {
+		sock.fresh = 5
+    sock.send(Uint8Array.from([0x05, 0x01, 0x00, 0x00]),
+      { binary: true })
+  } else if(sock.readyState == WebSocket.CLOSED) {
+    reconnect = true
+    if(sock ==socket1) {
+     socket1 = null
+    } else {
+      socket2 = null
+    }
+    NET_OpenIP()
+  }
+}
+
+
+function sendLegacyEmscriptenConnection(socket, port) {
+  socket.send(Uint8Array.from([
+    0xFF, 0xFF, 0xFF, 0xFF,
+    'p'.charCodeAt(0), 'o'.charCodeAt(0), 'r'.charCodeAt(0), 't'.charCodeAt(0),
+    (port & 0xFF00) >> 8, (port & 0xFF)
+  ]))
+
+}
+
+
+function socketOpen(evt) {
+	evt.target.fresh = 1
+	evt.target.send(Uint8Array.from([
+    0x05, 0x01, 0x00, // no password caps?
+  ]))
+	if(!heartbeat) {
+		heartbeat = setInterval(function () {
+      if(socket1) {
+        sendHeartbeat(socket1)
+      }
+      heartbeatTimeout = setTimeout(function () {
+        if(socket2) {
+          sendHeartbeat(socket2)
+        }
+      }, 7000)
+		}, 9000)
+	}
+  if(!reconnect) return
+	sendLegacyEmscriptenConnection(evt.target, window.net_port)
+}
+
+function socketMessage(evt) {
+  let message = new Uint8Array(evt.data)
+  //console.log(message)
+  switch(evt.target.fresh) {
+    case 1:
+      if(message.length != 2) {
+        throw new Error('wtf? this socket no worky')
+      } else
+
+      if(message[1] != 0) {
+        debugger
+        throw new Error('this socket requires a password, dude')
+      }
+
+      // send the UDP associate request
+      evt.target.send(Uint8Array.from([
+				0x05, 0x03, 0x00, 0x01, 
+				0x00, 0x00, 0x00, 0x00, // ip address
+				(window.net_port & 0xFF00) >> 8, (window.net_port & 0xFF)
+			]))
+      evt.target.fresh = 2
+    break
+		case 2:
+			if(message.length < 5) {
+				throw new Error('denied, can\'t have ports')
+			}
+
+			if(message[3] != 1) {
+				throw new Error('relay address is not IPV4')
+			}
+
+			sendLegacyEmscriptenConnection(evt.target, window.net_port)
+			evt.target.fresh = 3
+			/*
+      if(socket ==socket1) {
+				for(let i = 0, count =socket1Queue.length; i < count; i++) {
+					socket.send(socket1Queue.shift())
+				}
+			} else {
+				for(let i = 0, count =socket1Queue.length; i < count; i++) {
+					socket.send(socket2Queue.shift())
+				}
+			}
+      */
+
+		break
+		case 3:
+			if(message.length == 10) {
+				evt.target.fresh = 4
+				break
+			}
+
+		case 4:
+		case 5:
+				// add messages to queue for processing
+			if(message.length == 2 || message.length == 10) {
+				evt.target.fresh = 4
+				return
+			}
+
+			let addr, remotePort, msg
+			if(message[3] == 1) {
+				addr = message.slice(4, 8)
+				remotePort = message.slice(8, 10)
+				msg = Array.from(message.slice(10))
+			} else if (message[3] == 3) {
+				addr = Array.from(message.slice(5, 5 + message[4])).map(function (c) {
+					return String.fromCharCode(c)
+				}).join('')
+				remotePort = message.slice(5 + message[4], 5 + message[4] + 2)
+				msg = Array.from(message.slice(5 + addr.length + 2))
+			} else {
+				throw new Error('don\' know what to do mate')
+			}
+			//if(addr.includes('local.games')) {
+			//	debugger
+			//}
+      console.log([addr, remotePort, msg])
+			queue.push([addr, remotePort, msg])
+		break
+  }
+}
+
+function socketError(evt) {
+  reconnect = true
+  if(evt.target ==socket1) {
+   socket1 = null
+  }
+  if(evt.target == socket2) {
+    socket2 = null
+  }
+}
+
+
+function startLive() {
+  if(!queue) {
+    queue = []
+  }
+  if(window.location.protocol != 'http:' 
+    && window.location.protocol != 'https:') {
+    return
+  }
+  let fullAddress = 'ws' 
+    + (window.location.protocol.length > 5 ? 's' : '')
+    + '://' + window.location.hostname + ':' + window.location.port
+  if(!socket1) {
+   socket1 = new WebSocket(fullAddress)
+   socket1.binaryType = 'arraybuffer';
+   socket1.addEventListener('open', socketOpen, false)
+   socket1.addEventListener('message', socketMessage, false)
+   socket1.addEventListener('error', socketError, false)
+  }
+  if(!socket2) {
+    socket2 = new WebSocket(fullAddress)
+    socket2.binaryType = 'arraybuffer';
+    socket2.addEventListener('open', socketOpen, false)
+    socket2.addEventListener('message', socketMessage, false)
+    socket2.addEventListener('error', socketError, false)
+  }
+}
+
+
+

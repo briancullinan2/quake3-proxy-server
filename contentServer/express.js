@@ -1,6 +1,7 @@
 const { INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
+const { createSOCKS } = require('../proxyServer/socks5.js')
 
 // < 100 LoC
 const express = require('express')
@@ -82,16 +83,21 @@ const WEB_SOCKETS = []
 
 function createWebServers(services) {
   const { createServer } = require('http')
-  let virtualApp = createApplication(services)
-
+  const virtualApp = createApplication(services)
+  const { createRedirect } = require('../contentServer/express.js')
+  const redirectApp = createRedirect(redirectAddress())
+  
   for (let i = 0; i < HTTP_PORTS.length; i++) {
     // http
     let httpServer = createServer(virtualApp).listen(HTTP_PORTS[i])
     HTTP_LISTENERS[HTTP_PORTS[i]] = httpServer
-    if (services.includes('socks')) {
+    if (services.includes('all')
+      || services.includes('socks')) {
       const { Server } = require('ws')
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
-      WEB_SOCKETS[HTTP_PORTS[i]].on('connection', createSOCKS)
+      WEB_SOCKETS[HTTP_PORTS[i]].on('connection', function (socket) {
+        createSOCKS(socket, redirectApp)
+      })
     }
   }
 

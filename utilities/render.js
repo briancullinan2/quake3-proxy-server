@@ -40,7 +40,6 @@ function renderList(link, jsonView, total, id) {
   <script>window.sessionLines=${JSON.stringify(jsonView)}</script>
   <script>window.sessionLength=${total}</script>
   <script>window.sessionCallback=${link}</script>
-  <script async defer src="index.js"></script>
   `
 }
 

@@ -2,6 +2,7 @@
 const START_SERVICES = ['all']
 
 const SUPPORTED_SERVICES = [
+  'downloads', 
   'proxy', 'maps', 'master', 'mirror', 'dedicated',
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 
@@ -69,17 +70,25 @@ const CONTENT_FEATURES = {
     subtitle: 'Users / Groups / Access',
     link: 'users',
     levelshot: ``,
+  },
+  'downloads': {
+    title: 'Downloads',
+    subtitle: 'Download Remote content',
+    link: 'downloads',
+    levelshot: ``,
   }
 }
 
 // TODO: some sort of registration system?
 
 function getFeatureFilter(features) {
-  let featureList = (features || [])
+  let featuresFiltered = (features || [])
   .concat(!features ? START_SERVICES : [])
-  .concat((features || START_SERVICES).includes('all') 
-      ? SUPPORTED_SERVICES : [])
+  .concat((features || START_SERVICES).includes('all') ? SUPPORTED_SERVICES : [])
   .filter((s, i, arr) => arr.indexOf(s) == i)
+  // do this to maintain the correct order
+  let featureList = SUPPORTED_SERVICES
+  .filter(f => featuresFiltered.includes(f))
   .map(f => CONTENT_FEATURES[f])
   .filter(f => f)
   return featureList

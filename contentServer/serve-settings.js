@@ -1,9 +1,8 @@
 const fs = require('fs')
 const path = require('path')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { buildDirectories } = require('../assetServer/virtual.js')
-const { gameDirectories } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
+const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
+const { repackedCache, downloadCache, getGame } = require('../utilities/env.js')
 
 let SETTINGS_MENU = [
   {
@@ -134,7 +133,15 @@ async function serveSettings(request, response, next) {
   downloaded content based on filename. They are only checked when accessed directly,
   but using this tool, you can browse the converted / cached files in memory and on
   disk.</p>
-  
+  <ol class="directory-list">${repackedCache()}
+  </ol>
+  <h3>Downloaded Content</h3>
+  <p>Content can be downloaded from multiple sources and managed from the Downloads page.
+  These paths are currently being checked for downloaded .pk3 files. Combined with the 
+  content caching directories above, all downloaded, cached, and developing content
+  is included in the Virtual Directory.</p>
+  <ol class="directory-list">${downloadCache()}
+  </ol>
   </div>
   `))
 }

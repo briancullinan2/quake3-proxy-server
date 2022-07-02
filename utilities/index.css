@@ -418,7 +418,7 @@ ol.directory-list li {
 }
 
 #map-list li a, #game-list li a, .stream-list li a {
-  color: #CCC;
+  color: #FFF;
   text-decoration: none;
   display: block;
   flex-grow: 0;
