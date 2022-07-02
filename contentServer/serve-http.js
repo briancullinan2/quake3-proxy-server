@@ -1,10 +1,10 @@
 const { serveGames, serveGamesRange, serveList } = require('../gameServer/serve-games.js')
-const { serveMaps, serveDownload, serveMapsRange } = require('../mapServer/serve-download.js')
+const { serveMaps, serveDownload, serveMapsRange, serveDownloadList } = require('../mapServer/serve-download.js')
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
-const { downloadAllMeta } = require('../utilities/metadata.js')
+const { downloadAllMeta } = require('../quake3Utils/metadata.js')
 const { serveModInfo, serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
-const { servePalette, servePaletteMap, servePaletteRange} = require('../assetServer/serve-palette.js')
+const { servePalette, servePaletteMap, servePaletteRange } = require('../assetServer/serve-palette.js')
 const { getFeatureFilter } = require('../contentServer/features.js')
 const { renderIndex, renderFeature } = require('../utilities/render.js')
 const { serveAssets } = require('../assetServer/serve-assets.js')
@@ -59,13 +59,13 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('assets')) {
-      app.use(/\/assets\/?$/i, serveAssets)
+    app.use(/\/assets\/?$/i, serveAssets)
   }
 
 
   if (features.includes('all')
     || features.includes('metadata')) {
-      app.use(/\/metadata\/?$/i, serveMetadata)
+    app.use(/\/metadata\/?$/i, serveMetadata)
   }
 
   if (features.includes('all')
@@ -77,8 +77,16 @@ function setupExtensions(features, app) {
     || features.includes('live')
     || features.includes('repack')
     || features.includes('virtual')) {
-    app.use('/settings', serveSettings) // version.json and /build
-    }
+    app.use('/settings', serveSettings)
+  }
+
+  if (features.includes('all')
+    || features.includes('downloads')) {
+    app.use('/downloads', serveDownloadList)
+    app.use('/maps/download', serveDownload)
+  }
+
+
   return
 
   if (features.includes('all')
@@ -100,7 +108,6 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('maps')) {
     app.use('/maps/reload', downloadAllMeta)
-    app.use('/maps/download', serveDownload)
     app.use(/\/maps\/[0-9]+\/[0-9]+/i, serveMapsRange)
     app.use(/\/maps\/.+/, serveMapInfo)
     app.use('/maps', serveMaps)

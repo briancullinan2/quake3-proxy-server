@@ -27,11 +27,12 @@
 const fs = require('fs')
 const path = require('path')
 
-const { LVLWORLD_DB, downloadCache } = require('../utilities/env.js')
-const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
-const { renderList } = require('../utilities/render.js')
-const { renderIndex } = require('../utilities/render.js')
-const { existingMaps } = require('../assetServer/list-maps.js')
+const { LVLWORLD_DB, downloadCache, getGame } = require('../utilities/env.js')
+const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
+const { renderIndex, renderList } = require('../utilities/render.js')
+const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
+const { layeredDir } = require('../assetServer/layered.js')
+const { findFile } = require('../assetServer/virtual.js')
 
 
 const MAP_LIST = require(path.join(LVLWORLD_DB, 'maplist.json'))
@@ -53,7 +54,31 @@ async function serveDownload(request, response, next) {
     filename = filename.substr(1)
   }
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
+  let caches = downloadCache()
+
+  // handle pk3 files by name directly
+  let newFile = findFile(getGame() + '/' + path.basename(filename))
+  if(newFile && newFile.endsWith('.pk3')) {
+    console.log('Downloading:', newFile)
+    return response.sendFile(newFile, {
+      headers: { 'content-disposition': `attachment; filename="${path.basename(filename)}"` }
+    })
+  }
+
+  for(let i = 0; i < caches.length; i++) {
+    let pk3File = path.join(caches[i], path.basename(filename))
+    if(fs.existsSync(pk3File) && pk3File.endsWith('.pk3')) {
+      console.log('Downloading:', pk3File)
+      return response.sendFile(pk3File, {
+        headers: { 'content-disposition': `attachment; filename="${path.basename(filename)}"` }
+      })
+    }
+  }
+
+  // try to figure out pk3 name using indexing features, 
+  //   because it doesn't always match map name
   await existingMaps()
+
   if (typeof MAP_DICTIONARY[mapname] == 'undefined') {
     return next(new Error('File not found: ' + filename))
   }
@@ -61,16 +86,19 @@ async function serveDownload(request, response, next) {
     && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
     return next(new Error('Won\'t serve base file: ' + MAP_DICTIONARY[mapname]))
   }
-  let newFile = path.join(downloadCache(), MAP_DICTIONARY[mapname])
-  console.log('Downloading:', newFile)
-  if (fs.existsSync(newFile)) {
-    return response.sendFile(newFile, {
-      headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname]}"` }
-    })
-  } else {
-    return next(new Error('File not found: ' + filename))
+
+
+  for(let i = 0; i < caches.length; i++) {
+    let newFile = path.join(caches[i], MAP_DICTIONARY[mapname])
+    if(fs.existsSync(newFile)) {
+      console.log('Downloading:', newFile)
+      return response.sendFile(newFile, {
+        headers: { 'content-disposition': `attachment; filename="${MAP_DICTIONARY[mapname]}"` }
+      })
+    }
   }
 
+  return next(new Error('File not found: ' + filename))
 }
 
 
@@ -108,9 +136,65 @@ async function serveMaps(request, response, next) {
   return await serveMapsReal(start, end, isJson, response)
 }
 
+function filterPk3(file, i, arr) {
+  return !file.startsWith('.') && file.endsWith('.pk3') && arr.indexOf(file) === i
+}
+
+
+async function listDownloads() {
+
+  // TODO: list downloaded and not downloaded pk3s
+  let pk3Names = (await layeredDir(getGame())).filter(filterPk3).map(findFile)
+  let downloads = downloadCache()
+  for(let i = 0; i < downloads.length; i++) {
+    if(fs.existsSync(downloads[i])) {
+      pk3Names.push.apply(pk3Names, fs.readdirSync(downloads[i]).filter(filterPk3).map(file => path.join(downloads[i], file)))
+    }
+  }
+  let pk3sFiltered = pk3Names.filter(pk3 => !path.basename(pk3).startsWith('pak')).map(absolute => {
+    // TODO: compare pk3 name with known pk3s from remotes
+    //if(fs.existsSync())
+    let stat = fs.statSync(absolute)
+    return {
+      name: path.basename(absolute).replace(/\.pk3$/i, ''),
+      mtime: stat.mtime,
+      size: stat.size,
+      absolute: absolute,
+      link: '/maps/download/' + path.basename(absolute)
+    }
+  }).filter(pk3 => pk3)
+  return pk3sFiltered
+}
+
+
+async function serveDownloadList(request, response, next) {
+  let isIndex = request.url.match(/\?index/)
+  let isJson = request.url.match(/\?json/)
+  let filename = request.url.replace(/\?.*$/, '')
+  if(filename.startsWith('/')) {
+    filename = filename.substring(1)
+  }
+  if(filename.endsWith('/')) {
+    filename = filename.substring(0, filename.length - 1)
+  }
+
+  let pk3sFiltered = await listDownloads()
+    
+  return response.send(renderIndex(
+  `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  <div class="info-layout">
+  <h2>Downloads</h2>
+  <ol class="directory-list">${pk3sFiltered.map(renderFilelist).join('\n')}
+  </ol>
+  </div>
+  `))
+}
+
+
 
 module.exports = {
   serveMaps,
   serveDownload,
   serveMapsRange,
+  serveDownloadList,
 }

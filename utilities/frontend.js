@@ -221,7 +221,7 @@ function sendHeartbeat(sock) {
     } else {
       socket2 = null
     }
-    NET_OpenIP()
+    startLive()
   }
 }
 

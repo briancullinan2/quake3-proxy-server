@@ -25,14 +25,18 @@ const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
 const LVLSHOTS = fs.readFileSync(path.resolve(__dirname + '/../utilities/levelinfo.cfg')).toString('utf-8')
 
-let REPACK_CACHE = path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')
-let DOWNLOAD_CACHE = path.join(BUILD_DIRECTORY)
+let REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
+let DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
 
 function setRepack(directory) {
-  REPACK_CACHE = directory
+  REPACK_CACHE = [directory]
 }
 function setDownload(directory) {
-  DOWNLOAD_CACHE = directory
+  DOWNLOAD_CACHE = [directory]
+}
+
+function addDownload(directory) {
+  DOWNLOAD_CACHE.push(directory)
 }
 
 function setGame(game) {
@@ -146,4 +150,5 @@ module.exports = {
   setDownload,
   redirectAddress,
   setRedirect,
+  addDownload,
 }

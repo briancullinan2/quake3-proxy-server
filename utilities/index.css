@@ -97,6 +97,7 @@ ol.directory-list li {
   display: flex;
   margin: 3px 10px;
   max-width: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 .directory-list li a {
   flex-grow: 1;

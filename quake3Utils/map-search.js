@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 const Fuse = require('fuse.js')
-const {LVLWORLD_DB} = require('../utilities/metadata.js')
+const {LVLWORLD_DB} = require('../quake3Utils/metadata.js')
 
 var cache = fs.readdirSync(LVLWORLD_DB)
   .filter(d => d[0] != '.' && d.includes('.json'))
@@ -34,7 +34,7 @@ function tokenSearch(search) {
 function mapSearch(bsp) {
   if(!searchMaps) {
     searchMaps = new Fuse(cache, Object.assign({}, FUSE_CONFIG, {
-      keys: ['includes.bsp'] // server status always set to bsp name nothing else
+      keys: ['zip', 'includes.bsp'] // server status always set to bsp name nothing else
     }))
   }
   var response = searchMaps.search(bsp)

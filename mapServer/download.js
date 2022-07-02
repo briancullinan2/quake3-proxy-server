@@ -6,6 +6,10 @@ const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 
 const MAP_SOURCES = {}
 
+// https://efservers.com/games/baseEF/
+
+
+
 async function sourcePk3Download(filename) {
   let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
   let source
@@ -21,10 +25,15 @@ async function sourcePk3Download(filename) {
     } else
       if ((cached = findFile('baseq3/' + pk3name))) {
         source = cached
-      } else
-        if (fs.existsSync(path.join(downloadCache(), pk3name))) {
-          source = path.join(downloadCache(), pk3name)
+      } else {
+        let caches = downloadCache()
+        for(let i = 0; i < caches.length; i++) {
+          if(fs.existsSync(path.join(caches[i], pk3name))) {
+            source = path.join(caches[i], pk3name)
+            break
+          }
         }
+      }
   }
 
   if (source) {

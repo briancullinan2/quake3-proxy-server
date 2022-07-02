@@ -7,29 +7,31 @@
 // Then every port opened has authenticated access matching the game password 
 //   to track client guids
 const fs = require('fs')
+const path = require('path')
 const { HTTP_PORTS, createWebServers } = require('./contentServer/express.js')
 const { MASTER_PORTS, createMasters } = require('./gameServer/serve-master.js')
 const { serveDedicated } = require('./gameServer/serve-process.js')
 const { 
-  setDownload, setRepack, downloadCache, repackedCache, setGame 
+  setDownload, setRepack, downloadCache, repackedCache, setGame, 
+  addDownload, 
 } = require('./utilities/env.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
 
 let forwardIP = ''
 let noFS = false
 
-function parseAguments() {
+function parseAguments(startArgs) {
 
-  for (let i = 0; i < process.argv.length; i++) {
-    let a = process.argv[i]
+  for (let i = 0; i < startArgs.length; i++) {
+    let a = startArgs[i]
     switch (a) {
       case '--proxy-ip':
-        console.log('Forwarding ip address: ', process.argv[i + 1])
-        forwardIP = process.argv[i + 1]
+        console.log('Forwarding ip address: ', startArgs[i + 1])
+        forwardIP = startArgs[i + 1]
         i++
         break
       case '--http-port':
-        console.log('HTTP ports: ', process.argv[i + 1])
+        console.log('HTTP ports: ', startArgs[i + 1])
         HTTP_PORTS.splice(0)
         for (let i = 0; i < newPorts.length; i++) {
           HTTP_PORTS.push(parseInt(newPorts[i]))
@@ -37,17 +39,17 @@ function parseAguments() {
         i++
         break
       case '--master-port':
-        console.log('Master port: ', process.argv[i + 1])
+        console.log('Master port: ', startArgs[i + 1])
         MASTER_PORTS.splice(0)
-        let newPorts = process.argv[i + 1].split(',')
+        let newPorts = startArgs[i + 1].split(',')
         for (let i = 0; i < newPorts.length; i++) {
           MASTER_PORTS.push(parseInt(newPorts[i]))
         }
         i++
         break
       case '--masters':
-        console.log('Master servers: ', process.argv[i + 1])
-        masters = process.argv[i + 1].split(',')
+        console.log('Master servers: ', startArgs[i + 1])
+        masters = startArgs[i + 1].split(',')
         i++
         break
       case '--no-fs':
@@ -55,22 +57,30 @@ function parseAguments() {
         noFS = true
         break
       case '--game':
-        console.log('Basegame: ', process.argv[i + 1])
-        setGame(process.argv[i + 1])
+        console.log('Basegame: ', startArgs[i + 1])
+        setGame(startArgs[i + 1])
         i++
         break
       case '--repack-cache':
-        console.log('Repack cache: ', process.argv[i + 1])
-        setRepack(process.argv[i + 1])
+        console.log('Repack cache: ', startArgs[i + 1])
+        setRepack(startArgs[i + 1])
         if (!fs.existsSync(repackedCache())) {
           console.log('WARNING: directory does not exist, unexpected behavior.')
         }
         i++
         break
       case '--download-cache':
-        console.log('Download cache: ', process.argv[i + 1])
-        setDownload(process.argv[i + 1])
-        if (!fs.existsSync(downloadCache())) {
+        console.log('Download cache: ', startArgs[i + 1])
+        setDownload(startArgs[i + 1])
+        if (!fs.existsSync(downloadCache()[0])) {
+          console.log('WARNING: directory does not exist, unexpect behavior.')
+        }
+        i++
+        break
+      case '--add-downloads':
+        console.log('Download cache: ', startArgs[i + 1])
+        addDownload(startArgs[i + 1])
+        if (!fs.existsSync(startArgs[i + 1])) {
           console.log('WARNING: directory does not exist, unexpect behavior.')
         }
         i++
@@ -159,7 +169,10 @@ function addCommands(features) {
 }
 
 function main() {
-  parseAguments()
+  parseAguments(process.argv)
+  if(fs.existsSync(path.join(__dirname, 'settings.json'))) {
+    parseAguments(require(path.join(__dirname, 'settings.json')))
+  }
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {

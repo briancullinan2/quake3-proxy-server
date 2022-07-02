@@ -11,6 +11,7 @@ const { getMapInfo } = require('../mapServer/bsp.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { renderImages } = require('../mapServer/shaders.js')
 
+
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()

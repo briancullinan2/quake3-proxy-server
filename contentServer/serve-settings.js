@@ -133,15 +133,20 @@ async function serveSettings(request, response, next) {
   downloaded content based on filename. They are only checked when accessed directly,
   but using this tool, you can browse the converted / cached files in memory and on
   disk.</p>
-  <ol class="directory-list">${repackedCache()}
+  <ol class="directory-list">${repackedCache().join('<br />')}
   </ol>
   <h3>Downloaded Content</h3>
   <p>Content can be downloaded from multiple sources and managed from the Downloads page.
   These paths are currently being checked for downloaded .pk3 files. Combined with the 
   content caching directories above, all downloaded, cached, and developing content
   is included in the Virtual Directory.</p>
-  <ol class="directory-list">${downloadCache()}
+  <ol class="directory-list">${downloadCache().join('<br />')}
   </ol>
+  <h3>File-system Watchers</h3>
+  <p>File watchers can run events when a file change is detected. Instead of waiting for 
+  user input, the page can refresh automatically if .pk3 files are added. The parent 
+  directory and glob matching are listed on the left and the event that it triggers
+  is listed on the right.
   </div>
   `))
 }
