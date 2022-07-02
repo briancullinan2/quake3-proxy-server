@@ -77,12 +77,13 @@ function setupExtensions(features, app) {
     || features.includes('live')
     || features.includes('repack')
     || features.includes('virtual')) {
-    app.use('/settings', serveSettings)
+    app.use(/\/settings\/?$/i, serveSettings)
   }
 
   if (features.includes('all')
     || features.includes('downloads')) {
-    app.use('/downloads', serveDownloadList)
+    app.use(/\/downloads\/?$/i, serveDownloadList)
+    app.use(/\/missing\/?$/i, serveDownloadList)
     app.use('/maps/download', serveDownload)
   }
 

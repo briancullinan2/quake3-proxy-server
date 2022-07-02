@@ -29,7 +29,7 @@ const path = require('path')
 
 const { LVLWORLD_DB, downloadCache, getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
-const { renderIndex, renderList } = require('../utilities/render.js')
+const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
 const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { findFile } = require('../assetServer/virtual.js')
@@ -151,26 +151,46 @@ async function listDownloads() {
       pk3Names.push.apply(pk3Names, fs.readdirSync(downloads[i]).filter(filterPk3).map(file => path.join(downloads[i], file)))
     }
   }
-  let pk3sFiltered = pk3Names.filter(pk3 => !path.basename(pk3).startsWith('pak')).map(absolute => {
-    // TODO: compare pk3 name with known pk3s from remotes
-    //if(fs.existsSync())
-    let stat = fs.statSync(absolute)
-    return {
-      name: path.basename(absolute).replace(/\.pk3$/i, ''),
-      mtime: stat.mtime,
-      size: stat.size,
-      absolute: absolute,
-      link: '/maps/download/' + path.basename(absolute)
-    }
-  }).filter(pk3 => pk3)
+  let pk3sFiltered = pk3Names.filter(pk3 => !path.basename(pk3).startsWith('pak'))
   return pk3sFiltered
 }
 
 
+async function describePk3(absolute) {
+  let stat = fs.statSync(absolute)
+  return {
+    name: path.basename(absolute).replace(/\.pk3$/i, ''),
+    mtime: stat.mtime,
+    size: stat.size,
+    absolute: absolute,
+    link: '/maps/download/' + path.basename(absolute)
+  }
+}
+
+
+let DOWNLOADS_MENU = [{
+  title: 'Downloads',
+  link: 'downloads',
+  subtitle: 'Downloaded Maps / Add-ons'
+}, {
+  title: 'Missing',
+  link: 'missing',
+  subtitle: 'Missing Maps / Fetch'
+}, {
+  title: 'Sources',
+  link: 'sources',
+  subtitle: 'Remote Sources / Hosting'
+}, {
+  title: 'Queue',
+  link: 'queue',
+  subtitle: 'Download Queue / Active'
+}]
+
+
 async function serveDownloadList(request, response, next) {
-  let isIndex = request.url.match(/\?index/)
-  let isJson = request.url.match(/\?json/)
-  let filename = request.url.replace(/\?.*$/, '')
+  let isIndex = request.originalUrl.match(/\?index/)
+  let isJson = request.originalUrl.match(/\?json/)
+  let filename = request.originalUrl.replace(/\?.*$/, '')
   if(filename.startsWith('/')) {
     filename = filename.substring(1)
   }
@@ -178,12 +198,27 @@ async function serveDownloadList(request, response, next) {
     filename = filename.substring(0, filename.length - 1)
   }
 
+  // TODO: make async
   let pk3sFiltered = await listDownloads()
-    
+  // TODO: compare pk3 name with known pk3s from remotes
+  if(filename.match(/missing/i)) {
+    let allMaps = Object.values(MAP_LIST)
+    let exitingNames = pk3sFiltered.map(map => path.basename(map).replace(/\.pk3/i, '').toLocaleLowerCase())
+    pk3sFiltered = allMaps.filter(map => !exitingNames.includes(map.toLocaleLowerCase())).map(map => ({
+      name: map || '',
+      absolute: ''
+    }))
+    console.log(pk3sFiltered)
+  } else {
+    pk3sFiltered = await Promise.all(pk3sFiltered.slice(0, 100).map(describePk3))
+  }
+
+
   return response.send(renderIndex(
-  `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  renderMenu(DOWNLOADS_MENU, 'downloads-menu')
+  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
-  <h2>Downloads</h2>
+  <h2>${filename.match(/missing/i) ? 'Missing' : 'Downloads'}</h2>
   <ol class="directory-list">${pk3sFiltered.map(renderFilelist).join('\n')}
   </ol>
   </div>

@@ -4,25 +4,23 @@ const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.
 
 async function serveMetadata(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  let METADATA_FEATURES = [
-    {
-      title: 'Skins',
-      link: 'metadata/#skins',
-      subtitle: 'Asset streaming / Indexing'
-    }, {
-      title: 'Arenas',
-      link: 'metadata/#arenas',
-      subtitle: 'Map Validation / Parsing'
-    }, {
-      title: 'Matches',
-      link: 'metadata/#matches',
-      subtitle: 'Server Mocking / Recording'
-    }, {
-      title: 'Games',
-      link: 'metadata/#games',
-      subtitle: 'Master Servers / Mods'
-    }
-  ]
+  let METADATA_FEATURES = [{
+    title: 'Skins',
+    link: 'metadata/#skins',
+    subtitle: 'Asset streaming / Indexing'
+  }, {
+    title: 'Arenas',
+    link: 'metadata/#arenas',
+    subtitle: 'Map Validation / Parsing'
+  }, {
+    title: 'Matches',
+    link: 'metadata/#matches',
+    subtitle: 'Server Mocking / Recording'
+  }, {
+    title: 'Games',
+    link: 'metadata/#games',
+    subtitle: 'Master Servers / Mods'
+  }]
   return response.send(renderIndex(
   renderMenu(METADATA_FEATURES, 'metadata-menu')
   + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
