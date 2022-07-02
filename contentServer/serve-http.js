@@ -1,4 +1,4 @@
-const { serveGames, serveGamesRange } = require('../gameServer/serve-games.js')
+const { serveGames, serveGamesRange, serveList } = require('../gameServer/serve-games.js')
 const { serveMaps, serveDownload, serveMapsRange } = require('../mapServer/serve-download.js')
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
@@ -7,6 +7,9 @@ const { serveModInfo, serveMods, serveModsRange } = require('../gameServer/serve
 const { servePalette, servePaletteMap, servePaletteRange} = require('../assetServer/serve-palette.js')
 const { getFeatureFilter } = require('../contentServer/features.js')
 const { renderIndex, renderFeature } = require('../utilities/render.js')
+const { serveAssets } = require('../assetServer/serve-assets.js')
+const { serveMetadata } = require('../assetServer/serve-metadata.js')
+const { serveLive } = require('../contentServer/serve-live.js')
 
 
 // circular dependency
@@ -25,7 +28,9 @@ function setupExtensions(features, app) {
     || features.includes('games')) {
     app.use(/\/games\/[0-9]+\/[0-9]+/i, serveGamesRange)
     app.use(/\/games\/?$/i, serveGames)
+    app.use(/\/servers\/?$/i, serveList)
   }
+
 
   if (features.includes('all')
     || features.includes('maps')) {
@@ -34,6 +39,7 @@ function setupExtensions(features, app) {
     app.use(/\/maps\/?$/i, serveMaps)
   }
 
+
   if (features.includes('all')
     || features.includes('mods')) {
     app.use(/\/mods\/[0-9]+\/[0-9]+/i, serveModsRange)
@@ -41,11 +47,29 @@ function setupExtensions(features, app) {
     app.use(/\/mods\/?$/i, serveMods)
   }
 
+
   if (features.includes('all')
     || features.includes('shaders')) {
     app.use(/\/palette\/[0-9]+\/[0-9]+/i, servePaletteRange)
     app.use(/\/palette\/.+/i, servePaletteMap)
     app.use(/\/palette\/?$/i, servePalette)
+  }
+
+
+  if (features.includes('all')
+    || features.includes('assets')) {
+      app.use(/\/assets\/?$/i, serveAssets)
+  }
+
+
+  if (features.includes('all')
+    || features.includes('metadata')) {
+      app.use(/\/metadata\/?$/i, serveMetadata)
+  }
+
+  if (features.includes('all')
+    || features.includes('live')) {
+    app.use('/build', serveLive) // version.json and /build
   }
 
   return

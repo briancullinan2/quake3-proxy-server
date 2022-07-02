@@ -1,7 +1,6 @@
 const fs = require('fs')
 const path = require('path')
 
-const { getGame, repackedCache } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { existingMaps } = require('../mapServer/serve-download.js')
 const { parseExisting } = require('./list-palettes.js')

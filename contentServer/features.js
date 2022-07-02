@@ -41,7 +41,7 @@ const CONTENT_FEATURES = {
     levelshot: ``,
   },
   'metadata': {
-    title: 'Data',
+    title: 'Metadata',
     subtitle: 'Metadata / List datas',
     link: 'metadata',
     levelshot: ``,

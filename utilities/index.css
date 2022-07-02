@@ -28,6 +28,12 @@ body > img {
 #map-info h2, .info-layout h2 {
   margin:0;
   padding: 0;
+  max-width: 100%;
+}
+
+.info-layout p {
+  max-width:100%;
+  white-space: normal;
 }
 
 .loading-blur {
@@ -82,6 +88,17 @@ body > img {
   text-decoration: none;
 }
 
+ol.directory-list {
+  flex-direction:column;
+  flex-wrap: nowrap;
+}
+
+ol.directory-list li {
+  display:
+  block;
+  margin: 3px 10px;
+}
+
 .main-menu {
   flex-wrap: wrap;
   display: flex;
@@ -109,6 +126,14 @@ body > img {
 
 #map-menu li {
   background-color: rgb(127, 16, 22);
+}
+
+#asset-menu li {
+  background-color: rgb(169, 95, 21);
+}
+
+#metadata-menu li {
+  background-color: rgb(21, 120, 169);
 }
 
 .main-menu li a {
@@ -260,6 +285,15 @@ body > img {
 #feature-list h3 {
   background-color: rgb(169, 147, 21);
 }
+
+#assets-list h3 {
+  background-color: rgb(169, 95, 21);
+}
+
+#metadatas-list h3 {
+  background-color: rgb(21, 120, 169);
+}
+
 
 .shaders li {
   overflow: hidden;

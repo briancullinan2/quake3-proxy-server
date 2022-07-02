@@ -64,7 +64,7 @@ async function serveGamesReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
   let games = await Promise.all(Object.values(GAME_SERVERS).slice(start, end).map(game => gameInfo(game)))
   if (isJson) {
-    return response.json(json)
+    return response.json(games)
   }
   let total = Object.values(GAME_SERVERS).length
   let index = renderIndex(renderList('/games/', games, total, 'game-list'))
@@ -72,7 +72,19 @@ async function serveGamesReal(start, end, isJson, response, next) {
 }
 
 
+async function serveList(request, response, next) {
+  let isJson = request.originalUrl.match(/\?json/)
+  let start = 0
+  let end = 100
+  // TODO: add filtering
+  return response.json(Object.values(GAME_SERVERS))
+
+  // TODO: add list HTML display, same for processes, for many details
+}
+
+
 module.exports = {
   serveGames,
   serveGamesRange,
+  serveList,
 }

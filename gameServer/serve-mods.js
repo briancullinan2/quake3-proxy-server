@@ -11,15 +11,6 @@ const { renderIndex, renderList } = require('../utilities/render.js')
   }
 */
 
-async function modInfo(modName) {
-  let levelshot
-  return {
-    title: modName,
-    levelshot: levelshot,
-    link: `mods/${modName}`,
-  }
-}
-
 
 async function serveMods(request, response, next) {
   let isJson = request.originalUrl.match(/\?json/)
@@ -45,9 +36,18 @@ async function serveModsRange(request, response, next) {
 
 async function serveModsReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
-  let games = await Promise.all(Object.values(MODS_NAMES).slice(start, end).map(game => modInfo(game)))
+  let games = await Promise.all(Object.values(MODS_NAMES)
+    .slice(start, end).map(async (game, i) => {
+      let levelshot
+      return {
+        title: MODS_NAMES[i],
+        subtitle: game,
+        levelshot: levelshot,
+        link: `mods/${game}`,
+      }
+    }))
   if (isJson) {
-    return response.json(json)
+    return response.json(games)
   }
   let total = Object.values(MODS_NAMES).length
   let index = renderIndex(renderList('/mods/', games, total))
