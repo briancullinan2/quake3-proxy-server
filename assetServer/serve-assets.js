@@ -51,7 +51,7 @@ async function serveAssets(request, response, next) {
   HTML directory list.</p>
 
   <ol id="assets-list" class="stream-list">${ASSET_FEATURES
-    .map(f => renderFeature(f)).join('')}</ol>
+    .map(renderFeature).join('')}</ol>
 
   <p>Each of these datas are associated with a number of source or endpoints
   those raw sources are made available at each endpoint by adding \`?json\`

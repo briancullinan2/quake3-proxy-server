@@ -94,9 +94,52 @@ ol.directory-list {
 }
 
 ol.directory-list li {
-  display:
-  block;
+  display: flex;
   margin: 3px 10px;
+  max-width: none;
+}
+.directory-list li a {
+  flex-grow: 1;
+  flex-basis: 100%;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: auto;
+}
+
+
+.directory-list li span:first-of-type {
+  flex-shrink: 1;
+  flex-grow: 1;
+  min-width: 100px;
+  text-align: right;
+  display: inline-block;
+  flex-basis: 50%;
+}
+
+.directory-list li span:nth-of-type(2) {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 150px;
+  flex-basis: 150px;
+  min-width: 100px;
+  text-align: right;
+  display: inline-block;
+  padding: 0 10px;
+}
+
+.directory-list li span:nth-of-type(3) {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 30%;
+  flex-basis: 30%;
+  min-width: 100px;
+  text-align: right;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .main-menu {
@@ -104,6 +147,17 @@ ol.directory-list li {
   display: flex;
   position: relative;
   z-index: 1;
+}
+
+.close-files {
+  position: absolute;
+  top:100px;
+  right:50px;
+  font-size:50px;
+  z-index:500;
+  text-decoration: none;
+  color: white;
+  font-family: monospace;
 }
 
 .main-menu li {

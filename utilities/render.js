@@ -35,7 +35,7 @@ function renderMenu(jsonView, id) {
 
 
 function renderList(link, jsonView, total, id) {
-  let list = jsonView.map(game => renderFeature(game)).join('')
+  let list = jsonView.map(renderFeature).join('')
   return `<ol ${id ? `id="${id}"` : ''} class="stream-list">${list}</ol>
   <script>window.sessionLines=${JSON.stringify(jsonView)}</script>
   <script>window.sessionLength=${total}</script>

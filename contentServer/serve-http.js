@@ -17,7 +17,7 @@ function serveFeatures(features, response) {
   let featureList = getFeatureFilter(features)
   let index = renderIndex(
     `<ol id="feature-list" class="stream-list">${featureList
-      .map(f => renderFeature(f)).join('')}</ol>`)
+      .map(renderFeature).join('')}</ol>`)
   return response.send(index)
 }
 
