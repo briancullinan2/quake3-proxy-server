@@ -14,7 +14,7 @@ async function serveConnections(request, response, next) {
     return {
       name: UDP_CLIENTS[p]._socket.remoteAddress.replace('::ffff:', '') 
         + ':' + UDP_CLIENTS[p]._socket.remotePort,
-      assignments: p + ' -> ' + (newUrl ? (newUrl.pathname + (newUrl.query || '')) : ''),
+      assignments: p + ' -> ' + SESSION_URLS[sessionId].replace(/^.*?:\/\/.*?\/|^\//i, ''),
     }
   })
   return response.send(renderIndex(

@@ -22,16 +22,22 @@ const MAP_ARENAS = {
 
 async function getMapInfo(mapname) {
   let basegame = getGame()
+  let caches = repackedCache()
   // TODO: make sure BSP file is available synchronously first
   let newFile = await sourcePk3Download(mapname)
   await ScanAndLoadShaderFiles()
 
-  let newZip = path.join(repackedCache(), path.basename(newFile))
-  let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
   let pk3Path = `/${basegame}/${path.basename(newFile)}dir`
-
+  let foundBsp = false
+  for(let i = 0; i < caches.length; i++) {
+    let newZip = path.join(caches[i], path.basename(newFile))
+    let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
+    if(fs.existsSync(bspFile)) {
+      foundBsp = true
+    }
+  }
   // extract the BSP because we might change it anyways
-  if (!fs.existsSync(bspFile)) {
+  if (!foundBsp) {
     fs.mkdirSync(path.dirname(bspFile), { recursive: true })
     const file = fs.createWriteStream(bspFile)
     await streamFileKey(newFile, `maps/${mapname}.bsp`, file)
@@ -52,23 +58,32 @@ async function getMapInfo(mapname) {
   }
 
 
+  // TODO: combine with BSP loop above
   let entities = ''
-  let entityFile = path.join(repackedCache(), '/maps/', mapname + '.ent')
-  if (!fs.existsSync(entityFile)) {
-    Promise.resolve(execLevelshot(mapname)).then(console.log).catch(console.error)
-    console.error('WARNING: entities not found: ' + mapname)
-  } else {
-    entities = fs.readFileSync(entityFile).toString('utf-8')
-  }
-
-
   let images = []
-  let imagesFile = path.join(repackedCache(), '/maps/', mapname + '-images.txt')
-  if (!fs.existsSync(imagesFile)) {
+  for(let i = 0; i < caches.length; i++) {
+
+    let entityFile = path.join(caches[i], '/maps/', mapname + '.ent')
+    if (fs.existsSync(entityFile)) {
+      entities = fs.readFileSync(entityFile).toString('utf-8')
+    }
+
+
+    let imagesFile = path.join(caches[i], '/maps/', mapname + '-images.txt')
+    if (fs.existsSync(imagesFile)) {
+      images = fs.readFileSync(imagesFile).toString('utf-8').split('\n')
+    }
+
+  }
+  if(images.length == 0 || entities.length == 0) {
     Promise.resolve(execLevelshot(mapname)).then(console.log).catch(console.error)
+  }
+  if(images.length == 0) {
+    // async
     console.error('WARNING: images not found: ' + mapname)
-  } else {
-    images = fs.readFileSync(imagesFile).toString('utf-8').split('\n')
+  }
+  if(entities.length == 0) {
+    console.error('WARNING: entities not found: ' + mapname)
   }
 
 

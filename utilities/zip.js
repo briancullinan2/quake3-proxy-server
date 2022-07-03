@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const {PassThrough, Readable} = require('stream')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 const EXISTING_ZIPS = {}
 const EXISTING_MTIME = {}
@@ -25,6 +26,7 @@ async function getIndex(pk3Path) {
       storeEntries: true,
       skipEntryNameValidation: true,
     })
+    zip.file = pk3Path
   }
   const index = await new Promise(resolve => {
     zip.on('ready', () => {
@@ -43,14 +45,22 @@ async function getIndex(pk3Path) {
     entry.name = entry.name.replace(/\\/ig, '/')
                            .replace(/\/$/, '')
     entry.zip = zip
+    entry.file = pk3Path || zip.file
   }
   EXISTING_MTIME[pk3Path] = Date.now()
   return (EXISTING_ZIPS[pk3Path] = index)
 }
 
+const EXTRACTING_ZIPS = {
+
+}
 
 async function streamFile(file, stream) {
   return await new Promise(function (resolve, reject) {
+    let fullPath = file.file + '/' + file.key
+    console.log('Extracting: ' + fullPath)
+    EXTRACTING_ZIPS[fullPath] = new Date()
+    updatePageViewers('/process')
     file.zip.stream(file.key, (err, stm) => {
       if(err) {
         console.error(err)
@@ -58,7 +68,11 @@ async function streamFile(file, stream) {
       }
       // TODO: result = await execCmd(command, stm)
       stm.pipe(stream);
-      stm.on('end', resolve);
+      stm.on('end', function () {
+        delete EXTRACTING_ZIPS[fullPath]
+        updatePageViewers('/process')
+        resolve()
+      })
     })
   })
 }
@@ -105,6 +119,7 @@ async function readFileKey(pk3Path, fileKey) {
 
 
 module.exports = {
+  EXTRACTING_ZIPS,
   EXISTING_ZIPS,
   getIndex,
   streamFileKey,
