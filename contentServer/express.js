@@ -49,6 +49,10 @@ function createApplication(features) {
     } else
     if(typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined') {
       res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], { maxAge: 900000, httpOnly: true })
+    } else
+    if(typeof cookies['__planet_quake_port'] != 'undefined') {
+      // TODO: pre-associate from previously selected address
+      //SESSION_IDS[cookies['__planet_quake_sess']] =  cookies['__planet_quake_port']
     }
     next()
   })

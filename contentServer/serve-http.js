@@ -12,6 +12,7 @@ const { serveMetadata } = require('../assetServer/serve-metadata.js')
 const { serveLive } = require('../contentServer/serve-live.js')
 const { serveSettings } = require('../contentServer/serve-settings.js')
 const { serveConnections } = require('../proxyServer/serve-connections.js')
+const { serveProcess } = require('../gameServer/serve-process.js')
 
 // circular dependency
 function serveFeatures(features, response) {
@@ -91,6 +92,12 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('proxy')) {
     app.use(/\/proxy\/?$/i, serveConnections)
+  }
+
+
+  if (features.includes('all')
+    || features.includes('process')) {
+    app.use(/\/process\/?$/i, serveProcess)
   }
 
   return

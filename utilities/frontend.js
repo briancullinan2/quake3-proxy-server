@@ -297,10 +297,13 @@ function socketMessage(evt) {
       evt.target.fresh = 2
     break
 		case 2:
+      if(message.length == 2) {
+        evt.target.fresh = 3
+        break
+      } else
 			if(message.length < 5) {
 				throw new Error('denied, can\'t have ports')
-			}
-
+			} else
 			if(message[3] != 1) {
 				throw new Error('relay address is not IPV4')
 			}

@@ -15,7 +15,7 @@ const { MASTER_PORTS, createMasters } = require('./gameServer/serve-master.js')
 const { serveDedicated } = require('./gameServer/serve-process.js')
 const { 
   setDownload, setRepack, downloadCache, repackedCache, setGame, 
-  addDownload, 
+  addDownload, setWatcherPID, 
 } = require('./utilities/env.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
 
@@ -77,6 +77,11 @@ function parseAguments(startArgs) {
         if (!fs.existsSync(downloadCache()[0])) {
           console.log('WARNING: directory does not exist, unexpect behavior.')
         }
+        i++
+        break
+      case '--watcher-pid':
+        console.log('Watcher PID: ', startArgs[i + 1])
+        setWatcherPID(startArgs[i + 1])
         i++
         break
       case '--add-downloads':
@@ -188,6 +193,9 @@ function addCommands(features) {
   })
 }
 
+
+
+
 function main() {
 
   if(!START_SERVICES.includes('holdup')
@@ -196,7 +204,7 @@ function main() {
     let startArgs = [process.argv[1]]
       .concat(process.argv.slice(2))
       .concat(START_SERVICES)
-      .concat(['holdup'])
+      .concat(['holdup', '--watcher-pid', process.pid])
     let childProcess
     fs.watch(__dirname, {recursive: true}, function (type, file) {
       if(file.match(/\.js/i)) {
@@ -204,9 +212,11 @@ function main() {
           childProcess.kill()
         }
         childProcess = spawn('node', startArgs, {stdio: 'inherit'})
+        childProcess.unref()
       }
     })
     childProcess = spawn('node', startArgs, {stdio: 'inherit'})
+    childProcess.unref()
     return
   }
 

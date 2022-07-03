@@ -55,6 +55,15 @@ function downloadCache() {
   return DOWNLOAD_CACHE
 }
 
+let WATCHER_PID = process.pid
+function setWatcherPID(pid) {
+  WATCHER_PID = pid
+}
+
+function watcherPID() {
+  return WATCHER_PID
+}
+
 
 let PUBLIC_REDIRECT = 'http://locahost:8080'
 
@@ -151,4 +160,6 @@ module.exports = {
   redirectAddress,
   setRedirect,
   addDownload,
+  setWatcherPID,
+  watcherPID,
 }
