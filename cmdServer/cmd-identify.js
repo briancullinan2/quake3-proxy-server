@@ -6,8 +6,21 @@ const { PassThrough } = require('stream')
 const { execCmd } = require('../utilities/exec.js')
 const { streamFile } = require('../utilities/zip.js')
 
+
+const CURRENTLY_IDENTIFYING = {}
+
+
 async function opaqueCmd(imagePath, unsupportedFormat) {
   let isOpaque
+
+  if(typeof CURRENTLY_IDENTIFYING[imagePath] != 'undefined'
+    && CURRENTLY_IDENTIFYING[imagePath].length > 0) {
+    await new Promise(resolve => {
+      CURRENTLY_IDENTIFYING[imagePath].push(resolve)
+    })
+  }
+  CURRENTLY_IDENTIFYING[imagePath] = ['placeholder']
+
   let unsupportedExt = path.extname(unsupportedFormat)
   if (imagePath.match(/\.pk3$/i)) {
     let file = await fileKey(imagePath, unsupportedFormat)
@@ -31,7 +44,14 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
     || unsupportedFormat.match(/levelshots\//i)) {
     isOpaque = 'True'
   }
-  return isOpaque.match(/true/ig)
+  return await new Promise(resolve => {
+    let result = isOpaque.match(/true/ig)
+    resolve(result)
+    for(let i = 1; i < CURRENTLY_IDENTIFYING[imagePath].length; ++i) {
+      CURRENTLY_IDENTIFYING[imagePath](result)
+    }
+    CURRENTLY_IDENTIFYING[imagePath].splice(0)
+  })
 }
 
 module.exports = {

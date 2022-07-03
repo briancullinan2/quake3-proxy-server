@@ -2,14 +2,14 @@
 const path = require('path')
 const fs = require('fs')
 
-const { EXE_NAME, FS_BASEPATH, FS_GAMEHOME, LVLSHOTS } = require('../utilities/env.js')
+const { FS_BASEPATH, FS_GAMEHOME, LVLSHOTS } = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
+const { lvlshotCmd } = require('../mapServer/serve-lvlshot.js')
 
-
-const EXECUTING_ENGINE = {}
+const EXECUTING_LVLSHOTS = {}
 
 
 // TODO: treat each task as a separate unit of work, 
@@ -21,33 +21,35 @@ const EXECUTING_ENGINE = {}
 //   running separate processes for every map, run 4 instances
 //   and rotate maps between them.
 
-async function resolveScreenshot(filter, logs, task) {
+async function resolveScreenshot(logs, task) {
 
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
+  let screenName = path.basename(task.test).replace(path.extname(task.test), '')
   let match
   while (match = WROTE_SCREENSHOT.exec(logs)) {
-    let unsupportedFormat = findFile(basegame + '/' + match[1])
-    if (!unsupportedFormat) {
+    let outputEnts = path.join(FS_GAMEHOME, getGame(), match[1])
+    if (!fs.existsSync(outputEnts)) {
       console.error('WARNING: output image not found ' + match[1])
       continue
     }
     // TODO: don't wait for anything?
-    await convertImage(unsupportedFormat, match[1], '80%')
-    return true
+    if(match[1].match(screenName)) {
+      await convertImage(outputEnts, match[1], '80%')
+      return true
+    } else {
+      convertImage(outputEnts, match[1], '80%')
+    }
   }
 
 }
 
 
 async function resolveEnts(logs, task) {
-
-  let WROTE_ENTS = /^Wrote\s+(maps.*?\.ent)$/gmi
-  let outputEnts = path.join(FS_GAMEHOME, basegame, '/maps/' + mapname + '.ent')
-  fs.mkdirSync(REPACKED_MAPS, { recursive: true })
+  let outputEnts = path.join(FS_GAMEHOME, getGame(), task.test)
   if (fs.existsSync(outputEnts)) {
-    fs.renameSync(outputEnts, path.join(REPACKED_MAPS, mapname + '.ent'))
+    fs.renameSync(outputEnts, path.join(repackedCache()[0], task.test))
     return true
   }
 
@@ -58,39 +60,38 @@ async function resolveImages(logs, task) {
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
-  if (imageList) {
-    let images = imageList[0].split('\n').slice(1, -3)
-      .map(line => (' ' + line).split(/\s+/ig).pop())
-      .join('\n')
-    fs.writeFileSync(imageFile, images)
+  if (!imageList) {
+    return
   }
+  let images = imageList[0].split('\n').slice(1, -3)
+    .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
+  fs.writeFileSync(path.join(repackedCache()[0], task.test), images)
 
 }
 
 
 async function execLevelshot(mapname) {
-  let basegame = getGame()
-  let screenshotCommands = []
   let newVstr = ''
   let caches = repackedCache()
+  let basegame = getGame()
 
   // figure out which images are missing and do it in one shot
   let LVL_COMMANDS = [{
     mapname: mapname,
     cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshot ; ',
-    resolve: resolveScreenshot.bind(null, 'levelshots\/'),
+    resolve: resolveScreenshot,
     test: path.join('levelshots', mapname + '.jpg')
   }, {
     mapname: mapname,
     // special exception
     cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshotFullsize ; ',
-    resolve: resolveScreenshot.bind(null, 'screenshot0001'),
+    resolve: resolveScreenshot,
     test: path.join('screenshots', mapname + '_screenshot0001.jpg')
   }, {
     mapname: mapname,
     // special exception
     cmd: ' ; vstr screenshotBirdsEyeView ; ',
-    resolve: resolveScreenshot.bind(null, 'screenshot0002'),
+    resolve: resolveScreenshot,
     test: path.join('screenshots', mapname + '_screenshot0002.jpg')
   }]
   // TODO: take screenshot from every camera position
@@ -114,7 +115,7 @@ async function execLevelshot(mapname) {
       mapname: mapname,
       // special exception
       cmd: TRACEMAPS[i],
-      resolve: resolveScreenshot.bind(null, tracename),
+      resolve: resolveScreenshot,
       test: path.join('maps', tracename)
     }
   }))
@@ -136,22 +137,29 @@ async function execLevelshot(mapname) {
     test: path.join('maps', mapname + '-images.txt')
   })
 
+  fs.mkdirSync(path.join(repackedCache()[0], '/maps/'), { recursive: true })
+
   for(let i = 0; i < LVL_COMMANDS.length; i++) {
     for(let j = 0; j < caches.length; j++) {
       if(fs.existsSync(path.join(caches[j], LVL_COMMANDS[i].test))) {
-        continue
+        LVL_COMMANDS[i].done = true
+        break
       }
-
-      // resolve based on filename and no logs? 
-      //   i.e. output already exists, but not converted
-      if(await LVL_COMMANDS[i].resolve('', LVL_COMMANDS[i])) { 
-        continue
-      }
-
-      newVstr += LVL_COMMANDS[i].cmd
-      // TODO: queue the commands for the map and wait for individual success
-
     }
+
+    if(LVL_COMMANDS[i].done) {
+      continue
+    }
+
+    // resolve based on filename and no logs? 
+    //   i.e. output already exists, but not converted
+    if(await LVL_COMMANDS[i].resolve('', LVL_COMMANDS[i])) {
+      LVL_COMMANDS[i].done = true
+      continue
+    }
+
+    newVstr += LVL_COMMANDS[i].cmd
+    // TODO: queue the commands for the map and wait for individual success
   }
 
   /*
@@ -161,43 +169,84 @@ async function execLevelshot(mapname) {
   }
   */
 
-  let logs = ''
   if (newVstr.length == 0) {
     return
   }
 
-  screenshotCommands.push.apply(screenshotCommands, [
+  const screenshotCommands = [
+    '+set', 'fs_basepath', FS_BASEPATH,
+    '+set', 'fs_homepath', FS_GAMEHOME,
+    '+set', 'bot_enable', '0',
+    '+set', 'developer', '0',
+    // Ironically, the thing I learned working for the radio station about
+    //   M$ Windows not being able to run without a video card for remote
+    //   desktop, but Xvfb working fine with remote desktop, has suddenly
+    //   become relevant, and now I understand why.
+    // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
+    '+set', 'r_headless', '1',
+
+    // TODO: run a few frames to load images before
+    //   taking a screen shot and exporting canvas
+    //   might also be necessary for aligning animations.
     '+set', 'lvlshotCommands', `"${newVstr}"`,
     '+exec', `".config/levelinfo_${mapname}.cfg"`,
     '+vstr', 'resetLvlshot',
     '+devmap', mapname,
     '+vstr', 'lvlshotCommands',
     '+wait', '200', '+quit'
-  ])
+  ]
+
 
 
   fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
   fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
   let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
   fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
+  
+  // TODO: filtered to a specific task listed above based 
+  //   on where the mapinfo request came from
+  EXECUTING_LVLSHOTS[mapname] = LVL_COMMANDS
 
-  return await new Promise(resolve => {
-    Promise.resolve(execLevelshotDed(mapname, screenshotCommands))
-      .then(logs => {
-        fs.unlinkSync(lvlconfig)
-        resolve(logs)
-        // resolve other waiters
-        for (let i = 1; i < EXECUTING[mapname].length; i++) {
-          EXECUTING[mapname][i](logs)
-        }
-        EXECUTING[mapname].splice(0)
-      })
-  })
+  Promise.resolve(lvlshotCmd(mapname, screenshotCommands, logs => {
+    return updateSubscribers(mapname, logs)
+  })).then(logs => { fs.unlinkSync(lvlconfig) })
+
+  return await Promise.all(LVL_COMMANDS
+    .filter(cmd => cmd.cmd.includes('saveents') || cmd.cmd.includes('imagelist'))
+    .map(cmd => new Promise(resolve => {
+      if(typeof cmd.subscribers == 'undefined') {
+        cmd.subscribers = []
+      }
+      cmd.subscribers.push(resolve)
+    })))
+}
+
+
+// break up the processing of specific events from the logs
+//   to allow clients to subscribe
+async function updateSubscribers(mapname, logs) {
+  const LVL_COMMANDS = EXECUTING_LVLSHOTS[mapname]
+  for(let i = 0; i < LVL_COMMANDS.length; i++) {
+    if(LVL_COMMANDS[i].done) {
+      continue
+    }
+    let isResolved = await LVL_COMMANDS[i].resolve(logs, LVL_COMMANDS[i])
+    if(!isResolved) {
+      continue
+    }
+  
+    LVL_COMMANDS[i].done = true
+    if(LVL_COMMANDS[i].subscribers) {
+      for(let j = 0; j < LVL_COMMANDS[i].subscribers.length; ++j) {
+        LVL_COMMANDS[i].subscribers[j](logs)
+      }
+    }
+  }
 }
 
 
 module.exports = {
-  EXECUTING_ENGINE,
+  EXECUTING_LVLSHOTS,
   execLevelshot,
 }
 

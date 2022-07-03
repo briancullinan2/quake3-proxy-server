@@ -9,10 +9,14 @@ const HTTP_LISTENERS = []
 const WEB_SOCKETS = []
 
 
+// make sure this run async because we don't want to block 
+//   something else from queing this cycle
 async function updatePageViewers(route) {
+  await new Promise(resolve => setTimeout(resolve, 100))
   let response = await fetch('http://localhost:' + HTTP_PORTS[0] + route)
   let html = await response.text()
-  Promise.resolve(Promise.all(Object.keys(SESSION_URLS).map(sess => {
+  Promise.resolve(Promise.all(Object.keys(SESSION_URLS).map(async sess => {
+    await new Promise(resolve => setTimeout(resolve, 10))
     if(SESSION_URLS[sess].match(route)) {
       if(UDP_CLIENTS[SESSION_IDS[sess]]) {
         UDP_CLIENTS[SESSION_IDS[sess]].send(html, {binary: false})

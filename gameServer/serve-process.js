@@ -3,7 +3,9 @@ const { DED_NAME, watcherPID } = require('../utilities/env.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { renderIndex } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
-
+const { EXECUTING_MAPS } = require('../mapServer/serve-lvlshot.js')
+const { CHILD_PROCESS } = require('../utilities/exec.js')
+const { CURRENTLY_CONVERTING } = require('../contentServer/convert.js')
 
 const RESOLVE_DEDICATED = []
 
@@ -44,13 +46,35 @@ async function serveProcess(request, response, next) {
   }, {
     name: 'Application',
     assignments: process.pid,
-  }]
+  }].concat(Object.keys(CHILD_PROCESS).map(cp => {
+    return {
+      name: CHILD_PROCESS[cp],
+      assignments: cp,
+    }
+  }))
   let zips = Object.keys(EXTRACTING_ZIPS).map(zip => {
     return {
       name: zip,
       assignments: process.pid,
     }
   })
+  let engines = Object.keys(EXECUTING_MAPS)
+  .filter(zip => EXECUTING_MAPS[zip].length > 0)
+  .map(zip => {
+    return {
+      name: zip,
+      assignments: process.pid,
+    }
+  })
+  let images = Object.keys(CURRENTLY_CONVERTING)
+  .filter(zip => CURRENTLY_CONVERTING[zip].length > 0)
+  .map(zip => {
+    return {
+      name: zip,
+      assignments: process.pid,
+    }
+  })
+
   return response.send(renderIndex(
     //renderMenu(PROXY_MENU, 'downloads-menu')
     //+ 
@@ -59,10 +83,15 @@ async function serveProcess(request, response, next) {
     <h2>Task List</h2>
     <ol class="directory-list">${processes.map(renderProcess).join('\n')}
     </ol>
-    <h3>Working ZIPs</3>
+    <h3>Running Engines</h3>
+    <ol class="directory-list">${engines.map(renderProcess).join('\n')}
+    </ol>
+    <h3>Working ZIPs</h3>
     <ol class="directory-list">${zips.map(renderProcess).join('\n')}
     </ol>
-    
+    <h3>Image Converter</h3>
+    <ol class="directory-list">${images.map(renderProcess).join('\n')}
+    </ol>
     </div>
     `))
 }
