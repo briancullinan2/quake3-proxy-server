@@ -21,7 +21,9 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
     if(port === 0) {
       port = await new Promise(resolve => {
         newServer.on('listening', () => {
-          SESSION_IDS[sessionId] = newServer.address().port
+          if(sessionId) {
+            SESSION_IDS[sessionId] = newServer.address().port
+          }
           resolve(newServer.address().port)
         })  
       })

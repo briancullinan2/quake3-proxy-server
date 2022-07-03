@@ -164,7 +164,6 @@ ol.directory-list li {
 .main-menu li {
   background-color: rgb(169, 147, 21);
   border-radius: 10px;
-  padding: 10px 20px;
   flex-shrink: 0;
   color: white;
   text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);
@@ -198,6 +197,8 @@ ol.directory-list li {
 .main-menu li a {
   color: white;
   text-decoration: none;
+  padding: 10px 20px;
+  display: inline-block;
 }
 
 #map-info ol .title, .info-layout ol .title {

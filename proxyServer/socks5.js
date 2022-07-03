@@ -30,7 +30,10 @@ const REP = {
 }
 
 function createSOCKS(socket, redirectApp, sessionId) {
-  socket.on('message', async function (message) {
+  socket.on('message', async function (message, binary) {
+    if(!binary) {
+      return
+    }
     try {
       let response = await parseSOCKS(sessionId, redirectApp, socket, message)
       socket.send(Buffer.from(response), { binary: true })

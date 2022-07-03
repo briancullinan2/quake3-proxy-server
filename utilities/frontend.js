@@ -4,6 +4,7 @@ let mapList
 let gameList
 let mapInfo
 
+
 window.addEventListener('load', (event) => {
   mapList = document.getElementById('map-list')
   if(mapList) {
@@ -16,15 +17,6 @@ window.addEventListener('load', (event) => {
     setInterval(refreshMaps, 20)
     setInterval(function () { previousLine = -1 }, 500)
   }
-  
-
-  
-  gameList = document.getElementById('game-list')
-  if(gameList) {
-    setInterval(refreshGames, 20)
-    setInterval(function () { previousLine = -1 }, 2000)
-  }
-
 
   mapInfo = document.getElementById('map-info')
   if(mapInfo) {
@@ -33,6 +25,22 @@ window.addEventListener('load', (event) => {
   }
 
   startLive()
+
+  document.addEventListener('click', function (evt) {
+    for(let i = 0; i < evt.path.length; i++) {
+      if(evt.path[i].tagName == 'A' 
+        && evt.path[i].href) {
+        let header = document.getElementsByTagName('H2')[0]
+        history.pushState(
+          {location: window.location.pathname}, 
+          header ? 'Quake III Arena: ' + header : document.title, 
+          evt.path[i].href)
+        socket1.send(evt.path[i].href, { binary: false })
+        evt.preventDefault()
+        return false
+      }
+    }
+  })
 })
 
 
@@ -258,6 +266,15 @@ function socketOpen(evt) {
 }
 
 function socketMessage(evt) {
+  if(typeof evt.data == 'string'
+    && evt.data.includes('<html')) {
+    let length = document.body.children.length
+    for(let i = length - 1; i > 0; --i) { // don't remove menu
+      document.body.children[i].remove()
+    }
+    document.body.innerHTML += (/<body>[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
+    return
+  }
   let message = new Uint8Array(evt.data)
   //console.log(message)
   switch(evt.target.fresh) {
@@ -349,6 +366,7 @@ function socketError(evt) {
     socket2 = null
   }
 }
+
 
 
 function startLive() {

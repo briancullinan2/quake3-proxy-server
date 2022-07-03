@@ -35,7 +35,7 @@ function createApplication(features) {
     if (filename.match('/unknownmap.jpg')) {
       return res.sendFile(UNKNOWN)
     }
-    if (filename.match('/index.js')) {
+    if (filename.match('/frontend.js')) {
       return res.sendFile(SCRIPTS)
     }
     if (filename.length <= 1 || filename.match('/index.html')) {
@@ -71,13 +71,10 @@ function createApplication(features) {
       return res.sendFile(UNKNOWN)
     }
     // index page
-    let index = renderIndex(`Cannot ${req.method} ${req.originalUrl}`)
+    let index = renderIndex(`<div>Cannot ${req.method} ${req.originalUrl}</div>`)
     return res.status(404).send(index)
   })
 
-  app.use(function (err, req, res, next) {
-    console.log('wtf')
-  })
 
   return app
 }
@@ -121,7 +118,16 @@ function createWebServers(services) {
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
       WEB_SOCKETS[HTTP_PORTS[i]].on('connection', function (socket, request) {
         let cookies = parseCookies(request.headers['cookie'])
-        console.log(cookies, SESSION_IDS)
+        socket.on('message', async function (message, binary) {
+          if(binary) {
+            return
+          }
+          let response = await fetch(message.toString('utf-8'), {
+            method: 'GET',
+          })
+          let html = await response.text()
+          socket.send(html, {binary: false})
+        })
         createSOCKS(socket, redirectApp, cookies['__planet_quake_sess'])
       })
     }
