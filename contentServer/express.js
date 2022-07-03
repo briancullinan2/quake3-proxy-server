@@ -2,7 +2,7 @@ const { INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utiliti
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')
-const { SESSION_IDS } = require('../proxyServer/serve-udp.js')
+const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS } = require('../proxyServer/serve-udp.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 
 // < 100 LoC
@@ -46,6 +46,7 @@ function createApplication(features) {
     if(typeof cookies['__planet_quake_sess'] == 'undefined') {
       let newId = buildChallenge()
       res.cookie('__planet_quake_sess', newId, { maxAge: 900000, httpOnly: true })
+      //SESSION_URLS[newId] = 'http://local' + req.originalUrl
     } else
     if(typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined') {
       res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], { maxAge: 900000, httpOnly: true })
@@ -53,7 +54,12 @@ function createApplication(features) {
     if(typeof cookies['__planet_quake_port'] != 'undefined') {
       // TODO: pre-associate from previously selected address
       //SESSION_IDS[cookies['__planet_quake_sess']] =  cookies['__planet_quake_port']
+      if(req.headers['accept'].includes('text/html')) {
+        SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
+        updateProxyViewers()
+      }
     }
+
     next()
   })
 
@@ -81,6 +87,19 @@ function createApplication(features) {
 
 
   return app
+}
+
+
+async function updateProxyViewers() {
+  let response = await fetch('http://localhost:' + HTTP_PORTS[0] + '/proxy')
+  let html = await response.text()
+  Promise.resolve(Promise.all(Object.keys(SESSION_URLS).map(sess => {
+    if(SESSION_URLS[sess].includes('/proxy')) {
+      if(UDP_CLIENTS[SESSION_IDS[sess]]) {
+        UDP_CLIENTS[SESSION_IDS[sess]].send(html, {binary: false})
+      }
+    }
+  })))
 }
 
 
@@ -122,17 +141,20 @@ function createWebServers(services) {
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
       WEB_SOCKETS[HTTP_PORTS[i]].on('connection', function (socket, request) {
         let cookies = parseCookies(request.headers['cookie'])
+        let sessionId = cookies['__planet_quake_sess']
         socket.on('message', async function (message, binary) {
           if(binary) {
             return
           }
-          let response = await fetch(message.toString('utf-8'), {
-            method: 'GET',
-          })
+          let newUrl = message.toString('utf-8')
+          SESSION_URLS[sessionId] = newUrl
+          let response = await fetch(newUrl)
           let html = await response.text()
           socket.send(html, {binary: false})
+          updateProxyViewers()
         })
-        createSOCKS(socket, redirectApp, cookies['__planet_quake_sess'])
+        createSOCKS(socket, redirectApp, sessionId)
+        updateProxyViewers()
       })
     }
   }

@@ -1,14 +1,21 @@
 // TODO: list connected clients and usernames
 const { renderIndex } = require('../utilities/render.js')
-const { UDP_CLIENTS } = require('../proxyServer/serve-udp.js')
+const { UDP_CLIENTS, SESSION_URLS, SESSION_IDS } = require('../proxyServer/serve-udp.js')
 
 async function serveConnections(request, response, next) {
   let ports = Object.keys(UDP_CLIENTS)
   let proxyConnections = ports.map(p => {
+    let sessionId = Object.keys(SESSION_IDS)
+        .filter(sess => SESSION_IDS[sess] == p)[0]
+    let newUrl
+    if(sessionId && SESSION_URLS[sessionId]){
+      newUrl = new URL(SESSION_URLS[sessionId])
+    }
+    console.log(SESSION_URLS)
     return {
       name: UDP_CLIENTS[p]._socket.remoteAddress.replace('::ffff:', '') 
         + ':' + UDP_CLIENTS[p]._socket.remotePort,
-      assignments: p + ' -> ',
+      assignments: p + ' -> ' + (newUrl ? (newUrl.pathname + (newUrl.query || '')) : ''),
     }
   })
   return response.send(renderIndex(

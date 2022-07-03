@@ -41,6 +41,10 @@ window.addEventListener('load', (event) => {
       }
     }
   })
+
+  window.addEventListener('popstate', function () {
+    socket1.send(window.location, { binary: false })
+  }, false)
 })
 
 

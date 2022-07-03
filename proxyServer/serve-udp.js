@@ -4,6 +4,7 @@ const UDP_SERVERS = []
 const UDP_CLIENTS = []
 const WS_FORWARDS = []
 const SESSION_IDS = {}
+const SESSION_URLS = {}
 
 async function serveUDP(socket, address, port, redirectApp, sessionId) {
   const { Server } = require('ws')
@@ -26,7 +27,7 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
       })
     }
     if(sessionId) {
-      SESSION_IDS[sessionId] = newServer.address().port
+      SESSION_IDS[sessionId] = port
     }
     UDP_SERVERS[port] = newServer
     UDP_SERVERS[port].on('message', function (message, rinfo) {
@@ -84,6 +85,7 @@ function forwardMessage(port, isWS, message, rinfo) {
 
 
 module.exports = {
+  SESSION_URLS,
   SESSION_IDS,
   UDP_SERVERS,
   UDP_CLIENTS,
