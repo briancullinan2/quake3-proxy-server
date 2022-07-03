@@ -31,7 +31,9 @@ async function resolveScreenshot(logs, task) {
   while (match = WROTE_SCREENSHOT.exec(logs)) {
     let outputEnts = path.join(FS_GAMEHOME, getGame(), match[1])
     if (!fs.existsSync(outputEnts)) {
-      console.error('WARNING: output image not found ' + match[1])
+      if(START_SERVICES.includes('convert')) {
+        console.error(new Error('WARNING: output image not found ' + match[1]))
+      }
       continue
     }
     // TODO: don't wait for anything?
@@ -208,7 +210,7 @@ async function execLevelshot(mapname) {
   EXECUTING_LVLSHOTS[mapname] = LVL_COMMANDS
 
   Promise.resolve(lvlshotCmd(mapname, screenshotCommands, logs => {
-    return updateSubscribers(mapname, logs)
+    Promise.all(LVL_COMMANDS.map(updateSubscribers.bind(null, mapname, logs)))
   })).then(logs => { fs.unlinkSync(lvlconfig) })
 
   return await Promise.all(LVL_COMMANDS
@@ -224,22 +226,19 @@ async function execLevelshot(mapname) {
 
 // break up the processing of specific events from the logs
 //   to allow clients to subscribe
-async function updateSubscribers(mapname, logs) {
-  const LVL_COMMANDS = EXECUTING_LVLSHOTS[mapname]
-  for(let i = 0; i < LVL_COMMANDS.length; i++) {
-    if(LVL_COMMANDS[i].done) {
-      continue
-    }
-    let isResolved = await LVL_COMMANDS[i].resolve(logs, LVL_COMMANDS[i])
-    if(!isResolved) {
-      continue
-    }
-  
-    LVL_COMMANDS[i].done = true
-    if(LVL_COMMANDS[i].subscribers) {
-      for(let j = 0; j < LVL_COMMANDS[i].subscribers.length; ++j) {
-        LVL_COMMANDS[i].subscribers[j](logs)
-      }
+async function updateSubscribers(mapname, logs, cmd) {
+  if(cmd.done) {
+    return
+  }
+  let isResolved = await cmd.resolve(logs, cmd)
+  if(!isResolved) {
+    return
+  }
+
+  cmd.done = true
+  if(cmd.subscribers) {
+    for(let j = 0; j < cmd.subscribers.length; ++j) {
+      cmd.subscribers[j](logs)
     }
   }
 }

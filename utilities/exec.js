@@ -36,13 +36,18 @@ async function execCmd(cmd, args, options) {
   //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   return await new Promise(function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
-    RUNNING++
+    if(options && options.later) {
+      CHILD_PROCESS[LIMIT + ':' + 0] = [cmd].concat(args).join(' ')
+      return resolve('')
+    }
     let ps = spawn(cmd, args, {
       timeout: 3600,
       cwd: (options ? options.cwd : null) || process.cwd(),
       shell: options ? options.shell : false || false,
     })
-    CHILD_PROCESS[ps.pid] = [cmd].concat(args).join(' ')
+    RUNNING++
+    let pid = LIMIT + ':' + ps.pid
+    CHILD_PROCESS[pid] = [cmd].concat(args).join(' ')
     updatePageViewers('/process')
     let stderr = ''
     let stdout = ''
@@ -53,7 +58,7 @@ async function execCmd(cmd, args, options) {
     }
     ps.on('close', function (errCode) {
       RUNNING--
-      delete CHILD_PROCESS[ps.pid]
+      delete CHILD_PROCESS[pid]
       updatePageViewers('/process')
       if(errCode > 0) {
         console.log('Error executing:', LIMIT, cmd, args.join(' '), options)

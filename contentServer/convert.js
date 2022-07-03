@@ -6,6 +6,8 @@ const { repackedCache } = require('../utilities/env.js')
 const { streamFile } = require('../utilities/zip.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { convertCmd } = require('../cmdServer/cmd-convert.js')
+const { updatePageViewers } = require('../contentServer/session.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 
 // for some reason image magick doesn't like TGA with variable 
@@ -85,6 +87,10 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
     })
   }
   CURRENTLY_CONVERTING[newPath] = ['placeholder']
+  updatePageViewers('/process')
+  if(!START_SERVICES.includes('convert')) {
+    return
+  }
 
   fs.mkdirSync(path.dirname(newPath), { recursive: true })
   let result = await convertCmd(imagePath, unsupportedFormat, quality, newPath)
@@ -94,6 +100,7 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
       CURRENTLY_CONVERTING[newPath](result)
     }
     CURRENTLY_CONVERTING[newPath].splice(0)
+    updatePageViewers('/process')
   })
 
 }

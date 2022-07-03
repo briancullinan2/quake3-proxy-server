@@ -261,6 +261,8 @@ function socketOpen(evt) {
 		heartbeat = setInterval(function () {
       if(socket1) {
         sendHeartbeat(socket1)
+      } else {
+        startLive()
       }
       heartbeatTimeout = setTimeout(function () {
         if(socket2) {
