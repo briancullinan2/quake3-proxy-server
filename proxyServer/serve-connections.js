@@ -11,7 +11,6 @@ async function serveConnections(request, response, next) {
     if(sessionId && SESSION_URLS[sessionId]){
       newUrl = new URL(SESSION_URLS[sessionId])
     }
-    console.log(SESSION_URLS)
     return {
       name: UDP_CLIENTS[p]._socket.remoteAddress.replace('::ffff:', '') 
         + ':' + UDP_CLIENTS[p]._socket.remotePort,

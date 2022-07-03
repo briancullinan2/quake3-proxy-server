@@ -48,16 +48,23 @@ function createApplication(features) {
       res.cookie('__planet_quake_sess', newId, { maxAge: 900000, httpOnly: true })
       //SESSION_URLS[newId] = 'http://local' + req.originalUrl
     } else
-    if(typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined') {
+    if(typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined'
+      && (typeof cookies['__planet_quake_port'] == 'undefined'
+      || cookies['__planet_quake_port'] != SESSION_IDS[cookies['__planet_quake_sess']])) {
       res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], { maxAge: 900000, httpOnly: true })
     } else
+
     if(typeof cookies['__planet_quake_port'] != 'undefined') {
       // TODO: pre-associate from previously selected address
       //SESSION_IDS[cookies['__planet_quake_sess']] =  cookies['__planet_quake_port']
-      if(req.headers['accept'].includes('text/html')) {
-        SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
-        updateProxyViewers()
-      }
+      
+    }
+
+    
+    if(cookies['__planet_quake_sess']
+      && req.headers['accept'].includes('text/html')) {
+      SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
+      updateProxyViewers()
     }
 
     next()
@@ -153,8 +160,23 @@ function createWebServers(services) {
           socket.send(html, {binary: false})
           updateProxyViewers()
         })
+        socket.on('close', function () {
+          let ports = Object.keys(UDP_CLIENTS)
+          for(let i = 0; i < ports.length; i++) {
+            if(UDP_CLIENTS[i] === socket) {
+              delete UDP_CLIENTS[i]
+            }
+          }
+        })
         createSOCKS(socket, redirectApp, sessionId)
         updateProxyViewers()
+        // if we haven't gotten a URL, the websocket is probably working, but 
+        //   the client never got a page, try to set one after a second
+        setTimeout(function () {
+          if(typeof SESSION_URLS[sessionId] == 'undefined') {
+            socket.send('URL: ', {binary: false})
+          }
+        }, 2000)
       })
     }
   }

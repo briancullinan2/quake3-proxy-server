@@ -278,6 +278,10 @@ function socketMessage(evt) {
     }
     document.body.innerHTML += (/<body>[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
     return
+  } else
+  if(typeof evt.data == 'string'
+    && evt.data.startsWith('URL: ')) {
+    window.location = window.location
   }
   let message = new Uint8Array(evt.data)
   //console.log(message)

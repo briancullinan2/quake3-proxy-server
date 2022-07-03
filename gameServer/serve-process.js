@@ -49,7 +49,7 @@ async function serveProcess(request, response, next) {
     //+ 
     `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <div class="info-layout">
-    <h2>Proxy Clients</h2>
+    <h2>Task List</h2>
     <ol class="directory-list">${processes.map(renderProcess).join('\n')}
     </ol>
     </div>
