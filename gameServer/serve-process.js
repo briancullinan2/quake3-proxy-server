@@ -2,6 +2,7 @@
 const { DED_NAME, watcherPID } = require('../utilities/env.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { renderIndex } = require('../utilities/render.js')
+const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 
 
 const RESOLVE_DEDICATED = []
@@ -44,6 +45,12 @@ async function serveProcess(request, response, next) {
     name: 'Application',
     assignments: process.pid,
   }]
+  let zips = Object.keys(EXTRACTING_ZIPS).map(zip => {
+    return {
+      name: zip,
+      assignments: process.pid,
+    }
+  })
   return response.send(renderIndex(
     //renderMenu(PROXY_MENU, 'downloads-menu')
     //+ 
@@ -52,6 +59,10 @@ async function serveProcess(request, response, next) {
     <h2>Task List</h2>
     <ol class="directory-list">${processes.map(renderProcess).join('\n')}
     </ol>
+    <h3>Working ZIPs</3>
+    <ol class="directory-list">${zips.map(renderProcess).join('\n')}
+    </ol>
+    
     </div>
     `))
 }

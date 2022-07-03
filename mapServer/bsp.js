@@ -38,6 +38,7 @@ async function getMapInfo(mapname) {
   }
   // extract the BSP because we might change it anyways
   if (!foundBsp) {
+    let bspFile = path.join(caches[0], path.basename(newFile) + 'dir', `/maps/${mapname}.bsp`)
     fs.mkdirSync(path.dirname(bspFile), { recursive: true })
     const file = fs.createWriteStream(bspFile)
     await streamFileKey(newFile, `maps/${mapname}.bsp`, file)
