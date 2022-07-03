@@ -36,13 +36,25 @@ const SHADER_LIST = {
 const SHADER_BODY = {
 
 }
+const SHADER_TIMES = {
 
+}
 
 async function ScanAndLoadShaderFiles() {
   let shaders = await existingShaders()
 
   for(let i = 0; i < shaders.length; i++) {
     let pakname = findFile(shaders[i].replace(/\.pk3.*?$/ig, '.pk3'))
+
+    // cache shaders based on file times
+    let stat = fs.statSync(pakname)
+    if(typeof SHADER_TIMES[shaders[i]] != 'undefined') {
+      if(SHADER_TIMES[shaders[i]] == stat.mtime.getTime()) {
+        continue
+      }
+    }
+    SHADER_TIMES[shaders[i]] = stat.mtime.getTime()
+
     let shaderText = await readFileKey(pakname, 'scripts/' + path.basename(shaders[i]))
     //let shaderText = fs.readFileSync(shaders[i]).toString('utf-8')
     SHADER_LIST[shaders[i]] = shaderText

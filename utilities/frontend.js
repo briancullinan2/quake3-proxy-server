@@ -28,17 +28,21 @@ window.addEventListener('load', (event) => {
 
   document.addEventListener('click', function (evt) {
     for(let i = 0; i < evt.path.length; i++) {
-      if(evt.path[i].tagName == 'A' 
-        && evt.path[i].href) {
-        let header = document.getElementsByTagName('H2')[0]
-        history.pushState(
-          {location: window.location.pathname}, 
-          header ? 'Quake III Arena: ' + header : document.title, 
-          evt.path[i].href)
-        socket1.send(evt.path[i].href, { binary: false })
-        evt.preventDefault()
-        return false
+      if(evt.path[i].tagName != 'A' || !evt.path[i].href) {
+        continue
       }
+      evt.preventDefault()
+      if(window.location.pathname == evt.path[i].pathname
+        && window.location.search == evt.path[i].search) {
+        return false // dont modify stack, because its the same
+      }
+      let header = document.getElementsByTagName('H2')[0]
+      history.pushState(
+        {location: window.location.pathname}, 
+        header ? 'Quake III Arena: ' + header : document.title, 
+        evt.path[i].href)
+      socket1.send(evt.path[i].href, { binary: false })
+      return false
     }
   })
 

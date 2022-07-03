@@ -9,127 +9,19 @@ const { getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
 
 
-const EXECUTING = {
-
-}
-
-async function execLevelshot(mapname) {
-  let basegame = getGame()
-  let screenshotCommands = []
-  let newVstr = ''
-  let REPACKED_MAPS = path.join(repackedCache(), '/maps/')
-  let REPACKED_SCREENSHOTS = path.join(repackedCache(), '/screenshots/')
-  let REPACKED_LVLSHOTS = path.join(repackedCache(), '/levelshots/')
-
-  // figure out which images are missing and do it in one shot
-  let needsSetup = false
-  let levelshot = path.join(REPACKED_LVLSHOTS, mapname + '.jpg')
-  if (!fs.existsSync(levelshot)) {
-    newVstr += ' ; vstr takeLevelshot ; '
-    needsSetup = true
-  }
-  let screenshot1 = path.join(REPACKED_SCREENSHOTS, mapname + '_screenshot0001.jpg')
-  if (!fs.existsSync(screenshot1)) {
-    newVstr += ' ; vstr takeLevelshotFullsize ; '
-    needsSetup = true
-  }
-
-  // special exception
-  if (needsSetup) {
-    newVstr = ' ; vstr setupLevelshot ; ' + newVstr
-  }
-
-  let screenshot2 = path.join(REPACKED_SCREENSHOTS, mapname + '_screenshot0002.jpg')
-  if (!fs.existsSync(screenshot2)) {
-    newVstr += ' ; vstr screenshotBirdsEyeView ; '
-  }
-  let tracemap1 = path.join(REPACKED_MAPS, mapname + '_tracemap0001.jpg')
-  if (!fs.existsSync(tracemap1)) {
-    newVstr += ' ; vstr exportAreaMask ; '
-  }
-
-  let tracemap2 = path.join(REPACKED_MAPS, mapname + '_tracemap0002.jpg')
-  if (!fs.existsSync(tracemap2)) {
-    newVstr += ' ; vstr exportHeightMap ; '
-  }
-
-  let tracemap3 = path.join(REPACKED_MAPS, mapname + '_tracemap0003.jpg')
-  if (!fs.existsSync(tracemap3)) {
-    newVstr += ' ; vstr exportSkybox ; '
-  }
-
-  let tracemap4 = path.join(REPACKED_MAPS, mapname + '_tracemap0004.jpg')
-  if (!fs.existsSync(tracemap4)) {
-    newVstr += ' ; vstr exportBottomup ; '
-  }
-
-  let tracemap5 = path.join(REPACKED_MAPS, mapname + '_tracemap0005.jpg')
-  if (!fs.existsSync(tracemap5)) {
-    newVstr += ' ; vstr exportGroundheight ; '
-  }
-
-  let tracemap6 = path.join(basegame, '/maps/', mapname + '_tracemap0006.jpg')
-  if (!fs.existsSync(tracemap6)) {
-    newVstr += ' ; vstr exportSkyboxVolume ; '
-  }
-
-  let tracemap7 = path.join(REPACKED_MAPS, mapname + '_tracemap0007.jpg')
-  if (!fs.existsSync(tracemap7)) {
-    newVstr += ' ; vstr exportSkyboxVolume2 ; '
-  }
-
-  let tracemap8 = path.join(REPACKED_MAPS, mapname + '_tracemap0008.jpg')
-  if (!fs.existsSync(tracemap8)) {
-    newVstr += ' ; vstr exportSkyboxVolume3 ; '
-  }
-
-  // TODO: export / write entities / mapname.ents file
-  let entityFile = path.join(REPACKED_MAPS, mapname + '.ent')
-  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
-  if (!fs.existsSync(entityFile)) {
-    screenshotCommands.push.apply(screenshotCommands, [
-      '+set', 'cm_saveEnts', '1'
-    ])
-  }
-
-  let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
-  if (!fs.existsSync(shaderFile)) {
-    newVstr += ' ; shaderlist ; '
-  }
-
-  let imageFile = path.join(REPACKED_MAPS, mapname + '-images.txt')
-  if (!fs.existsSync(imageFile)) {
-    newVstr += ' ; imagelist ; '
-  }
-
-  // TODO: take screenshot from every camera position
-  // TODO: export all BLUEPRINTS and all facets through sv_bsp_mini
-  let logs = ''
-  if (newVstr.length > 0) {
-    screenshotCommands.push.apply(screenshotCommands, [
-      '+set', 'lvlshotCommands', `"${newVstr}"`,
-      '+exec', `".config/levelinfo_${mapname}.cfg"`,
-      '+vstr', 'resetLvlshot',
-      '+devmap', mapname,
-      '+vstr', 'lvlshotCommands',
-      '+wait', '200', '+quit'
-    ])
+const EXECUTING_ENGINE = {}
 
 
-    fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
-    let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
-    fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
-    logs = await execLevelshotDed(mapname, screenshotCommands)
-    fs.unlinkSync(lvlconfig)
-  }
+// TODO: treat each task as a separate unit of work, 
+//   but only wait on the one that is requested, even if 
+//   many are running in a single instance.
+//   sort by requested count
+// TODO: run engine for specific tasks and connect back the 
+//   isolated master server, send RCON commands instead of
+//   running separate processes for every map, run 4 instances
+//   and rotate maps between them.
 
-  let outputEnts = path.join(FS_GAMEHOME, basegame, '/maps/' + mapname + '.ent')
-  fs.mkdirSync(REPACKED_MAPS, { recursive: true })
-  if (fs.existsSync(outputEnts)) {
-    fs.renameSync(outputEnts, path.join(REPACKED_MAPS, mapname + '.ent'))
-  }
-  //if(screenshotCommands.length) {
-  //}
+async function resolveScreenshot(filter, logs, task) {
 
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
@@ -143,7 +35,26 @@ async function execLevelshot(mapname) {
     }
     // TODO: don't wait for anything?
     await convertImage(unsupportedFormat, match[1], '80%')
+    return true
   }
+
+}
+
+
+async function resolveEnts(logs, task) {
+
+  let WROTE_ENTS = /^Wrote\s+(maps.*?\.ent)$/gmi
+  let outputEnts = path.join(FS_GAMEHOME, basegame, '/maps/' + mapname + '.ent')
+  fs.mkdirSync(REPACKED_MAPS, { recursive: true })
+  if (fs.existsSync(outputEnts)) {
+    fs.renameSync(outputEnts, path.join(REPACKED_MAPS, mapname + '.ent'))
+    return true
+  }
+
+}
+
+
+async function resolveImages(logs, task) {
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
@@ -154,20 +65,139 @@ async function execLevelshot(mapname) {
     fs.writeFileSync(imageFile, images)
   }
 
-  // TODO: CODE REVIEW, in another location, I call resolve() after a promised resolve()
-  //   but from within the same function
-  if (typeof EXECUTING[mapname] != 'undefined') {
-    for (let i = 1; i < EXECUTING[mapname].length; i++) {
-      EXECUTING[mapname][i](logs)
+}
+
+
+async function execLevelshot(mapname) {
+  let basegame = getGame()
+  let screenshotCommands = []
+  let newVstr = ''
+  let caches = repackedCache()
+
+  // figure out which images are missing and do it in one shot
+  let LVL_COMMANDS = [{
+    mapname: mapname,
+    cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshot ; ',
+    resolve: resolveScreenshot.bind(null, 'levelshots\/'),
+    test: path.join('levelshots', mapname + '.jpg')
+  }, {
+    mapname: mapname,
+    // special exception
+    cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshotFullsize ; ',
+    resolve: resolveScreenshot.bind(null, 'screenshot0001'),
+    test: path.join('screenshots', mapname + '_screenshot0001.jpg')
+  }, {
+    mapname: mapname,
+    // special exception
+    cmd: ' ; vstr screenshotBirdsEyeView ; ',
+    resolve: resolveScreenshot.bind(null, 'screenshot0002'),
+    test: path.join('screenshots', mapname + '_screenshot0002.jpg')
+  }]
+  // TODO: take screenshot from every camera position
+  // TODO: export all BLUEPRINTS and all facets through sv_bsp_mini
+  // TODO: palette pastel full levelshot
+
+  const TRACEMAPS = {
+    1: ' ; vstr exportAreaMask ; ',
+    2: ' ; vstr exportHeightMap ; ',
+    3: ' ; vstr exportSkybox ; ',
+    4: ' ; vstr exportBottomup ; ',
+    5: ' ; vstr exportGroundheight ; ',
+    6: ' ; vstr exportSkyboxVolume ; ',
+    7: ' ; vstr exportSkyboxVolume2 ; ',
+    8: ' ; vstr exportSkyboxVolume3 ; ',
+
+  }
+  LVL_COMMANDS.push.apply(LVL_COMMANDS, Object.keys(TRACEMAPS).map(i => {
+    let tracename = `${mapname}_tracemap${String(i).padStart(4, '0')}.jpg`
+    return {
+      mapname: mapname,
+      // special exception
+      cmd: TRACEMAPS[i],
+      resolve: resolveScreenshot.bind(null, tracename),
+      test: path.join('maps', tracename)
     }
-    EXECUTING[mapname].splice(0)
+  }))
+
+  // TODO: export / write entities / mapname.ents file
+  LVL_COMMANDS.push({
+    mapname: mapname,
+    // special exception
+    cmd: ' ; saveents ; ',
+    resolve: resolveEnts,
+    test: path.join('maps', mapname + '.ent')
+  })
+
+  LVL_COMMANDS.push({
+    mapname: mapname,
+    // special exception
+    cmd: ' ; imagelist ; ',
+    resolve: resolveImages,
+    test: path.join('maps', mapname + '-images.txt')
+  })
+
+  for(let i = 0; i < LVL_COMMANDS.length; i++) {
+    for(let j = 0; j < caches.length; j++) {
+      if(fs.existsSync(path.join(caches[j], LVL_COMMANDS[i].test))) {
+        continue
+      }
+
+      // resolve based on filename and no logs? 
+      //   i.e. output already exists, but not converted
+      if(await LVL_COMMANDS[i].resolve('', LVL_COMMANDS[i])) { 
+        continue
+      }
+
+      newVstr += LVL_COMMANDS[i].cmd
+      // TODO: queue the commands for the map and wait for individual success
+
+    }
   }
 
-  return logs
+  /*
+  let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
+  if (!fs.existsSync(shaderFile)) {
+    newVstr += ' ; shaderlist ; '
+  }
+  */
+
+  let logs = ''
+  if (newVstr.length == 0) {
+    return
+  }
+
+  screenshotCommands.push.apply(screenshotCommands, [
+    '+set', 'lvlshotCommands', `"${newVstr}"`,
+    '+exec', `".config/levelinfo_${mapname}.cfg"`,
+    '+vstr', 'resetLvlshot',
+    '+devmap', mapname,
+    '+vstr', 'lvlshotCommands',
+    '+wait', '200', '+quit'
+  ])
+
+
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
+  let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
+  fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
+
+  return await new Promise(resolve => {
+    Promise.resolve(execLevelshotDed(mapname, screenshotCommands))
+      .then(logs => {
+        fs.unlinkSync(lvlconfig)
+        resolve(logs)
+        // resolve other waiters
+        for (let i = 1; i < EXECUTING[mapname].length; i++) {
+          EXECUTING[mapname][i](logs)
+        }
+        EXECUTING[mapname].splice(0)
+      })
+  })
 }
 
 
 module.exports = {
+  EXECUTING_ENGINE,
   execLevelshot,
 }
 
