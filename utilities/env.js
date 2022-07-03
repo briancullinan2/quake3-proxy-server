@@ -93,7 +93,7 @@ if(fs.existsSync(FS_BASEPATH)
         && fs.statSync(modDir).isDirectory()) {
       if(fs.existsSync(path.join(modDir, 'description.txt'))
         || fs.readdirSync(modDir)
-          .filter(filename => filename.endsWith('.pk3') 
+          .filter(filename => filename.match(/\.pk3$/i) 
             || filename.endsWith('.pk3dir')).length > 0) {
         MODS.push(appDirectory[i])
         MODS_NAMES.push(appDirectory[i].toLocaleLowerCase())

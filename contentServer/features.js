@@ -76,6 +76,12 @@ const CONTENT_FEATURES = {
     subtitle: 'Download Remote content',
     link: 'downloads',
     levelshot: ``,
+  },
+  'proxy': {
+    title: 'Proxy',
+    subtitle: 'Proxy Server',
+    link: 'proxy',
+    levelshot: ``,
   }
 }
 

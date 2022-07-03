@@ -40,7 +40,7 @@ async function getMapInfo(mapname) {
 
   let levelshotPath = path.join(pk3Path, '/levelshots/', mapname + '.jpg')
   let levelshot = findFile(levelshotPath)
-  if (levelshot.endsWith('.pk3')) {
+  if (levelshot.match(/\.pk3$/i)) {
     //newFile = await extractPk3(newFile)
   }
 

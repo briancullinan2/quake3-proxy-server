@@ -11,7 +11,7 @@ const { serveAssets } = require('../assetServer/serve-assets.js')
 const { serveMetadata } = require('../assetServer/serve-metadata.js')
 const { serveLive } = require('../contentServer/serve-live.js')
 const { serveSettings } = require('../contentServer/serve-settings.js')
-
+const { serveConnections } = require('../proxyServer/serve-connections.js')
 
 // circular dependency
 function serveFeatures(features, response) {
@@ -87,6 +87,11 @@ function setupExtensions(features, app) {
     app.use('/maps/download', serveDownload)
   }
 
+
+  if (features.includes('all')
+    || features.includes('proxy')) {
+    app.use(/\/proxy\/?$/i, serveConnections)
+  }
 
   return
 

@@ -72,7 +72,7 @@ async function serveVirtual(request, response, next) {
   
 
   for (let i = 0; i < directory.length; i++) {
-    if(directory[i].endsWith('.pk3')) {
+    if(directory[i].match(/\.pk3$/i)) {
       if (!directory.includes(directory[i] + 'dir')) {
         directory.push(directory[i] + 'dir')
       }

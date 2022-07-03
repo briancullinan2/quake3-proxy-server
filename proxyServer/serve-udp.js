@@ -3,16 +3,30 @@ const { lookupDNS } = require('../utilities/dns.js')
 const UDP_SERVERS = []
 const UDP_CLIENTS = []
 const WS_FORWARDS = []
+const SESSION_IDS = {}
 
-async function serveUDP(socket, address, port, redirectApp) {
+async function serveUDP(socket, address, port, redirectApp, sessionId) {
   const { Server } = require('ws')
   const { createServer } = require('http')
   const { createSocket } = require('dgram')
   console.log('UDP associate: ' + address + ':' + port)
-
-  if (typeof UDP_SERVERS[port] == 'undefined') {
-    UDP_SERVERS[port] = createSocket('udp4')
-    UDP_SERVERS[port].bind(port, '0.0.0.0')
+  if(typeof SESSION_IDS[sessionId] != 'undefined') {
+    if(port === 0) {
+      port = SESSION_IDS[sessionId]
+    }
+  }
+  if (port === 0 || typeof UDP_SERVERS[port] == 'undefined') {
+    let newServer = createSocket('udp4')
+    newServer.bind(port, '0.0.0.0')
+    if(port === 0) {
+      port = await new Promise(resolve => {
+        newServer.on('listening', () => {
+          SESSION_IDS[sessionId] = newServer.address().port
+          resolve(newServer.address().port)
+        })  
+      })
+    }
+    UDP_SERVERS[port] = newServer
     UDP_SERVERS[port].on('message', function (message, rinfo) {
       return forwardMessage(port, false /* isWS */, message, rinfo)
     })
@@ -27,7 +41,6 @@ async function serveUDP(socket, address, port, redirectApp) {
   UDP_CLIENTS[port] = socket
   let bindIP = await lookupDNS(socket._socket.localAddress)
   let IPsegments = bindIP.split('.').map(seg => parseInt(seg))
-  console.log(bindIP)
 
   return [
     0x05, 0x00 /* REP.SUCCESS */, 0x00, 0x01 /* ATYP.IPv4 */
@@ -69,5 +82,8 @@ function forwardMessage(port, isWS, message, rinfo) {
 
 
 module.exports = {
+  SESSION_IDS,
+  UDP_SERVERS,
+  UDP_CLIENTS,
   serveUDP,
 }

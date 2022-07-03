@@ -37,7 +37,7 @@ async function serveRepacked(request, response, next) {
   }
 
   let newFile = findFile(filename)
-  if (newFile && newFile.endsWith('.pk3')) {
+  if (newFile && newFile.match(/\.pk3$/i)) {
     // serve unsupported images with ?alt in URL
     if (await streamFileKey(newFile, pk3InnerPath, response)) {
       return

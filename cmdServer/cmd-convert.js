@@ -8,7 +8,7 @@ const { streamFileKey } = require('../utilities/zip.js')
 
 async function convertCmd(imagePath, unsupportedFormat, quality, outFile) {
   let unsupportedExt = path.extname(unsupportedFormat)
-  if (imagePath.endsWith('.pk3')) {
+  if (imagePath.match(/\.pk3$/i)) {
     console.log('Converting: ', imagePath, unsupportedFormat)
     let passThrough = new PassThrough()
     streamFileKey(imagePath, unsupportedFormat, passThrough)

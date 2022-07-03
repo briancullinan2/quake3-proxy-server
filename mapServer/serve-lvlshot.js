@@ -53,14 +53,14 @@ async function serveLevelshot(request, response, next) {
 
 
   levelshot = findFile(filename)
-  if (levelshot && !levelshot.endsWith('.pk3')) {
+  if (levelshot && !levelshot.match(/\.pk3$/i)) {
     return response.sendFile(levelshot)
   }
 
 
   /*
   let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3'))
+  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i))
   let maps = (await Promise.all(pk3files.map(async function (pk3name) {
     let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))

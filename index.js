@@ -125,6 +125,28 @@ function printLogs(cmd) {
 }
 
 
+process.on('unhandledRejection', exceptionHandler)
+process.on('uncaughtException', exceptionHandler)
+
+isInside = false
+function exceptionHandler(ex) {
+  if(isInside) {
+    REDIRECTED_ERRORS.push([ex])
+    previousError(REDIRECTED_ERRORS.length, 'unhandled:', 
+        (ex + '').substring(0, 100))
+    return
+  }
+  isInside = true
+  throw ex // bubble up, make sure it is uncaught?
+}
+
+
+function errorConsole(...args) {
+  REDIRECTED_ERRORS.push(args)
+  previousError(REDIRECTED_ERRORS.length, 'errors:', 
+      args.join(' ').substring(0, 100))
+}
+
 
 function addCommands(features) {
   if(!process.stdin.isTTY) {
@@ -141,11 +163,7 @@ function addCommands(features) {
   //  REDIRECTED_LOGS.push(args)
     //previousLog(...args)
   //}
-  console.error = function (...args) {
-    REDIRECTED_ERRORS.push(args)
-    previousError(REDIRECTED_ERRORS.length, 'errors:', 
-        args.join(' ').substring(0, 100))
-  }
+  console.error = errorConsole
   rl.on('line', function(line){
     line = line.trim()
     if(line.startsWith('\\')) {

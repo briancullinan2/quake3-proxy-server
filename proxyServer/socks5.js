@@ -29,10 +29,10 @@ const REP = {
   ATYPUNSUPP: 0x08
 }
 
-function createSOCKS(socket, redirectApp) {
+function createSOCKS(socket, redirectApp, sessionId) {
   socket.on('message', async function (message) {
     try {
-      let response = await parseSOCKS(redirectApp, socket, message)
+      let response = await parseSOCKS(sessionId, redirectApp, socket, message)
       socket.send(Buffer.from(response), { binary: true })
     } catch (e) {
       console.error(e)
@@ -98,7 +98,7 @@ function parsePort(buffer) {
   return (buffer[0] << 8) + buffer[1]
 }
 
-async function parseSOCKS(redirectApp, socket, message) {
+async function parseSOCKS(sessionId, redirectApp, socket, message) {
   let buffer = new Uint8Array(message)
 
   if (!message) {
@@ -111,7 +111,7 @@ async function parseSOCKS(redirectApp, socket, message) {
     // reconnect client, automatically associate
     let port = parsePort(buffer)
     socket.bound = true
-    await serveUDP(socket, '0.0.0.0', port, redirectApp)
+    await serveUDP(socket, '0.0.0.0', port, redirectApp, sessionId)
     console.log('Switching to UDP listener.', socket._socket.remotePort)
     return [0x05, 0x00]
   } else
@@ -160,7 +160,7 @@ async function parseSOCKS(redirectApp, socket, message) {
           let { buffer, address } = await parseAddress(message.slice(3))
           let port = parsePort(buffer)
           socket.bound = true
-          return await serveUDP(socket, address, port, redirectApp)
+          return await serveUDP(socket, address, port, redirectApp, sessionId)
         } else
 
           if (message.length == 4 && message[3] == 0) {

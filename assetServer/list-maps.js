@@ -9,7 +9,7 @@ const MAP_DICTIONARY = {}
 async function existingMaps() {
   let basegame = getGame()
   let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
+  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i)).sort().reverse()
   let maps = (await Promise.all(pk3files.map(async function (pk3name) {
     let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))

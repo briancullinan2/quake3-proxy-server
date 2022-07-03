@@ -32,7 +32,7 @@ async function parseExisting(pk3files) {
     let gamedir = await layeredDir(basegame)
     // TODO: automatically add palette and built QVMs
     pk3files = gamedir
-        .filter(file => file.endsWith('.pk3'))
+        .filter(file => file.match(/\.pk3$/i))
         .map(p => path.basename(p)).sort().reverse()
   }
   let existingPalette = {}

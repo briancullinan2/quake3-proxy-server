@@ -18,7 +18,7 @@ async function unpackBasegame(newZip) {
   let virtualPaths = []
   let gamedir = await layeredDir(getGame())
   // TODO: automatically add palette and built QVMs
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()
+  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i)).sort().reverse()
   for (let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(pk3files[j])
     let index = await getIndex(newFile)

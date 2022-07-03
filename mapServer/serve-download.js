@@ -30,7 +30,7 @@ const path = require('path')
 const { LVLWORLD_DB, downloadCache, getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
 const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
-const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
+const { renderFilelist } = require('../contentServer/serve-settings.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { findFile } = require('../assetServer/virtual.js')
 
@@ -58,7 +58,7 @@ async function serveDownload(request, response, next) {
 
   // handle pk3 files by name directly
   let newFile = findFile(getGame() + '/' + path.basename(filename))
-  if(newFile && newFile.endsWith('.pk3')) {
+  if(newFile && newFile.match(/\.pk3$/i)) {
     console.log('Downloading:', newFile)
     return response.sendFile(newFile, {
       headers: { 'content-disposition': `attachment; filename="${path.basename(filename)}"` }
@@ -67,7 +67,7 @@ async function serveDownload(request, response, next) {
 
   for(let i = 0; i < caches.length; i++) {
     let pk3File = path.join(caches[i], path.basename(filename))
-    if(fs.existsSync(pk3File) && pk3File.endsWith('.pk3')) {
+    if(fs.existsSync(pk3File) && pk3File.match(/\.pk3$/i)) {
       console.log('Downloading:', pk3File)
       return response.sendFile(pk3File, {
         headers: { 'content-disposition': `attachment; filename="${path.basename(filename)}"` }
@@ -137,7 +137,7 @@ async function serveMaps(request, response, next) {
 }
 
 function filterPk3(file, i, arr) {
-  return !file.startsWith('.') && file.endsWith('.pk3') && arr.indexOf(file) === i
+  return !file.startsWith('.') && file.match(/\.pk3$/i) && arr.indexOf(file) === i
 }
 
 
@@ -199,18 +199,19 @@ async function serveDownloadList(request, response, next) {
   }
 
   // TODO: make async
-  let pk3sFiltered = await listDownloads()
+  let pk3sPaths = await listDownloads()
   // TODO: compare pk3 name with known pk3s from remotes
+  let pk3sFiltered
   if(filename.match(/missing/i)) {
     let allMaps = Object.values(MAP_LIST)
-    let exitingNames = pk3sFiltered.map(map => path.basename(map).replace(/\.pk3/i, '').toLocaleLowerCase())
-    pk3sFiltered = allMaps.filter(map => !exitingNames.includes(map.toLocaleLowerCase())).map(map => ({
+    let exitingNames = pk3sPaths.map(map => path.basename(map).replace(/^map[-_]/i, '').replace(/\.pk3/i, '').toLocaleLowerCase())
+    pk3sFiltered = allMaps.filter(map => !exitingNames.includes(map.replace(/^map[-_]/i, '').toLocaleLowerCase())).map(map => ({
       name: map || '',
       absolute: ''
     }))
     console.log(pk3sFiltered)
   } else {
-    pk3sFiltered = await Promise.all(pk3sFiltered.slice(0, 100).map(describePk3))
+    pk3sFiltered = await Promise.all(pk3sPaths.slice(0, 100).map(describePk3))
   }
 
 

@@ -5,13 +5,13 @@ async function alternateAudio(pk3InnerPath, response, next) {
   let altFile = pk3InnerPath.replace(path.extname(pk3InnerPath), '')
 
   let gamedir = await layeredDir(getGame())
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
+  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i)).sort().reverse()  
   for(let i = 0; i < AUDIO_FORMATS.length; i++) {
     if(unsupportedAudio(AUDIO_FORMATS[i])) {
       continue
     }
     let newFile = findFile(altFile + AUDIO_FORMATS[i])
-    if(newFile && !newFile.endsWith('.pk3')) {
+    if(newFile && !newFile.match(/\.pk3$/i)) {
       console.log(newFile)
       return response.sendFile(newFile)
     }
@@ -68,13 +68,13 @@ async function alternateImage(pk3InnerPath, response, next) {
   
 
   let gamedir = await layeredDir(getGame())
-  let pk3files = gamedir.filter(file => file.endsWith('.pk3')).sort().reverse()  
+  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i)).sort().reverse()  
   for(let i = 0; i < IMAGE_FORMATS.length; i++) {
     if(unsupportedImage(IMAGE_FORMATS[i])) {
       continue
     }
     let newFile = findFile(altFile + IMAGE_FORMATS[i])
-    if(newFile && !newFile.endsWith('.pk3')) {
+    if(newFile && !newFile.match(/\.pk3$/i)) {
       return response.sendFile(newFile)
     }
   }

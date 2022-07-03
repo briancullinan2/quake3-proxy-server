@@ -12,7 +12,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
   let file
   let passThrough
   let startArgs = []
-  if(audioPath.endsWith('.pk3')) {
+  if(audioPath.match(/\.pk3$/i)) {
     file = await fileKey(audioPath, unsupportedFormat)
     if(file) {
       passThrough = new PassThrough()

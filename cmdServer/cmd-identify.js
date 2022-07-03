@@ -9,7 +9,7 @@ const { streamFile } = require('../utilities/zip.js')
 async function opaqueCmd(imagePath, unsupportedFormat) {
   let isOpaque
   let unsupportedExt = path.extname(unsupportedFormat)
-  if (imagePath.endsWith('.pk3')) {
+  if (imagePath.match(/\.pk3$/i)) {
     let file = await fileKey(imagePath, unsupportedFormat)
     if (file) {
       let passThrough = new PassThrough()

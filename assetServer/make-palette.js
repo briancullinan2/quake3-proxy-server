@@ -32,7 +32,7 @@ async function rebuildPalette(pk3files) {
   if(pk3sOnly.length == 0) {
     let gamedir = await layeredDir(getGame())
     // TODO: automatically add palette and built QVMs
-    pk3sOnly = gamedir.filter(file => file.endsWith('.pk3'))
+    pk3sOnly = gamedir.filter(file => file.match(/\.pk3$/i))
         .map(p => path.basename(p)).sort().reverse()
   }
 

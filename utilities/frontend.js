@@ -363,7 +363,7 @@ function startLive() {
     + (window.location.protocol.length > 5 ? 's' : '')
     + '://' + window.location.hostname + ':' + window.location.port
   if(!socket1) {
-   socket1 = new WebSocket(fullAddress)
+   socket1 = new WebSocket(fullAddress /* , {headers: cookie: '__planet_quake_sess='} */)
    socket1.binaryType = 'arraybuffer';
    socket1.addEventListener('open', socketOpen, false)
    socket1.addEventListener('message', socketMessage, false)
