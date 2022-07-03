@@ -8,6 +8,8 @@
 //   to track client guids
 const fs = require('fs')
 const path = require('path')
+const {spawn} = require('child_process')
+
 const { HTTP_PORTS, createWebServers } = require('./contentServer/express.js')
 const { MASTER_PORTS, createMasters } = require('./gameServer/serve-master.js')
 const { serveDedicated } = require('./gameServer/serve-process.js')
@@ -187,10 +189,34 @@ function addCommands(features) {
 }
 
 function main() {
+
+  if(!START_SERVICES.includes('holdup')
+    && (START_SERVICES.includes('all')
+    || START_SERVICES.includes('live'))) {
+    let startArgs = [process.argv[1]]
+      .concat(process.argv.slice(2))
+      .concat(START_SERVICES)
+      .concat(['holdup'])
+    let childProcess
+    fs.watch(__dirname, {recursive: true}, function (type, file) {
+      if(file.match(/\.js/i)) {
+        if(childProcess) {
+          childProcess.kill()
+        }
+        childProcess = spawn('node', startArgs, {stdio: 'inherit'})
+      }
+    })
+    childProcess = spawn('node', startArgs, {stdio: 'inherit'})
+    return
+  }
+
   parseAguments(process.argv)
+
   if(fs.existsSync(path.join(__dirname, 'settings.json'))) {
     parseAguments(require(path.join(__dirname, 'settings.json')))
   }
+
+  //console.log(START_SERVICES)
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
@@ -211,12 +237,14 @@ function main() {
     || START_SERVICES.includes('tty')) {
     addCommands(START_SERVICES)
   }
+
 }
 
 
 // create servers
 let isCLI = false
 let runServer = false
+let holdup = false
 
 for (let i = 0; i < process.argv.length; i++) {
   let a = process.argv[i]
@@ -227,13 +255,17 @@ for (let i = 0; i < process.argv.length; i++) {
       runServer = true
     } else
       if (SUPPORTED_SERVICES.includes(a)) {
-        if (START_SERVICES.length == 1 && START_SERVICES[0] == 'all') {
-          START_SERVICES.pop()
-        }
         START_SERVICES.push(a)
       }
 }
+if(START_SERVICES.length == 0) {
+  START_SERVICES.push('all')
+}
 
 if (runServer) {
-  main()
+  if(START_SERVICES.includes('holdup')) {
+    setTimeout(main, 2000)
+  } else {
+    main()
+  }
 }
