@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
-const { repackedCache, downloadCache, getGame } = require('../utilities/env.js')
+const { getGames, repackedCache, downloadCache } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../utilities/watch.js')
 
 let SETTINGS_MENU = [
@@ -82,21 +82,22 @@ async function serveSettings(request, response, next) {
     }
   }
 
-
-  let GAME_ORDER = gameDirectories(getGame(), true)
-  //let nonExistingGames = []
-  //let includedGames = []
   let allGames = []
-  for(let i = 0; i < GAME_ORDER.length; i++) {
-    let exists = fs.existsSync(GAME_ORDER[i])
-    allGames.push({
-      name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),
-      mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : new Date(0),
-      absolute: path.dirname(GAME_ORDER[i]),
-      exists: exists
-    })
+  let GAME_MODS = getGames()
+  for(let i = 0; i < GAME_MODS.length; i++) {
+    let GAME_ORDER = gameDirectories(GAME_MODS[i], true)
+    //let nonExistingGames = []
+    //let includedGames = []
+    for(let i = 0; i < GAME_ORDER.length; i++) {
+      let exists = fs.existsSync(GAME_ORDER[i])
+      allGames.push({
+        name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),
+        mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : new Date(0),
+        absolute: path.dirname(GAME_ORDER[i]),
+        exists: exists
+      })
+    }
   }
-
 
   return response.send(renderIndex(
   renderMenu(SETTINGS_MENU, 'asset-menu')

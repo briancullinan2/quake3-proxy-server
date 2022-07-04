@@ -2,5 +2,7 @@
   "--add-downloads",
   "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-c",
   "--add-repacked",
-  "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-cc"
+  "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-cc",
+  "--add-game",
+  "baseq3a"
 ]

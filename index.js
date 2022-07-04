@@ -14,7 +14,7 @@ const { MASTER_PORTS, createMasters } = require('./gameServer/serve-master.js')
 const { serveDedicated } = require('./gameServer/serve-process.js')
 const {
   setDownload, setRepack, downloadCache, repackedCache, setGame,
-  addDownload, setWatcherPID, addRepacked,
+  addDownload, setWatcherPID, addRepacked, addGame,
 } = require('./utilities/env.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
 const { projectWatcher, contentWatcher } = require('./utilities/watch.js')
@@ -61,6 +61,12 @@ function parseAguments(startArgs) {
       case '--game':
         console.log('Basegame: ', startArgs[i + 1])
         setGame(startArgs[i + 1])
+        i++
+        break
+      case '--add-mod':
+      case '--add-game':
+        console.log('Game mod: ', startArgs[i + 1])
+        addGame(startArgs[i + 1])
         i++
         break
       case '--repack-cache':

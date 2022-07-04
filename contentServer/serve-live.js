@@ -3,8 +3,9 @@
 const path = require('path')
 const fs = require('fs')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { buildDirectories } = require('../assetServer/virtual.js')
+const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
 const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
+const { getGames } = require('../utilities/env.js')
 
 // TODO: send refresh signal over websocket/proxy
 //   in a POSIX similar way? This would be cool
@@ -42,23 +43,52 @@ async function serveVersion() {
 async function listFiles(filename) {
   let directory = []
   let lowercasePaths = []
-  let BUILD_ORDER = buildDirectories()
+  let BUILD_ORDER = buildDirectories().map(dir => path.join(dir, filename))
+  let GAME_MODS = getGames()
+  if(filename.startsWith('/')) {
+    filename = filename.substring(1)
+  }
+  let modname = filename.split('/')[0]
+
+  for(let i = 0; i < GAME_MODS.length; i++) {
+    let GAME_ORDER = gameDirectories(GAME_MODS[i]).map(dir => path.join(dir, filename.substring(modname.length))).filter(dir => fs.existsSync(dir) && fs.statSync(dir).isDirectory())
+    if(GAME_ORDER.length == 0) {
+      continue
+    }
+    if(modname.localeCompare(GAME_MODS[i], 'en', {sensitivity: 'base'}) == 0) {
+      BUILD_ORDER.push.apply(BUILD_ORDER, GAME_ORDER)
+    }
+    if(filename.length > 1) {
+      continue
+    }
+    let stat = fs.statSync(GAME_ORDER[0])
+    directory.push({
+      name: GAME_MODS[i] + '/',
+      link: `/build/${GAME_MODS[i]}`,
+      absolute: path.join(path.basename(path.dirname(GAME_ORDER[0])), path.basename(GAME_ORDER[0]), GAME_MODS[i]),
+      mtime: stat.mtime || stat.ctime,
+    })
+    lowercasePaths.push((GAME_MODS[i] + '/').toLocaleLowerCase())
+  }
+
   // TODO: add game development directories
   // TODO: add --add-game to add multiple games
   for (let i = 0; i < BUILD_ORDER.length; i++) {
-    let newPath = path.join(BUILD_ORDER[i], filename)
-    if (!fs.existsSync(newPath) 
-      || !fs.statSync(newPath).isDirectory()) {
+    if (!fs.existsSync(BUILD_ORDER[i]) 
+      || !fs.statSync(BUILD_ORDER[i]).isDirectory()) {
       continue
     }
-    let subdirectory =  fs.readdirSync(newPath)
+    let subdirectory =  fs.readdirSync(BUILD_ORDER[i])
     for(let s = 0; s < subdirectory.length; s++) {
-      let stat = fs.statSync(path.join(newPath, subdirectory[s]))
+      if(!fs.existsSync(path.join(BUILD_ORDER[i], subdirectory[s]))) {
+        continue
+      }
+      let stat = fs.statSync(path.join(BUILD_ORDER[i], subdirectory[s]))
       if(stat.isDirectory()) {
         directory.push({
           name: subdirectory[s] + '/',
           link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
-          absolute: path.join(path.basename(path.dirname(newPath)), path.basename(newPath), subdirectory[s]),
+          absolute: path.join(path.basename(path.dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
         lowercasePaths.push((subdirectory[s] + '/').toLocaleLowerCase())
@@ -67,7 +97,7 @@ async function listFiles(filename) {
           name: subdirectory[s],
           size: stat.size,
           link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
-          absolute: path.join(path.basename(path.dirname(newPath)), path.basename(newPath), subdirectory[s]),
+          absolute: path.join(path.basename(path.dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
         lowercasePaths.push(subdirectory[s].toLocaleLowerCase())

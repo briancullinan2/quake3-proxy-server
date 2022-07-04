@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { MODS_NAMES, getGame } = require('../utilities/env.js')
+const { MODS_NAMES, getGame, getGames } = require('../utilities/env.js')
 const { renderIndex, renderList } = require('../utilities/render.js')
 
 /*
@@ -36,7 +36,8 @@ async function serveModsRange(request, response, next) {
 
 async function serveModsReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
-  let games = await Promise.all(Object.values(MODS_NAMES)
+  let games = await Promise.all(Object.values(MODS_NAMES).concat(getGames())
+    .filter((mod, i, arr) => arr.indexOf(mod) == i)
     .slice(start, end).map(async (game, i) => {
       let levelshot
       return {
@@ -46,6 +47,7 @@ async function serveModsReal(start, end, isJson, response, next) {
         link: `mods/${game}`,
       }
     }))
+  games.sort((a, b) => a.title.localeCompare(b.title, 'en', {sensitivity: 'base'}))
   if (isJson) {
     return response.json(games)
   }
@@ -72,7 +74,7 @@ async function serveModInfo(request, response, next) {
       },
       {
         title: 'Assets',
-        link: getGame() + '/' + modname,
+        link: modname,
       },
     ], 3)))
 }

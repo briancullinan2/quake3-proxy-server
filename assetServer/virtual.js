@@ -28,7 +28,7 @@ function gameDirectories(basegame, unexisting) {
     path.join(GAME_DIRECTORY, 'build/win32-qvm'),
     path.join(GAME_DIRECTORY, 'assets'),
     GAME_DIRECTORY,
-  ]
+  ].filter(dir => unexisting || fs.existsSync(dir))
   if(unexisting || fs.existsSync(path.join(FS_GAMEHOME, basegame))) {
     GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, basegame))
   }

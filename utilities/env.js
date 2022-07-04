@@ -51,6 +51,16 @@ function getGame() {
   return FS_BASEGAME
 }
 
+const GAME_MODS = []
+
+function getGames() {
+  return [FS_BASEGAME].concat(GAME_MODS)
+}
+
+function addGame(game) {
+  GAME_MODS.push(game)
+}
+
 function repackedCache() {
   return REPACK_CACHE
 }
@@ -140,6 +150,7 @@ module.exports = {
   AUDIO_FORMATS,
   EXE_NAME,
   DED_NAME,
+  GAME_MODS,
   WEB_DIRECTORY,
   ASSETS_DIRECTORY,
   BUILD_DIRECTORY,
@@ -156,7 +167,9 @@ module.exports = {
   MODS,
   MODS_NAMES,
   setGame,
+  addGame,
   getGame,
+  getGames,
   repackedCache,
   downloadCache,
   setRepack,
