@@ -121,7 +121,8 @@ function socketConnect(socket, request) {
       }
     }
   })
-  updateSession(request.url)
+  updateSession(request.url.includes('://') ? request.url 
+    : ('http://localhost:' + HTTP_PORTS[0] + request.url))
   createSOCKS(socket, redirectApp, sessionId)
   updatePageViewers('/proxy')
   // if we haven't gotten a URL, the websocket is probably working, but 

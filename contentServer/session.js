@@ -14,7 +14,7 @@ const WEB_SOCKETS = {}
 async function updatePageViewers(route) {
   let promises = []
   await new Promise(resolve => setTimeout(resolve, 100))
-  let newUrl = 'http://localhost:' + HTTP_PORTS[0] + route
+  let newUrl = route.includes('://') ? route : ('http://localhost:' + HTTP_PORTS[0] + route)
   let html
   if(route.match(/proxy/i)) {
     html = 'UPDATE: ' + route
