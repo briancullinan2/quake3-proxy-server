@@ -68,7 +68,6 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
 }
 
 function forwardMessage(port, isWS, message, rinfo) {
-  //console.log(arguments)
   let domain = reverseLookup(isWS, rinfo.address)
   let buffer
   if (!domain) {

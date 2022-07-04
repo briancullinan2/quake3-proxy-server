@@ -21,7 +21,6 @@ function sendOOB(socket, message, rinfo) {
 
 
 async function heartbeat(socket, message, rinfo) {
-  //console.log(message, rinfo)
   // wait for a successful infoResponse before confirming
   let info = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
@@ -36,7 +35,6 @@ async function heartbeat(socket, message, rinfo) {
     }
     sendOOB(socket, msg, rinfo)
   })
-  //console.log(info)
 
   // resolve awaiting `getServers` command for new local dedicated
   if (rinfo.address == '127.0.0.1') {
@@ -57,7 +55,7 @@ async function infoResponse(socket, message, rinfo) {
       }
       return obj
     }, {})
-  //console.log(infos)
+
   if (typeof GAME_SERVERS[infos.challenge] != 'undefined') {
     Object.assign(GAME_SERVERS[infos.challenge], infos)
   }
@@ -79,7 +77,7 @@ async function infoResponse(socket, message, rinfo) {
 // Interesting, I see an end to the classic "loss-leaders"
 async function getserversResponse(socket, message, rinfo) {
   let buffer = message
-  //console.log(Array.from(message).map(c => String.fromCharCode(c)).join(''))
+
   while (buffer[0] == '\\'.charCodeAt(0)
     && !(buffer[1] == 'E'.charCodeAt(0)
       && buffer[2] == 'O'.charCodeAt(0)
@@ -98,7 +96,7 @@ async function getserversResponse(socket, message, rinfo) {
       rinfo.address = '127.0.0.1'
     }
     GAME_SERVERS[challenge] = rinfo
-    //console.log(rinfo)
+
     sendOOB(socket, msg, rinfo)
     buffer = buffer.slice(7)
   }
@@ -148,7 +146,6 @@ async function serveMaster(socket, message, rinfo) {
   if (!(buffer = parseOOB(message))) {
     return
   }
-  //console.log(buffer)
 
   for (let i = 0; i < MASTER_SERVICE.length; i++) {
     if (buffer.length < MASTER_SERVICE[i].length) {
@@ -161,7 +158,7 @@ async function serveMaster(socket, message, rinfo) {
     ) {
       continue;
     }
-    //console.log(i, request, '!=', MASTER_SERVICE[i])
+
     buffer = buffer.slice(MASTER_SERVICE[i].length)
     if (i == 0) {
       await getserversResponse(socket, buffer, rinfo)

@@ -16,7 +16,6 @@ const { renderImages } = require('../mapServer/shaders.js')
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()
   let mapsAvailable = await existingMaps()
-  //console.log(MAP_DICTIONARY)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
   if (typeof MAP_DICTIONARY[mapname] == 'undefined') {

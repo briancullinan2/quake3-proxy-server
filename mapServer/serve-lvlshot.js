@@ -45,8 +45,6 @@ async function lvlshotCmd(mapname, startArgs, callback) {
     })
   }
 
-  //console.log(startArgs)
-  //console.log(startArgs)
   // TODO: CODE REVIEW, using the same technique in compress.js (CURRENTLY_UNPACKING)
   //   but the last resolve function would be here after the resolve(stderr)
   //   instead of after, in the encapsulating function call.

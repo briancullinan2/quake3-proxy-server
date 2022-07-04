@@ -232,7 +232,7 @@ function sendHeartbeat(sock) {
       { binary: true })
   } else if(sock.readyState == WebSocket.CLOSED) {
     reconnect = true
-    if(sock ==socket1) {
+    if(sock == socket1) {
      socket1 = null
     } else {
       socket2 = null
@@ -262,7 +262,7 @@ function socketOpen(evt) {
       if(socket1) {
         sendHeartbeat(socket1)
       } else {
-        startLive()
+        setTimeout(startLive, 100)
       }
       heartbeatTimeout = setTimeout(function () {
         if(socket2) {
@@ -274,6 +274,9 @@ function socketOpen(evt) {
   if(!reconnect) return
 	sendLegacyEmscriptenConnection(evt.target, window.net_port)
 }
+
+let previousUrl = ''
+let debounceTimer
 
 function socketMessage(evt) {
   if(typeof evt.data == 'string'
@@ -293,12 +296,24 @@ function socketMessage(evt) {
   if(typeof evt.data == 'string'
     && evt.data.startsWith('UPDATE: ')) {
     if(window.location.pathname.match(evt.data.substring(8))) {
-      socket1.send(window.location + '', { binary: false })
+      if(previousUrl.localeCompare(evt.data.substring(8), 'en', {sensitivity: 'base'}) != 0) {
+        previousUrl = evt.data.substring(8)
+        clearTimeout(debounceTimer)
+        debounceTimer = null
+      }
+      if(!debounceTimer) {
+        debounceTimer = setTimeout(function () {
+          debounceTimer = null
+          socket1.send(window.location + '', { binary: false })
+        }, 100)
+      }
     }
+
     return
   }
+
+
   let message = new Uint8Array(evt.data)
-  //console.log(message)
   switch(evt.target.fresh) {
     case 1:
       if(message.length != 2) {
@@ -404,7 +419,8 @@ function startLive() {
   }
   let fullAddress = 'ws' 
     + (window.location.protocol.length > 5 ? 's' : '')
-    + '://' + window.location.hostname + ':' + window.location.port
+    + '://' + window.location.hostname + ':' + window.location.port 
+    + window.location.pathname
   if(!socket1) {
    socket1 = new WebSocket(fullAddress /* , {headers: cookie: '__planet_quake_sess='} */)
    socket1.binaryType = 'arraybuffer';

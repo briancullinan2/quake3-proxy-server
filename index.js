@@ -206,14 +206,21 @@ function main() {
       .concat(START_SERVICES)
       .concat(['holdup', '--watcher-pid', process.pid])
     let childProcess
+    let debounceTimer
     fs.watch(__dirname, {recursive: true}, function (type, file) {
-      if(file.match(/\.js/i)) {
-        if(childProcess) {
-          childProcess.kill()
-        }
-        childProcess = spawn('node', startArgs, {stdio: 'inherit'})
-        childProcess.unref()
+      if(debounceTimer) {
+        return
       }
+      debounceTimer = setTimeout(function () {
+        debounceTimer = null
+        if(file.match(/\.js/i)) {
+          if(childProcess) {
+            childProcess.kill()
+          }
+          childProcess = spawn('node', startArgs, {stdio: 'inherit'})
+          childProcess.unref()
+        }
+      }, 300)
     })
     childProcess = spawn('node', startArgs, {stdio: 'inherit'})
     childProcess.unref()

@@ -14,8 +14,13 @@ const WEB_SOCKETS = {}
 async function updatePageViewers(route) {
   let promises = []
   await new Promise(resolve => setTimeout(resolve, 100))
-  let response = await fetch('http://localhost:' + HTTP_PORTS[0] + route)
-  let html = await response.text()
+  let html
+  if(route.match(/proxy/i)) {
+    html = 'UPDATE: ' + route
+  } else {
+    let response = await fetch('http://localhost:' + HTTP_PORTS[0] + route)
+    html = await response.text()
+  }
   let ports = Object.keys(UDP_CLIENTS)
   //let sessions = Object.keys(SESSION_URLS)
   let count = 0
@@ -67,20 +72,7 @@ function restoreSession(req, res) {
       && (typeof cookies['__planet_quake_port'] == 'undefined'
         || cookies['__planet_quake_port'] != SESSION_IDS[cookies['__planet_quake_sess']])) {
       res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], { maxAge: 900000, httpOnly: true })
-    } else
-
-      if (typeof cookies['__planet_quake_port'] != 'undefined') {
-        // TODO: pre-associate from previously selected address
-        //SESSION_IDS[cookies['__planet_quake_sess']] =  cookies['__planet_quake_port']
-
-      }
-
-
-  if (cookies['__planet_quake_sess']
-    && req.headers['accept'].includes('text/html')) {
-    //SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
-    //updatePageViewers('/proxy')
-  }
+    }
 
 }
 

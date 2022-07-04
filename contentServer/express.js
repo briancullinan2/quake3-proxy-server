@@ -89,18 +89,26 @@ function socketConnect(socket, request) {
   UDP_CLIENTS[0].push(socket)
   let cookies = parseCookies(request.headers['cookie'])
   let sessionId = cookies['__planet_quake_sess']
+  function updateSession(newUrl) {
+    if(Object.values(UDP_CLIENTS).filter(multicast => {
+      return multicast.indexOf(socket) == 0
+    }).length > 0) {
+      SESSION_URLS[sessionId] = newUrl
+    }
+    if(!newUrl.match(/proxy/i)) {
+      updatePageViewers('/proxy')
+      console.log(newUrl)
+    }
+  }
   socket.on('message', async function (message, binary) {
     if (binary) {
       return
     }
     let newUrl = message.toString('utf-8')
-    if(Object.values(UDP_CLIENTS).filter(multicast => multicast.indexOf(socket) == 0).length > 0) {
-      SESSION_URLS[sessionId] = newUrl
-    }
+    updateSession(newUrl)
     let response = await fetch(newUrl)
     let html = await response.text()
     socket.send(html, { binary: false })
-    updatePageViewers('/proxy')
   })
   socket.on('close', function () {
     let ports = Object.keys(UDP_CLIENTS)
@@ -111,6 +119,7 @@ function socketConnect(socket, request) {
       }
     }
   })
+  updateSession('http://local' + request.url)
   createSOCKS(socket, redirectApp, sessionId)
   updatePageViewers('/proxy')
   // if we haven't gotten a URL, the websocket is probably working, but 

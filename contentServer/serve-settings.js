@@ -86,7 +86,6 @@ async function serveSettings(request, response, next) {
   let nonExistingGames = []
   let includedGames = []
   for(let i = 0; i < GAME_ORDER.length; i++) {
-    //console.log(newPath)
     if(!fs.existsSync(GAME_ORDER[i])) {
       nonExistingGames.push({
         name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),

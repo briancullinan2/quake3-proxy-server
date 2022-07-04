@@ -50,7 +50,6 @@ function createSOCKS(socket, redirectApp, sessionId) {
 }
 
 function parseLegacyEmscriptPort(buffer) {
-  //console.log(Array.from(buffer).map(c => String.fromCharCode(c)).join(''))
   if (Array.from(buffer).slice(0, 4).map(c => String.fromCharCode(c)).join('') == 'port') {
     return buffer.slice(4)
   }
@@ -107,7 +106,6 @@ async function parseSOCKS(sessionId, redirectApp, socket, message) {
   if (!message) {
     throw new Error('wtf?')
   }
-  //console.log(message)
 
   if ((buffer = parseOOB(message))
     && (buffer = parseLegacyEmscriptPort(buffer))) {

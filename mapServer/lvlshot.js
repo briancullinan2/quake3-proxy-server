@@ -4,11 +4,11 @@ const fs = require('fs')
 
 const { FS_BASEPATH, FS_GAMEHOME, LVLSHOTS } = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
-const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
 const { lvlshotCmd } = require('../mapServer/serve-lvlshot.js')
 const { START_SERVICES } = require('../contentServer/features.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 const EXECUTING_LVLSHOTS = {}
 
@@ -77,6 +77,16 @@ async function execLevelshot(mapname) {
   let newVstr = ''
   let caches = repackedCache()
   let basegame = getGame()
+
+  if(typeof EXECUTING_LVLSHOTS[mapname] != 'undefined') {
+    return await Promise.all(EXECUTING_LVLSHOTS[mapname]
+    .map(cmd => new Promise(resolve => {
+      if(typeof cmd.subscribers == 'undefined') {
+        cmd.subscribers = []
+      }
+      cmd.subscribers.push(resolve)
+    })))
+  }
 
   // figure out which images are missing and do it in one shot
   let LVL_COMMANDS = [{
@@ -212,7 +222,11 @@ async function execLevelshot(mapname) {
 
   Promise.resolve(lvlshotCmd(mapname, screenshotCommands, logs => {
     Promise.all(LVL_COMMANDS.map(updateSubscribers.bind(null, mapname, logs)))
-  })).then(logs => { fs.unlinkSync(lvlconfig) })
+  })).then(logs => {
+    fs.unlinkSync(lvlconfig)
+    updatePageViewers('\/maps\/' + mapname)
+    delete EXECUTING_LVLSHOTS[mapname]
+  })
 
   return await Promise.all(LVL_COMMANDS
     .filter(cmd => cmd.cmd.includes('saveents') || cmd.cmd.includes('imagelist'))
@@ -242,6 +256,7 @@ async function updateSubscribers(mapname, logs, cmd) {
       cmd.subscribers[j](logs)
     }
   }
+  updatePageViewers('\/maps\/' + mapname)
 }
 
 

@@ -59,17 +59,12 @@ async function unpackBasegame(newZip) {
           directory.push(newAudio)
         }
       }
-      //if(SUPPORTED_FORMATS.includes(path.extname(index[i].name))
-      //    || IMAGE_FORMATS.includes(path.extname(index[i].name))
-      //    || AUDIO_FORMATS.includes(path.extname(index[i].name))) {
       if(!fs.existsSync(outFile)) {
         fs.mkdirSync(path.dirname(outFile), { recursive: true })
         const file = fs.createWriteStream(outFile)
         await streamFile(index[i], file)
         file.close()
       }
-      //}
-      //console.log(path.join(newZip, index[i].name))
       virtualPaths.push(index[i].name.toLocaleLowerCase())
       directory.push(outFile)
     }

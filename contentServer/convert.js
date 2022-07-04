@@ -48,7 +48,6 @@ async function convertAudio(audioPath, unsupportedFormat, quality) {
     newPath = path.join(repackedCache(), newFile)
   }
   if (fs.existsSync(newPath)) {
-    //console.log('Skipping: ', newPath)
     return newPath
   }
 
@@ -74,7 +73,6 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   }
 
   if (fs.existsSync(newPath)) {
-    //console.log('Skipping: ', newPath)
     return newPath
   }
 

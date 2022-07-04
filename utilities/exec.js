@@ -33,7 +33,7 @@ async function execCmd(cmd, args, options) {
       return
     }
   }
-  //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+
   return await new Promise(function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
     if(options && options.later) {
