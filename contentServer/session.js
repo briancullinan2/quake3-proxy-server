@@ -14,11 +14,12 @@ const WEB_SOCKETS = {}
 async function updatePageViewers(route) {
   let promises = []
   await new Promise(resolve => setTimeout(resolve, 100))
+  let newUrl = 'http://localhost:' + HTTP_PORTS[0] + route
   let html
   if(route.match(/proxy/i)) {
     html = 'UPDATE: ' + route
   } else {
-    let response = await fetch('http://localhost:' + HTTP_PORTS[0] + route)
+    let response = await fetch(newUrl)
     html = await response.text()
   }
   let ports = Object.keys(UDP_CLIENTS)
@@ -26,24 +27,38 @@ async function updatePageViewers(route) {
   let count = 0
   for(let i = 0; i < ports.length; i++) {
     for(let j = 0; j < UDP_CLIENTS[ports[i]].length; ++j) {
-      let msg
       if(ports[i] == 0) {
-        msg = 'UPDATE: ' + route
-      } else {
+        promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
+        .then(() => {
+          UDP_CLIENTS[ports[i]][j].send('UPDATE: ' + route, {binary: false})
+        }))
+    } else {
         let sess = Object.keys(SESSION_IDS).filter(k => SESSION_IDS[k] == ports[i])
         if(sess[0] 
           && SESSION_URLS[sess[0]]
           && SESSION_URLS[sess[0]].match(route)) {
-          msg = html
+          if(newUrl.localeCompare(SESSION_URLS[sess[0]], 'en', {sensitivity: 'base'})) {
+            promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
+            .then(() => fetch(SESSION_URLS[sess[0]]))
+            .then(() => response.text())
+            .then(html => { 
+              UDP_CLIENTS[ports[i]][j].send(html, {binary: false}) 
+            }))
+          } else {
+            console.log('Sending: ' + route)
+            promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
+            .then(() => {
+              UDP_CLIENTS[ports[i]][j].send(html, {binary: false})
+            }))
+          }
         } else {
-          msg = 'UPDATE: ' + route
+          promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
+          .then(() => {
+            UDP_CLIENTS[ports[i]][j].send('UPDATE: ' + route, {binary: false})
+          }))
         }
       }
 
-      promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
-      .then(() => {
-        UDP_CLIENTS[ports[i]][j].send(msg, {binary: false})
-      }))
       count++
     }
   }

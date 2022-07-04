@@ -295,7 +295,7 @@ function socketMessage(evt) {
   } else
   if(typeof evt.data == 'string'
     && evt.data.startsWith('UPDATE: ')) {
-    if(window.location.pathname.match(evt.data.substring(8))) {
+    if((window.location + '').match(evt.data.substring(8))) {
       if(previousUrl.localeCompare(evt.data.substring(8), 'en', {sensitivity: 'base'}) != 0) {
         previousUrl = evt.data.substring(8)
         clearTimeout(debounceTimer)

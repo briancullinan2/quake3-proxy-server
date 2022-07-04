@@ -2,8 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const { spawn } = require('child_process')
 const { START_SERVICES } = require('../contentServer/features.js')
-const { gameDirectories } = require('../assetServer/virtual.js')
-const { getGame, downloadCache, repackedCache } = require('../utilities/env.js')
+const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
+const { getGames, downloadCache, repackedCache } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 const FILESYSTEM_WATCHERS = [{
@@ -54,16 +54,22 @@ const CONTENT_WATCHES = {}
 
 
 function contentWatcher() {
-  let GAME_ORDER = gameDirectories(getGame(), true)
+  let BUILD_ORDER = buildDirectories()
+  let GAME_MODS = getGames()
+  let GAME_ORDER = []
+  for(let i = 0; i < GAME_MODS.length; i++) {
+    GAME_ORDER.push.apply(GAME_ORDER, gameDirectories(GAME_MODS[i], true))
+  }
   let CONTENT_ORDER = repackedCache().concat(downloadCache())
-  let MONITOR_CHANGES = GAME_ORDER.concat(CONTENT_ORDER)
+  let MONITOR_CHANGES = BUILD_ORDER.concat(GAME_ORDER).concat(CONTENT_ORDER)
   let localeList = []
   for(let i = 0; i < MONITOR_CHANGES.length; i++) {
     if(fs.existsSync(MONITOR_CHANGES[i])) {
       let localeName = MONITOR_CHANGES[i].toLocaleLowerCase()
       if(typeof CONTENT_WATCHES[localeName] == 'undefined') {
-        console.log('Watching: ', MONITOR_CHANGES[i])
+        console.log('Watching 1: ', MONITOR_CHANGES[i])
         CONTENT_WATCHES[localeName] = fs.watch(MONITOR_CHANGES[i], { recursive: false }, function (type, file) {
+          updatePageViewers('\\?index')
           updatePageViewers('/settings')
           setTimeout(contentWatcher, 1000)
         })
@@ -74,8 +80,9 @@ function contentWatcher() {
       let rootDirectory = MONITOR_CHANGES[i].split('/').slice(0, 2).join('/')
       let rootName = rootDirectory.toLocaleLowerCase()
       if(typeof CONTENT_WATCHES[rootName] == 'undefined') {
-        console.log('Watching: ', rootDirectory)
+        console.log('Watching 2: ', rootDirectory)
         CONTENT_WATCHES[rootName] = fs.watch(rootDirectory, { recursive: false }, function (type, file) {
+          updatePageViewers('\\?index')
           updatePageViewers('/settings')
           setTimeout(contentWatcher, 1000)
         })
@@ -89,11 +96,14 @@ function contentWatcher() {
       while(!fs.existsSync(currentPath)) {
         currentPath = path.dirname(currentPath)
       }
+
       if(fs.existsSync(currentPath)) {
-        let localeName = MONITOR_CHANGES[i].toLocaleLowerCase()
+        
+        let localeName = currentPath.toLocaleLowerCase()
         if(typeof CONTENT_WATCHES[localeName] == 'undefined') {
-          console.log('Watching: ', currentPath)
+          console.log('Watching 3: ', currentPath)
           CONTENT_WATCHES[localeName] = fs.watch(currentPath, { recursive: false }, function (type, file) {
+            updatePageViewers('\\?index')
             updatePageViewers('/settings')
             setTimeout(contentWatcher, 1000)
           })
@@ -103,8 +113,9 @@ function contentWatcher() {
         let rootDirectory = currentPath.split('/').slice(0, 2).join('/')
         let rootName = rootDirectory.toLocaleLowerCase()
         if(typeof CONTENT_WATCHES[rootName] == 'undefined') {
-          console.log('Watching: ', rootDirectory)
+          console.log('Watching 4: ', rootDirectory)
           CONTENT_WATCHES[rootName] = fs.watch(rootDirectory, { recursive: false }, function (type, file) {
+            updatePageViewers('\\?index')
             updatePageViewers('/settings')
             setTimeout(contentWatcher, 1000)
           })
