@@ -83,14 +83,56 @@ function createRedirect() {
   return app
 }
 
+let redirectApp
+
+function socketConnect(socket, request) {
+  UDP_CLIENTS[0].push(socket)
+  let cookies = parseCookies(request.headers['cookie'])
+  let sessionId = cookies['__planet_quake_sess']
+  socket.on('message', async function (message, binary) {
+    if (binary) {
+      return
+    }
+    let newUrl = message.toString('utf-8')
+    if(Object.values(UDP_CLIENTS).filter(multicast => multicast.indexOf(socket) == 0).length > 0) {
+      SESSION_URLS[sessionId] = newUrl
+    }
+    let response = await fetch(newUrl)
+    let html = await response.text()
+    socket.send(html, { binary: false })
+    updatePageViewers('/proxy')
+  })
+  socket.on('close', function () {
+    let ports = Object.keys(UDP_CLIENTS)
+    for (let i = 0; i < ports.length; i++) {
+      let index = UDP_CLIENTS[ports[i]].indexOf(socket)
+      if(index > -1) {
+        UDP_CLIENTS[ports[i]].splice(index, 1)
+      }
+    }
+  })
+  createSOCKS(socket, redirectApp, sessionId)
+  updatePageViewers('/proxy')
+  // if we haven't gotten a URL, the websocket is probably working, but 
+  //   the client never got a page, try to set one after a second
+  setTimeout(function () {
+    if (typeof SESSION_URLS[sessionId] == 'undefined'
+      && UDP_CLIENTS[SESSION_IDS[sessionId]]) {
+      for(let i = 0; i < UDP_CLIENTS[SESSION_IDS[sessionId]].length; i++) {
+        UDP_CLIENTS[SESSION_IDS[sessionId]][i].send('URL: ', { binary: false })
+      }
+    }
+  }, 2000)
+}
 
 
 
 function createWebServers(services) {
   const { createServer } = require('http')
   const virtualApp = createApplication(services)
-  const { createRedirect } = require('../contentServer/express.js')
-  const redirectApp = createRedirect(redirectAddress())
+  if(!redirectApp) {
+    redirectApp = createRedirect(redirectAddress())
+  }
 
   for (let i = 0; i < HTTP_PORTS.length; i++) {
     // http
@@ -100,38 +142,7 @@ function createWebServers(services) {
       || services.includes('socks')) {
       const { Server } = require('ws')
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
-      WEB_SOCKETS[HTTP_PORTS[i]].on('connection', function (socket, request) {
-        let cookies = parseCookies(request.headers['cookie'])
-        let sessionId = cookies['__planet_quake_sess']
-        socket.on('message', async function (message, binary) {
-          if (binary) {
-            return
-          }
-          let newUrl = message.toString('utf-8')
-          SESSION_URLS[sessionId] = newUrl
-          let response = await fetch(newUrl)
-          let html = await response.text()
-          socket.send(html, { binary: false })
-          updatePageViewers('/proxy')
-        })
-        socket.on('close', function () {
-          let ports = Object.keys(UDP_CLIENTS)
-          for (let i = 0; i < ports.length; i++) {
-            if (UDP_CLIENTS[i] === socket) {
-              delete UDP_CLIENTS[i]
-            }
-          }
-        })
-        createSOCKS(socket, redirectApp, sessionId)
-        updatePageViewers('/proxy')
-        // if we haven't gotten a URL, the websocket is probably working, but 
-        //   the client never got a page, try to set one after a second
-        setTimeout(function () {
-          if (typeof SESSION_URLS[sessionId] == 'undefined') {
-            socket.send('URL: ', { binary: false })
-          }
-        }, 2000)
-      })
+      WEB_SOCKETS[HTTP_PORTS[i]].on('connection', socketConnect)
     }
   }
 

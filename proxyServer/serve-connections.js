@@ -11,13 +11,16 @@ async function serveConnections(request, response, next) {
     if(sessionId && SESSION_URLS[sessionId]){
       newUrl = new URL(SESSION_URLS[sessionId])
     }
-    return {
-      name: UDP_CLIENTS[p]._socket.remoteAddress.replace('::ffff:', '') 
-        + ':' + UDP_CLIENTS[p]._socket.remotePort,
-      assignments: p + ' -> ' 
-        + (SESSION_URLS[sessionId] || '').replace(/^.*?:\/\/.*?\/|^\//i, ''),
-    }
-  })
+    let multicast = UDP_CLIENTS[p].map(socket => {
+      return {
+        name: socket._socket.remoteAddress.replace('::ffff:', '') 
+          + ':' + socket._socket.remotePort,
+        assignments: p + ' -> ' 
+          + (SESSION_URLS[sessionId] || '').replace(/^.*?:\/\/.*?\/|^\//i, ''),
+      }
+    })
+    return multicast
+  }).flat(1)
   return response.send(renderIndex(
     //renderMenu(PROXY_MENU, 'downloads-menu')
     //+ 

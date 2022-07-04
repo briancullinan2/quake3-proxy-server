@@ -36,7 +36,7 @@ async function lvlshotCmd(mapname, startArgs, callback) {
   if (EXECUTING_MAPS[mapname].length != 0) {
     return await new Promise(function (resolve, reject) {
       let rejectTimer = setTimeout(function () {
-        reject(new Error('Levelshot Service timed out.'))
+        reject(new Error('Level Shot service timed out.'))
       }, 10000)
       EXECUTING_MAPS[mapname].push(function (/* logs */) {
         clearTimeout(rejectTimer)

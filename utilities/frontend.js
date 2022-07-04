@@ -288,6 +288,14 @@ function socketMessage(evt) {
   if(typeof evt.data == 'string'
     && evt.data.startsWith('URL: ')) {
     window.location = window.location
+    return
+  } else
+  if(typeof evt.data == 'string'
+    && evt.data.startsWith('UPDATE: ')) {
+    if(window.location.pathname.match(evt.data.substring(8))) {
+      socket1.send(window.location + '', { binary: false })
+    }
+    return
   }
   let message = new Uint8Array(evt.data)
   //console.log(message)

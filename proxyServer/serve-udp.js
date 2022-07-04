@@ -1,7 +1,7 @@
 const { lookupDNS } = require('../utilities/dns.js')
 
 const UDP_SERVERS = []
-const UDP_CLIENTS = []
+const UDP_CLIENTS = {0: []}
 const WS_FORWARDS = []
 const SESSION_IDS = {}
 const SESSION_URLS = {}
@@ -43,7 +43,18 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
   }
 
   // instead of using on() event listeners, just use a list
-  UDP_CLIENTS[port] = socket
+  let ports = Object.keys(UDP_CLIENTS)
+  for(let i = 0; i < ports.length; i++) {
+    let index = UDP_CLIENTS[ports[i]].indexOf(socket)
+    if(index > -1) {
+      UDP_CLIENTS[ports[i]].splice(index, 1)
+    }
+  }
+  if(typeof UDP_CLIENTS[port] == 'undefined') {
+    UDP_CLIENTS[port] = []
+  }
+  UDP_CLIENTS[port].push(socket)
+
   let bindIP = await lookupDNS(socket._socket.localAddress)
   let IPsegments = bindIP.split('.').map(seg => parseInt(seg))
 

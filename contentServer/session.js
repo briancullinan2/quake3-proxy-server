@@ -6,23 +6,44 @@ const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS } = require('../proxyServer/serve
 
 const HTTP_PORTS = [8080]
 const HTTP_LISTENERS = []
-const WEB_SOCKETS = []
+const WEB_SOCKETS = {}
 
 
 // make sure this run async because we don't want to block 
 //   something else from queing this cycle
 async function updatePageViewers(route) {
+  let promises = []
   await new Promise(resolve => setTimeout(resolve, 100))
   let response = await fetch('http://localhost:' + HTTP_PORTS[0] + route)
   let html = await response.text()
-  Promise.resolve(Promise.all(Object.keys(SESSION_URLS).map(async sess => {
-    await new Promise(resolve => setTimeout(resolve, 10))
-    if(SESSION_URLS[sess].match(route)) {
-      if(UDP_CLIENTS[SESSION_IDS[sess]]) {
-        UDP_CLIENTS[SESSION_IDS[sess]].send(html, {binary: false})
+  let ports = Object.keys(UDP_CLIENTS)
+  //let sessions = Object.keys(SESSION_URLS)
+  let count = 0
+  for(let i = 0; i < ports.length; i++) {
+    for(let j = 0; j < UDP_CLIENTS[ports[i]].length; ++j) {
+      let msg
+      if(ports[i] == 0) {
+        msg = 'UPDATE: ' + route
+      } else {
+        let sess = Object.keys(SESSION_IDS).filter(k => SESSION_IDS[k] == ports[i])
+        if(sess[0] 
+          && SESSION_URLS[sess[0]]
+          && SESSION_URLS[sess[0]].match(route)) {
+          msg = html
+        } else {
+          msg = 'UPDATE: ' + route
+        }
       }
+
+      promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
+      .then(() => {
+        UDP_CLIENTS[ports[i]][j].send(msg, {binary: false})
+      }))
+      count++
     }
-  })))
+  }
+
+  Promise.resolve(Promise.all(promises))
 }
 
 function parseCookies(cookie) {
@@ -41,7 +62,6 @@ function restoreSession(req, res) {
   if (typeof cookies['__planet_quake_sess'] == 'undefined') {
     let newId = buildChallenge()
     res.cookie('__planet_quake_sess', newId, { maxAge: 900000, httpOnly: true })
-    //SESSION_URLS[newId] = 'http://local' + req.originalUrl
   } else
     if (typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined'
       && (typeof cookies['__planet_quake_port'] == 'undefined'
@@ -58,8 +78,8 @@ function restoreSession(req, res) {
 
   if (cookies['__planet_quake_sess']
     && req.headers['accept'].includes('text/html')) {
-    SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
-    updatePageViewers('/proxy')
+    //SESSION_URLS[cookies['__planet_quake_sess']] = 'http://local' + req.originalUrl
+    //updatePageViewers('/proxy')
   }
 
 }
