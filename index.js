@@ -8,16 +8,16 @@
 //   to track client guids
 const fs = require('fs')
 const path = require('path')
-const {spawn} = require('child_process')
 
 const { HTTP_PORTS, createWebServers } = require('./contentServer/express.js')
 const { MASTER_PORTS, createMasters } = require('./gameServer/serve-master.js')
 const { serveDedicated } = require('./gameServer/serve-process.js')
-const { 
-  setDownload, setRepack, downloadCache, repackedCache, setGame, 
-  addDownload, setWatcherPID, 
+const {
+  setDownload, setRepack, downloadCache, repackedCache, setGame,
+  addDownload, setWatcherPID, addRepacked,
 } = require('./utilities/env.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
+const { projectWatcher, contentWatcher } = require('./utilities/watch.js')
 
 let forwardIP = ''
 let noFS = false
@@ -92,12 +92,20 @@ function parseAguments(startArgs) {
         }
         i++
         break
+      case '--add-repacked':
+        console.log('Repacked cache: ', startArgs[i + 1])
+        addRepacked(startArgs[i + 1])
+        if (!fs.existsSync(startArgs[i + 1])) {
+          console.log('WARNING: directory does not exist, unexpect behavior.')
+        }
+        i++
+        break
     }
   }
 }
 
 const { GAME_SERVERS } = require('./gameServer/master.js')
-const {log: previousLog, error: previousError} = require('console')
+const { log: previousLog, error: previousError } = require('console')
 
 const REDIRECTED_LOGS = []
 const REDIRECTED_ERRORS = []
@@ -117,18 +125,18 @@ const CLI_COMMANDS = {
 
 
 function printLogs(cmd) {
-  if(cmd == 'logs' || cmd == 'log') {
-    for(let i = 0; i < REDIRECTED_LOGS.length; i++) {
+  if (cmd == 'logs' || cmd == 'log') {
+    for (let i = 0; i < REDIRECTED_LOGS.length; i++) {
       previousLog(...REDIRECTED_LOGS[i])
     }
     REDIRECTED_LOGS.splice(0)
   } else
-  if(cmd == 'error' || cmd == 'errors') {
-    for(let i = 0; i < REDIRECTED_ERRORS.length; i++) {
-      previousError(...REDIRECTED_ERRORS[i])
+    if (cmd == 'error' || cmd == 'errors') {
+      for (let i = 0; i < REDIRECTED_ERRORS.length; i++) {
+        previousError(...REDIRECTED_ERRORS[i])
+      }
+      REDIRECTED_ERRORS.splice(0)
     }
-    REDIRECTED_ERRORS.splice(0)
-  }
 }
 
 
@@ -137,10 +145,10 @@ process.on('uncaughtException', exceptionHandler)
 
 isInside = false
 function exceptionHandler(ex) {
-  if(isInside) {
+  if (isInside) {
     REDIRECTED_ERRORS.push([ex])
-    previousError(REDIRECTED_ERRORS.length, 'unhandled:', 
-        (ex + '').substring(0, 100))
+    previousError(REDIRECTED_ERRORS.length, 'unhandled:',
+      (ex + '').substring(0, 100))
     return
   }
   isInside = true
@@ -150,13 +158,13 @@ function exceptionHandler(ex) {
 
 function errorConsole(...args) {
   REDIRECTED_ERRORS.push(args)
-  previousError(REDIRECTED_ERRORS.length, 'errors:', 
-      args.join(' ').substring(0, 100))
+  previousError(REDIRECTED_ERRORS.length, 'errors:',
+    args.join(' ').substring(0, 100))
 }
 
 
 function addCommands(features) {
-  if(!process.stdin.isTTY) {
+  if (!process.stdin.isTTY) {
     return
   }
   let readline = require('readline')
@@ -168,19 +176,19 @@ function addCommands(features) {
   process.stdout.write(': ')
   //console.log = function (...args) {
   //  REDIRECTED_LOGS.push(args)
-    //previousLog(...args)
+  //previousLog(...args)
   //}
   console.error = errorConsole
-  rl.on('line', function(line){
+  rl.on('line', function (line) {
     line = line.trim()
-    if(line.startsWith('\\')) {
+    if (line.startsWith('\\')) {
       line = line.substring(1)
     }
     let cmd = (((/\w+/gi).exec(line) || [])[0] || '').toLocaleLowerCase()
     let cmds = Object.keys(CLI_COMMANDS)
     let found = false
-    for(let i = 0; i < cmds.length; i++) {
-      if(cmds[i] == cmd) {
+    for (let i = 0; i < cmds.length; i++) {
+      if (cmds[i] == cmd) {
         CLI_COMMANDS[cmd](cmd, line)
         found = true
         break
@@ -198,38 +206,15 @@ function addCommands(features) {
 
 function main() {
 
-  if(!START_SERVICES.includes('holdup')
+  if (!START_SERVICES.includes('holdup')
     && (START_SERVICES.includes('all')
-    || START_SERVICES.includes('live'))) {
-    let startArgs = [process.argv[1]]
-      .concat(process.argv.slice(2))
-      .concat(START_SERVICES)
-      .concat(['holdup', '--watcher-pid', process.pid])
-    let childProcess
-    let debounceTimer
-    fs.watch(__dirname, {recursive: true}, function (type, file) {
-      if(debounceTimer) {
-        return
-      }
-      debounceTimer = setTimeout(function () {
-        debounceTimer = null
-        if(file.match(/\.js/i)) {
-          if(childProcess) {
-            childProcess.kill()
-          }
-          childProcess = spawn('node', startArgs, {stdio: 'inherit'})
-          childProcess.unref()
-        }
-      }, 300)
-    })
-    childProcess = spawn('node', startArgs, {stdio: 'inherit'})
-    childProcess.unref()
-    return
+      || START_SERVICES.includes('live'))) {
+    return projectWatcher()
   }
 
   parseAguments(process.argv)
 
-  if(fs.existsSync(path.join(__dirname, 'settings.json'))) {
+  if (fs.existsSync(path.join(__dirname, 'settings.json'))) {
     parseAguments(require(path.join(__dirname, 'settings.json')))
   }
 
@@ -237,8 +222,8 @@ function main() {
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
-    createMasters(START_SERVICES.includes('all') 
-        || START_SERVICES.includes('mirror'))
+    createMasters(START_SERVICES.includes('all')
+      || START_SERVICES.includes('mirror'))
   }
 
   if (START_SERVICES.length > 0) {
@@ -250,9 +235,14 @@ function main() {
     serveDedicated().catch(e => console.error(e))
   }
 
-  if(START_SERVICES.includes('all')
+  if (START_SERVICES.includes('all')
     || START_SERVICES.includes('tty')) {
     addCommands(START_SERVICES)
+  }
+
+  if (START_SERVICES.includes('all')
+    || START_SERVICES.includes('live')) {
+    contentWatcher()
   }
 
 }
@@ -275,12 +265,12 @@ for (let i = 0; i < process.argv.length; i++) {
         START_SERVICES.push(a)
       }
 }
-if(START_SERVICES.length == 0) {
+if (START_SERVICES.length == 0) {
   START_SERVICES.push('all')
 }
 
 if (runServer) {
-  if(START_SERVICES.includes('holdup')) {
+  if (START_SERVICES.includes('holdup')) {
     setTimeout(main, 2000)
   } else {
     main()

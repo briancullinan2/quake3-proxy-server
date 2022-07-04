@@ -61,7 +61,7 @@ async function serveModInfo(request, response, next) {
   let modname = path.basename(filename).toLocaleLowerCase()
 
   return response.send(renderIndex(
-    + `<div id="mod-info" class="info-layout">
+    `<div id="mod-info" class="info-layout">
     <h2>${modname}</h2>
     <h3>Screenshots</h3>
     <h3>Links</h3>`

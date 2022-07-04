@@ -93,11 +93,13 @@ function socketConnect(socket, request) {
     if(Object.values(UDP_CLIENTS).filter(multicast => {
       return multicast.indexOf(socket) == 0
     }).length > 0) {
+      if(!SESSION_URLS[sessionId]) {
+        updatePageViewers(newUrl) // make sure a fresh copy of the page is sent
+      }
       SESSION_URLS[sessionId] = newUrl
     }
     if(!newUrl.match(/proxy/i)) {
       updatePageViewers('/proxy')
-      console.log(newUrl)
     }
   }
   socket.on('message', async function (message, binary) {
@@ -119,12 +121,13 @@ function socketConnect(socket, request) {
       }
     }
   })
-  updateSession('http://local' + request.url)
+  updateSession(request.url)
   createSOCKS(socket, redirectApp, sessionId)
   updatePageViewers('/proxy')
   // if we haven't gotten a URL, the websocket is probably working, but 
   //   the client never got a page, try to set one after a second
   setTimeout(function () {
+    //console.log(sessionId, SESSION_URLS[sessionId], UDP_CLIENTS[SESSION_IDS[sessionId]])
     if (typeof SESSION_URLS[sessionId] == 'undefined'
       && UDP_CLIENTS[SESSION_IDS[sessionId]]) {
       for(let i = 0; i < UDP_CLIENTS[SESSION_IDS[sessionId]].length; i++) {

@@ -441,6 +441,20 @@ ol.directory-list li {
   text-shadow: 2px 3px 4px rgba(0, 0, 0, 1), 0px 2px 6px rgba(255, 255, 255, 1);
 }
 
+ol.unused-path,
+ol.unused-path li,
+ol.unused-path li a,
+ol .unused-path,
+.unused-path,
+ol li.unused-path,
+.unused-path a,
+ol li.unused-path a,
+#unused-paths li a,
+#unused-paths a,
+#unused-paths {
+  color: #666;
+}
+
 
 #viewport-frame {
   position: absolute;

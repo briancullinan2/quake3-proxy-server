@@ -1,4 +1,6 @@
 [
   "--add-downloads",
-  "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-c"
+  "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-c",
+  "--add-repacked",
+  "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-cc"
 ]

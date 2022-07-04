@@ -21,7 +21,7 @@ function modDirectory(filename) {
   return MODS[basename]
 }
 
-function gameDirectories(basegame) {
+function gameDirectories(basegame, unexisting) {
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + basegame)
   const GAME_DIRECTORIES = [
     path.join(GAME_DIRECTORY, 'build/linux'),
@@ -29,19 +29,19 @@ function gameDirectories(basegame) {
     path.join(GAME_DIRECTORY, 'assets'),
     GAME_DIRECTORY,
   ]
-  if(fs.existsSync(path.join(FS_GAMEHOME, basegame))) {
+  if(unexisting || fs.existsSync(path.join(FS_GAMEHOME, basegame))) {
     GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, basegame))
   }
-  if(fs.existsSync(path.join(FS_BASEPATH, basegame))) {
+  if(unexisting || fs.existsSync(path.join(FS_BASEPATH, basegame))) {
     GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame))
   }
-  if(fs.existsSync(path.join(STEAMPATH, basegame))) {
+  if(unexisting || fs.existsSync(path.join(STEAMPATH, basegame))) {
     GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame))
   }
-  if(fs.existsSync(path.join(FS_BASEPATH, basegame.toLocaleLowerCase()))) {
+  if(unexisting || fs.existsSync(path.join(FS_BASEPATH, basegame.toLocaleLowerCase()))) {
     GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame.toLocaleLowerCase()))
   }
-  if(fs.existsSync(path.join(STEAMPATH, basegame.toLocaleLowerCase()))) {
+  if(unexisting || fs.existsSync(path.join(STEAMPATH, basegame.toLocaleLowerCase()))) {
     GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame.toLocaleLowerCase()))
   }
   return GAME_DIRECTORIES.filter((g, i, arr) => arr.indexOf(g) == i)

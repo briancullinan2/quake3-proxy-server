@@ -39,6 +39,10 @@ function addDownload(directory) {
   DOWNLOAD_CACHE.push(directory)
 }
 
+function addRepacked(directory) {
+  REPACK_CACHE.push(directory)
+}
+
 function setGame(game) {
   FS_BASEGAME = game
 }
@@ -160,6 +164,7 @@ module.exports = {
   redirectAddress,
   setRedirect,
   addDownload,
+  addRepacked,
   setWatcherPID,
   watcherPID,
 }

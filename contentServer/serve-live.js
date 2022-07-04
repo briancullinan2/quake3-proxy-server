@@ -43,6 +43,8 @@ async function listFiles(filename) {
   let directory = []
   let lowercasePaths = []
   let BUILD_ORDER = buildDirectories()
+  // TODO: add game development directories
+  // TODO: add --add-game to add multiple games
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     let newPath = path.join(BUILD_ORDER[i], filename)
     if (!fs.existsSync(newPath) 
