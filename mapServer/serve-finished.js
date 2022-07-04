@@ -2,7 +2,8 @@
 // TODO: OMG SO MANY FILES!
 // serve-finished are pk3 files, 
 //   serve-repacked are virtual files that would only exist after conversion
-
+const path = require('path')
+const fs = require('fs')
 const { sourcePk3Download } = require('../mapServer/download.js')
 
 
@@ -14,48 +15,27 @@ async function serveFinished(request, response, next) {
 
   await existingMaps()
 
-
-  let mapname = path.basename(filename).replace('.pk3', '').toLocaleLowerCase()
-  if (mapname.localeCompare('pak0', 'en', { sensitivity: 'base' }) == 0) {
-    // TODO: repack mod directory pk3s into 1 overlapping 
-    //   (i.e. do the same virtual combination the 
-    //      engine does and recompile)
-    // TODO: get index of all pk3 in non-cache game directories,
-    //   make a new pak with combined file-system
-    let newZip = path.join(repackedCache(), 'pak0.pk3')
-    if(!fs.existsSync(newZip)) {
-      let newZip = path.join(repackedCache(), 'pak0.pk3')
-      let filtered = await unpackBasegame(newZip)
-      //filtered.push(await rebuildPalette(filtered))
-      newZip = await repackPk3(filtered, newZip)
+  let mapname = path.basename(filename).replace(path.extname(filename), '').toLocaleLowerCase()
+  let newZip
+  if(path.basename(filename).match(/pak0\.pk3/i)) {
+    newZip = await buildBasepack()
+  } else
+  if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
+    if(MAP_DICTIONARY[mapname].startsWith('pak')) {
+      newZip = await repackBasemap()
+    } else {
+      newZip = await repackMappak()
     }
-    return response.sendFile(newZip, {
-      headers: { 'content-disposition': `attachment; filename="pak0.pk3"` }
-    })
+  } else {
+    newZip = sourcePk3Download()
+    newZip = await repackPk3(newZip)
   }
 
-  // repack base-maps for web
-  if(typeof MAP_DICTIONARY[mapname] == 'undefined') {
-    return next(new Error('File not found: ' + filename))
-  }
-  if(MAP_DICTIONARY[mapname].substr(0, 3) == 'pak'
-    && MAP_DICTIONARY[mapname].charCodeAt(3) - '0'.charCodeAt(0) < 9) {
-    let newZip = await repackBasemap(mapname)
-    return response.sendFile(newZip, {
-      headers: { 'content-disposition': 
-        `attachment; filename="${mapname}.pk3"` }
-    })
-  }
-
-  // download pk3 and repack
-  newFile = await sourcePk3Download(filename)
-  if (!newFile.startsWith(repackedCache())) {
-    newFile = await repackPk3(newFile)
-  }
-  return response.sendFile(newFile, {
+  return response.sendFile(newZip, {
     headers: { 'content-disposition': 
-        `attachment; filename="${path.basename(newFile)}"` }
+      `attachment; filename="${mapname}.pk3"` }
   })
+
 }
 
 module.exports = {

@@ -14,7 +14,7 @@ async function existingMaps() {
     let basename = path.basename(pk3name)
     let index = await getIndex(findFile(pk3name))
     let bsps = index.filter(item => item.key.endsWith('.bsp'))
-    let pakname = basename.replace('map-', '').replace('map_', '')
+    //let pakname = basename.replace('map-', '').replace('map_', '')
     return bsps.map(function (bsp) {
       let mapname = path.basename(bsp.key).replace(/\.bsp/ig, '').toLocaleLowerCase()
       MAP_DICTIONARY[mapname] = basename

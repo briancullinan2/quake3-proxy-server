@@ -66,7 +66,7 @@ function parseAguments(startArgs) {
       case '--repack-cache':
         console.log('Repack cache: ', startArgs[i + 1])
         setRepack(startArgs[i + 1])
-        if (!fs.existsSync(repackedCache())) {
+        if (!fs.existsSync(repackedCache()[0])) {
           console.log('WARNING: directory does not exist, unexpected behavior.')
         }
         i++
