@@ -64,7 +64,7 @@ async function listFiles(filename) {
     let stat = fs.statSync(GAME_ORDER[0])
     directory.push({
       name: GAME_MODS[i] + '/',
-      link: `/build/${GAME_MODS[i]}`,
+      link: `/build/${GAME_MODS[i]}/`,
       absolute: path.join(path.basename(path.dirname(GAME_ORDER[0])), path.basename(GAME_ORDER[0]), GAME_MODS[i]),
       mtime: stat.mtime || stat.ctime,
     })
@@ -87,7 +87,7 @@ async function listFiles(filename) {
       if(stat.isDirectory()) {
         directory.push({
           name: subdirectory[s] + '/',
-          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
+          link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}/`,
           absolute: path.join(path.basename(path
               .dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), 
               subdirectory[s]),

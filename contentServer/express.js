@@ -20,7 +20,7 @@ function createApplication(features) {
   app.set('etag', 'strong')
 
   app.use(function serveIndex(req, res, next) {
-    let filename = req.url.replace(/\?.*$/, '')
+    let filename = req.originalUrl.replace(/\?.*$/, '')
     if (filename.match('/index.css')) {
       return res.sendFile(STYLES)
     }

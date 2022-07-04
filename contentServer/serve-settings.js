@@ -46,7 +46,7 @@ function listGames() {
         mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
         absolute: path.dirname(GAME_ORDER[i]),
         exists: exists,
-        link: GAME_MODS[j],
+        link: GAME_MODS[j] + '/',
       })
     }
   }

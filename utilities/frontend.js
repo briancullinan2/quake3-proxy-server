@@ -40,11 +40,11 @@ window.addEventListener('load', (event) => {
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
+      socket1.send(evt.path[i].href, { binary: false })
       history.pushState(
         {location: window.location.pathname}, 
         header ? 'Quake III Arena: ' + header : document.title, 
         evt.path[i].href)
-      socket1.send(evt.path[i].href, { binary: false })
       evt.preventDefault()
       return false
     }

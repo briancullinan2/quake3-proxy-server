@@ -26,7 +26,7 @@ async function listCached(filename) {
     let stat = fs.statSync(CACHE_ORDER[0])
     directory.push({
       name: GAME_MODS[i] + '/',
-      link: `/repacked/${GAME_MODS[i]}`,
+      link: `/repacked/${GAME_MODS[i]}/`,
       absolute: path.join(path.basename(path.dirname(CACHE_ORDER[0])), path.basename(CACHE_ORDER[0]), GAME_MODS[i]),
       mtime: stat.mtime || stat.ctime,
     })
@@ -78,7 +78,7 @@ async function serveRepacked(request, response, next) {
       }
       return {
         name: pk3Name + 'dir/',
-        link: `/repacked/${pk3}dir`,
+        link: `/repacked/${pk3}dir/`,
         absolute: newFile || ('repacked/' + pk3 + '/.'),
         mtime: stat ? (stat.mtime || stat.ctime) : void 0,
       }
