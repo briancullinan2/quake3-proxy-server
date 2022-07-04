@@ -13,6 +13,7 @@ const { serveLive } = require('../contentServer/serve-live.js')
 const { serveSettings } = require('../contentServer/serve-settings.js')
 const { serveConnections } = require('../proxyServer/serve-connections.js')
 const { serveProcess } = require('../gameServer/serve-process.js')
+const { serveRepacked } = require('../mapServer/serve-repacked.js')
 
 // circular dependency
 function serveFeatures(features, response) {
@@ -100,13 +101,14 @@ function setupExtensions(features, app) {
     app.use(/\/process\/?$/i, serveProcess)
   }
 
-  return
 
   if (features.includes('all')
     || features.includes('repack')) {
-    app.use('/maps/repacked', serveFinished) // /maps/download/%1
-    app.use(serveRepacked) // /maps/download/%1
+    //app.use('/maps/repacked', serveFinished) // /maps/download/%1
+    app.use('/repacked', serveRepacked) // /maps/download/%1
   }
+
+  return
 
   if (features.includes('all')
     || features.includes('live')) {

@@ -25,37 +25,33 @@ async function updatePageViewers(route) {
   let ports = Object.keys(UDP_CLIENTS)
   //let sessions = Object.keys(SESSION_URLS)
   let count = 0
+
+  function updateClient(client, promise, timeout) {
+    promises.push(new Promise(resolve => setTimeout(resolve, timeout))
+    .then(() => Promise.resolve(promise))
+    .then(() => {
+      client.send('UPDATE: ' + route, {binary: false})
+    }))
+  }
+
   for(let i = 0; i < ports.length; i++) {
     for(let j = 0; j < UDP_CLIENTS[ports[i]].length; ++j) {
       if(ports[i] == 0) {
-        promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
-        .then(() => {
-          UDP_CLIENTS[ports[i]][j].send('UPDATE: ' + route, {binary: false})
-        }))
-    } else {
+        updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route, 10 * count)
+      } else {
         let sess = Object.keys(SESSION_IDS).filter(k => SESSION_IDS[k] == ports[i])
         if(sess[0] 
           && SESSION_URLS[sess[0]]
           && SESSION_URLS[sess[0]].match(route)) {
           if(newUrl.localeCompare(SESSION_URLS[sess[0]], 'en', {sensitivity: 'base'})) {
-            promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
-            .then(() => fetch(SESSION_URLS[sess[0]]))
-            .then(() => response.text())
-            .then(html => { 
-              UDP_CLIENTS[ports[i]][j].send(html, {binary: false}) 
-            }))
+            updateClient(UDP_CLIENTS[ports[i]][j], fetch(SESSION_URLS[sess[0]])
+              .then(() => response.text()), 10 * count)
           } else {
             console.log('Sending: ' + route)
-            promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
-            .then(() => {
-              UDP_CLIENTS[ports[i]][j].send(html, {binary: false})
-            }))
+            updateClient(UDP_CLIENTS[ports[i]][j], html, 10 * count)
           }
         } else {
-          promises.push(new Promise(resolve => setTimeout(resolve, 10 * count))
-          .then(() => {
-            UDP_CLIENTS[ports[i]][j].send('UPDATE: ' + route, {binary: false})
-          }))
+          updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route, 10 * count)
         }
       }
 

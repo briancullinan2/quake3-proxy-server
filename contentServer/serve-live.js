@@ -4,7 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
-const { SETTINGS_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
+const { ASSET_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
 const { getGames } = require('../utilities/env.js')
 
 // TODO: send refresh signal over websocket/proxy
@@ -88,7 +88,9 @@ async function listFiles(filename) {
         directory.push({
           name: subdirectory[s] + '/',
           link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
-          absolute: path.join(path.basename(path.dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), subdirectory[s]),
+          absolute: path.join(path.basename(path
+              .dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), 
+              subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
         lowercasePaths.push((subdirectory[s] + '/').toLocaleLowerCase())
@@ -97,7 +99,9 @@ async function listFiles(filename) {
           name: subdirectory[s],
           size: stat.size,
           link: `/build/${filename}${filename.length > 1 ? '/' : ''}${subdirectory[s]}`,
-          absolute: path.join(path.basename(path.dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), subdirectory[s]),
+          absolute: path.join(path.basename(path
+              .dirname(BUILD_ORDER[i])), path.basename(BUILD_ORDER[i]), 
+              subdirectory[s]),
           mtime: stat.mtime || stat.ctime,
         })
         lowercasePaths.push(subdirectory[s].toLocaleLowerCase())
@@ -126,19 +130,24 @@ async function serveLive(request, response, next) {
   }
 
   let directoryFiltered = await listFiles(filename)
+  return await renderDirectoryIndex(filename, directoryFiltered, filename.length > 1, isIndex, response)
+}
 
-  if(filename.length > 1) {
+
+async function renderDirectoryIndex(filename, directoryFiltered, isSub, isIndex, response) {
+
+  if(isSub) {
     directoryFiltered.unshift({
       name: '../',
-      link: `/build/${path.dirname(filename)}`,
+      link: `${path.dirname(filename)}/../`,
       mtime: new Date(),
-      absolute: 'build/' + filename,
+      absolute: filename,
     })
   }
 
   if (isIndex) {
     return response.send(renderIndex(
-    renderMenu(SETTINGS_MENU, 'asset-menu')
+    renderMenu(ASSET_MENU, 'asset-menu')
     + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <a class="close-files" href="/build/${filename}${filename.length > 1 ? '/' : ''}">X</a>
     <div class="info-layout">
@@ -157,6 +166,7 @@ async function serveLive(request, response, next) {
 
 
 module.exports = {
+  renderDirectoryIndex,
   serveVersion,
   serveLive,
 }

@@ -4,24 +4,15 @@ const path = require('path')
 const {
   BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME,
   ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
-  MODS_NAMES, MODS,
+  getGames,
 } = require('../utilities/env.js')
 
 
-function modDirectory(filename) {
-  if(filename.startsWith('/')) {
-    filename = filename.substr(1)
-  }
-
-  let basename = MODS_NAMES.indexOf(filename.split('\/')[0].toLocaleLowerCase())
-  if(basename == -1) {
-    return
-  }
-
-  return MODS[basename]
-}
-
 function gameDirectories(basegame, unexisting) {
+  const GAME_MODS = getGames()
+  if(!GAME_MODS.includes(basegame)) {
+    return []
+  }
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + basegame)
   const GAME_DIRECTORIES = [
     path.join(GAME_DIRECTORY, 'build/linux'),
@@ -82,8 +73,8 @@ function findFile(filename) {
     }
   }
 
-  let modname = modDirectory(filename)
-  if(!modname) {
+  let modname = filename.split('/')[0]
+  if(!modname || modname.length == 0) {
     return
   }
 
@@ -106,5 +97,4 @@ module.exports = {
   findFile,
   buildDirectories,
   gameDirectories,
-  modDirectory,
 }

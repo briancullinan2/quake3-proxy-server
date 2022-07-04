@@ -5,21 +5,53 @@ const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js
 const { getGames, repackedCache, downloadCache } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../utilities/watch.js')
 
-let SETTINGS_MENU = [
-  {
-    title: 'Virtual FS',
-    link: 'baseq3/pak0.pk3dir?index',
-  }, {
-    title: 'Repacked',
-    link: 'repacked/baseq3/pak0.pk3dir?index',
-  }, {
-    title: 'Live Dev',
-    link: 'build?index',
-  }, {
-    title: 'Directories',
-    link: 'settings',
+let ASSET_MENU = [{
+  title: 'Skins',
+  link: 'assets/#skins'
+}, {
+  title: 'Arenas',
+  link: 'assets/#arenas'
+}, {
+  title: 'Matches',
+  link: 'assets/#matches'
+}, {
+  title: 'Games',
+  link: 'assets/#games'
+}, {
+  title: 'Virtual FS',
+  link: 'baseq3/pak0.pk3dir?index',
+}, {
+  title: 'Repacked Cache',
+  link: 'repacked/baseq3/pak0.pk3dir?index',
+}, {
+  title: 'Live Dev',
+  link: 'build?index',
+}, {
+  title: 'Directories',
+  link: 'settings'
+}]
+
+
+function listGames() {
+  let allGames = []
+  let GAME_MODS = getGames()
+  for(let j = 0; j < GAME_MODS.length; j++) {
+    let GAME_ORDER = gameDirectories(GAME_MODS[j], true)
+    //let nonExistingGames = []
+    //let includedGames = []
+    for(let i = 0; i < GAME_ORDER.length; i++) {
+      let exists = fs.existsSync(GAME_ORDER[i])
+      allGames.push({
+        name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),
+        mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
+        absolute: path.dirname(GAME_ORDER[i]),
+        exists: exists,
+        link: GAME_MODS[j],
+      })
+    }
   }
-]
+  return allGames
+}
 
 
 function renderFilelist(node) {
@@ -82,25 +114,11 @@ async function serveSettings(request, response, next) {
     }
   }
 
-  let allGames = []
-  let GAME_MODS = getGames()
-  for(let i = 0; i < GAME_MODS.length; i++) {
-    let GAME_ORDER = gameDirectories(GAME_MODS[i], true)
-    //let nonExistingGames = []
-    //let includedGames = []
-    for(let i = 0; i < GAME_ORDER.length; i++) {
-      let exists = fs.existsSync(GAME_ORDER[i])
-      allGames.push({
-        name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),
-        mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : new Date(0),
-        absolute: path.dirname(GAME_ORDER[i]),
-        exists: exists
-      })
-    }
-  }
+  let allGames = listGames()
+
 
   return response.send(renderIndex(
-  renderMenu(SETTINGS_MENU, 'asset-menu')
+  renderMenu(ASSET_MENU, 'asset-menu')
   + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
   <h2>Settings</h2>
@@ -162,8 +180,9 @@ async function serveSettings(request, response, next) {
 }
 
 module.exports = {
-  SETTINGS_MENU,
+  ASSET_MENU,
   serveSettings,
-  renderFilelist
+  renderFilelist,
+  listGames,
 }
 

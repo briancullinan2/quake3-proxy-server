@@ -2,7 +2,7 @@ const path = require('path')
 const fs = require('fs')
 
 // use WASM renderer to screenshot uploaded maps
-const { findFile, modDirectory } = require('../assetServer/virtual.js')
+const { findFile } = require('../assetServer/virtual.js')
 const { EXE_NAME, getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
@@ -117,19 +117,8 @@ async function serveLevelshot(request, response, next) {
   }
 
 
-  let modname = modDirectory(filename)
-  if (modname) {
-    repackedFile = path.join(repackedCache(), match, path.basename(filename))
-    if (fs.existsSync(repackedFile)) {
-      return response.sendFile(repackedFile)
-    }
-    repackedFile = path.join(repackedCache(), filename.substr(modname.length))
-    if (fs.existsSync(repackedFile)) {
-      return response.sendFile(repackedFile)
-    }
-  }
 
-
+  
   levelshot = findFile(filename)
   if (levelshot && !levelshot.match(/\.pk3$/i)) {
     return response.sendFile(levelshot)

@@ -31,9 +31,12 @@ window.addEventListener('load', (event) => {
       if(evt.path[i].tagName != 'A' || !evt.path[i].href) {
         continue
       }
-      evt.preventDefault()
       if(window.location.pathname == evt.path[i].pathname
         && window.location.search == evt.path[i].search) {
+        if(window.location.hash != evt.path[i].hash) {
+          return false
+        }
+        evt.preventDefault()
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
@@ -42,6 +45,7 @@ window.addEventListener('load', (event) => {
         header ? 'Quake III Arena: ' + header : document.title, 
         evt.path[i].href)
       socket1.send(evt.path[i].href, { binary: false })
+      evt.preventDefault()
       return false
     }
   })

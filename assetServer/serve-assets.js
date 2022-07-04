@@ -1,48 +1,33 @@
 const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
+const { ASSET_MENU } = require('../contentServer/serve-settings.js')
+
 
 // TODO: provide editor / viewer for selected file type
 
 async function serveAssets(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  let ASSET_FEATURES = [
-    {
-      title: 'Virtual FS',
-      subtitle: 'Combined baseq3/pak0.pk3dir',
-      link: 'baseq3/pak0.pk3dir?index',
-    }, {
-      title: 'Repacked',
-      subtitle: 'On Demand Transcoding',
-      link: 'repacked/baseq3/pak0.pk3dir?index',
-    }, {
-      title: 'Live Dev',
-      subtitle: 'FS Watcher / Hot-reloading',
-      link: 'build?index',
-    }, {
-      title: 'Directories',
-      subtitle: 'Settings / Auto-detect',
-      link: 'settings',
-    }, {
-      title: 'Downloads',
-      subtitle: 'Find Remote content',
-      link: 'downloads',
-    }
-  ]
+  let ASSET_FEATURES = [{
+    title: 'Virtual FS',
+    subtitle: 'Combined baseq3/pak0.pk3dir',
+    link: 'baseq3/pak0.pk3dir?index',
+  }, {
+    title: 'Repacked Cache',
+    subtitle: 'On Demand Transcoding',
+    link: 'repacked/baseq3/pak0.pk3dir?index',
+  }, {
+    title: 'Live Dev',
+    subtitle: 'FS Watcher / Hot-reloading',
+    link: 'build?index',
+  }, {
+    title: 'Directories',
+    subtitle: 'Settings / Auto-detect',
+    link: 'settings',
+  }, {
+    title: 'Downloads',
+    subtitle: 'Find Remote content',
+    link: 'downloads',
+  }]
 
-  let ASSET_MENU = [
-    {
-      title: 'Skins',
-      link: 'assets/#skins'
-    }, {
-      title: 'Arenas',
-      link: 'assets/#arenas'
-    }, {
-      title: 'Matches',
-      link: 'assets/#matches'
-    }, {
-      title: 'Games',
-      link: 'assets/#games'
-    }
-  ]
   return response.send(renderIndex(
     renderMenu(ASSET_MENU, 'asset-menu')
   + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
