@@ -30,10 +30,8 @@ let directoryTimer
 async function calculateSize(directory, callback) {
   if(!directoryTimer) {
     directoryTimer = setInterval(function () {
-      let func = DIRECTORY_QUEUE.shift()
-      if(func) {
-        Promise.resolve(func())
-      }
+      let funcs = DIRECTORY_QUEUE.splice(0, 5)
+      funcs.forEach(func => func())
     }, 1000/60)
   }
 

@@ -34,7 +34,7 @@ async function listCached(modname, filename, pk3InnerPath) {
       let stat = fs.statSync(path.join(newDir, subdirectory[j]))
       directory.push({
         name: subdirectory[j] + (stat.isDirectory() ? '/' : ''),
-        link: `/repacked/${modname}/${filename}/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
+        link: `/repaacked/${modname}/${filename}/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
         absolute: path.join(path.basename(path.dirname(CACHE_ORDER[i])), path.basename(CACHE_ORDER[i])),
         mtime: stat.mtime || stat.ctime,
       })
@@ -103,7 +103,7 @@ async function serveRepacked(request, response, next) {
       }
       return {
         name: pk3Name + 'dir/',
-        link: `/repacked/${pk3}dir/`,
+        link: `/repacked/${modname}/${pk3}dir/`,
         absolute: newFile || ('(repacked)/' + pk3 + '/.'),
         mtime: stat ? (stat.mtime || stat.ctime) : void 0,
       }

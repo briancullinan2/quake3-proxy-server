@@ -66,7 +66,8 @@ async function updatePageViewers(route) {
           } else {
             updateClient(UDP_CLIENTS[ports[i]][j], fetch(SESSION_URLS[sess[0]])
               .then(response => {
-                console.log('Sending: ' + route)
+                //CODE REVIEW: this makes it synchronous because it waits for stdio?
+                // console.log('Sending: ' + route)
                 return response.text()
               }))
           }
