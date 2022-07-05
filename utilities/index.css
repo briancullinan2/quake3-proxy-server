@@ -83,7 +83,7 @@ body > img {
 }
 
 #map-info ol a, .info-layout ol a {
-  display: inline-block;
+  /* display: inline-block; */
   color: #CCC;
   text-decoration: none;
 }
@@ -96,30 +96,38 @@ ol.directory-list {
 ol.directory-list li {
   display: flex;
   margin: 3px 10px;
-  max-width: none;
+  max-width: 100%;
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
+
 .directory-list li a {
-  flex-grow: 1;
-  flex-basis: 100%;
-  flex-shrink: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  display: inline-block;
+}
+
+.directory-list li span:nth-child(1) {
+  /* display: inline-block; */
+  /* flex-grow: 1; */
+  flex-basis: 60%;
+  flex-shrink: 1;
   width: auto;
+  overflow: hidden;
 }
 
 
-.directory-list li span:first-of-type {
+.directory-list li span:nth-child(2) {
   flex-shrink: 1;
   flex-grow: 1;
   min-width: 100px;
   text-align: right;
   display: inline-block;
-  flex-basis: 50%;
+  /* flex-basis: 50%; */
 }
 
-.directory-list li span:nth-of-type(2) {
+.directory-list li span:nth-child(3) {
   flex-grow: 0;
   flex-shrink: 0;
   width: 150px;
@@ -130,10 +138,10 @@ ol.directory-list li {
   padding: 0 10px;
 }
 
-.directory-list li span:nth-of-type(3) {
-  flex-grow: 0;
-  flex-shrink: 0;
-  width: 30%;
+.directory-list li span:nth-child(4) {
+  flex-grow: 1;
+  flex-shrink: 1;
+  /* width: 30%; */
   flex-basis: 30%;
   min-width: 100px;
   text-align: right;

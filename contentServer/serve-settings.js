@@ -57,7 +57,7 @@ async function listGames(unexisting) {
             //   and the server only tries to get done what it thinks it can in that.
             ? await Promise.any([
               calculateSize(GAME_ORDER[i]), 
-              new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 100))]) : void 0,
+              new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))]) : void 0,
           link: GAME_MODS[j] + '/',
         }
       }
@@ -71,10 +71,10 @@ async function listGames(unexisting) {
 function renderFilelist(node) {
   let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
   if(node.name.endsWith('/') || typeof node.size == 'undefined') {
-    result += `<a href="${node.link}?index">${node.name}</a>`
+    result += `<span><a href="${node.link}?index">${node.name}</a></span>`
     result += `<span>&nbsp;</span>`
   } else {
-    result += `<a href="${node.link}?alt">${node.name}</a>`
+    result += `<span><a href="${node.link}?alt">${node.name}</a></span>`
     result += `<span>${formatSize(node.size)}</span>`
   }
   if(typeof node.mtime != 'undefined') {

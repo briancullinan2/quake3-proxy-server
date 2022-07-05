@@ -152,7 +152,7 @@ function projectWatcher() {
           childProcess = spawn('node', startArgs, { stdio: 'inherit' })
           childProcess.unref()
         }
-      }, 300)
+      }, 1000)
     })
   childProcess = spawn('node', startArgs, { stdio: 'inherit' })
   childProcess.unref()
@@ -160,9 +160,17 @@ function projectWatcher() {
 
 
 const CONTENT_WATCHES = {}
-
+let lastRun = 0
 
 function contentWatcher() {
+  updatePageViewers('\\?index')
+  updatePageViewers('/settings')
+  // debounce, in case multiple files change
+  if(Date.now() - lastRun < 1000) {
+    return
+  }
+  lastRun = Date.now()
+
   let BUILD_ORDER = buildDirectories()
   let GAME_MODS = getGames()
   let GAME_ORDER = []
@@ -178,8 +186,6 @@ function contentWatcher() {
       if(typeof CONTENT_WATCHES[localeName] == 'undefined') {
         console.log('Watching 1: ', MONITOR_CHANGES[i])
         CONTENT_WATCHES[localeName] = fs.watch(MONITOR_CHANGES[i], { recursive: false }, function (type, file) {
-          updatePageViewers('\\?index')
-          updatePageViewers('/settings')
           setTimeout(contentWatcher, 1000)
         })
       }
@@ -191,8 +197,6 @@ function contentWatcher() {
       if(typeof CONTENT_WATCHES[rootName] == 'undefined') {
         console.log('Watching 2: ', rootDirectory)
         CONTENT_WATCHES[rootName] = fs.watch(rootDirectory, { recursive: false }, function (type, file) {
-          updatePageViewers('\\?index')
-          updatePageViewers('/settings')
           setTimeout(contentWatcher, 1000)
         })
       }
@@ -212,8 +216,6 @@ function contentWatcher() {
         if(typeof CONTENT_WATCHES[localeName] == 'undefined') {
           console.log('Watching 3: ', currentPath)
           CONTENT_WATCHES[localeName] = fs.watch(currentPath, { recursive: false }, function (type, file) {
-            updatePageViewers('\\?index')
-            updatePageViewers('/settings')
             setTimeout(contentWatcher, 1000)
           })
         }
@@ -224,8 +226,6 @@ function contentWatcher() {
         if(typeof CONTENT_WATCHES[rootName] == 'undefined') {
           console.log('Watching 4: ', rootDirectory)
           CONTENT_WATCHES[rootName] = fs.watch(rootDirectory, { recursive: false }, function (type, file) {
-            updatePageViewers('\\?index')
-            updatePageViewers('/settings')
             setTimeout(contentWatcher, 1000)
           })
         }
