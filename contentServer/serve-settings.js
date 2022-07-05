@@ -47,7 +47,12 @@ async function listGames(unexisting) {
         mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
         absolute: path.dirname(GAME_ORDER[i]),
         exists: exists,
-        size: exists ? await calculateSize(GAME_ORDER[i]) : 0,
+        size: exists 
+          // I had this idea, what if a page could take a specific amount of time,
+          //   and the server only tries to get done what it thinks it can in that.
+          ? await Promise.any([
+            calculateSize(GAME_ORDER[i]), 
+            new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 100))]) : void 0,
         link: GAME_MODS[j] + '/',
       })
     }
@@ -78,17 +83,32 @@ function renderFilelist(node) {
 
 
 function formatSize(size) {
+  let formatted
+  let number
+  if(typeof size == 'number') {
+    number = size
+    formatted = []
+  } else if (typeof size == 'undefined'
+    || typeof size == 'object' && !size) {
+    return ''
+  } else if (typeof size == 'string') {
+    if(size.length == 0) { return '' }
+    formatted = size.split(' ')
+    number = parseInt(formatted[0])
+  }
+
   if(size > 1024 * 1024 * 1024) {
-   return Math.round(size / 1024 / 1024 / 1024 * 10) / 10 + 'GB'
+    formatted[0] = Math.round(number / 1024 / 1024 / 1024 * 10) / 10 + 'GB'
   } else
   if(size > 1024 * 1024) {
-    return Math.round(size / 1024 / 1024 * 10) / 10 + 'MB'
+    formatted[0] = Math.round(number / 1024 / 1024 * 10) / 10 + 'MB'
   } else
   if(size > 1024) {
-    return Math.round(size / 1024 * 10) / 10 + 'KB'
+    formatted[0] = Math.round(number / 1024 * 10) / 10 + 'KB'
   } else {
-    return size + 'B'
+    formatted[0] = number + 'B'
   }
+  return formatted.join(' ')
 }
 
 
