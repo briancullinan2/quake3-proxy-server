@@ -45,7 +45,7 @@ async function updatePageViewers(route) {
           && SESSION_URLS[sess[0]].match(route)) {
           if(newUrl.localeCompare(SESSION_URLS[sess[0]], 'en', {sensitivity: 'base'})) {
             updateClient(UDP_CLIENTS[ports[i]][j], fetch(SESSION_URLS[sess[0]])
-              .then(() => response.text()), 10 * count)
+              .then(response => response.text()), 10 * count)
           } else {
             console.log('Sending: ' + route)
             updateClient(UDP_CLIENTS[ports[i]][j], html, 10 * count)

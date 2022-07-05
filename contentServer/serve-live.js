@@ -139,7 +139,7 @@ async function renderDirectoryIndex(filename, directoryFiltered, isSub, isIndex,
   if(isSub) {
     directoryFiltered.unshift({
       name: '../',
-      link: `${path.dirname(filename)}/../`,
+      link: `../`,
       mtime: new Date(),
       absolute: filename,
     })

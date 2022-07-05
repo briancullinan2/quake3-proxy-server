@@ -8,7 +8,7 @@ const { listGames } = require('../contentServer/serve-settings.js')
 const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
 
 
-async function listCached(filename) {
+async function listCached(modname, filename, pk3InnerPath) {
   let directory = []
   let lowercasePaths = []
   let CACHE_ORDER = repackedCache()
@@ -19,18 +19,27 @@ async function listCached(filename) {
   //let modname = filename.split('/')[0]
 
   for(let i = 0; i < CACHE_ORDER.length; i++) {
+    let newDir = path.join(CACHE_ORDER[i], 
+        /* modname + '-converted', */
+        filename + 'dir', pk3InnerPath)
 
-    //if(GAME_ORDER.length == 0) {
-    //  continue
-    //}
-    let stat = fs.statSync(CACHE_ORDER[0])
-    directory.push({
-      name: GAME_MODS[i] + '/',
-      link: `/repacked/${GAME_MODS[i]}/`,
-      absolute: path.join(path.basename(path.dirname(CACHE_ORDER[0])), path.basename(CACHE_ORDER[0]), GAME_MODS[i]),
-      mtime: stat.mtime || stat.ctime,
-    })
-    lowercasePaths.push((GAME_MODS[i] + '/').toLocaleLowerCase())
+    if(!fs.existsSync(newDir)) {
+      continue
+    }
+    if(! fs.statSync(newDir).isDirectory())  {
+      continue
+    }
+    let subdirectory = fs.readdirSync(newDir)
+    for(let j = 0; j < subdirectory.length; j++) {
+      let stat = fs.statSync(path.join(newDir, subdirectory[j]))
+      directory.push({
+        name: subdirectory[j] + (stat.isDirectory() ? '/' : ''),
+        link: `/repacked/${modname}/${filename}/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
+        absolute: path.join(path.basename(path.dirname(CACHE_ORDER[i])), path.basename(CACHE_ORDER[i])),
+        mtime: stat.mtime || stat.ctime,
+      })
+      lowercasePaths.push((subdirectory[j] + (stat.isDirectory() ? '/' : '')).toLocaleLowerCase())
+    }
   }
 
   let directoryFiltered = directory
@@ -53,6 +62,7 @@ async function serveRepacked(request, response, next) {
     filename = filename.substring(0, filename.length - 1)
   }
   let modname = filename.split('/')[0]
+
   if(!modname || modname.length == 0) {
     let allGames = listGames()
     return await renderDirectoryIndex(filename, allGames, false, isIndex, response)
@@ -65,9 +75,11 @@ async function serveRepacked(request, response, next) {
     return next(new Error('Not in repack: ' + modname))
   }
 
+  
   let pk3File = path.basename(filename.replace(/\.pk3.*/gi, '.pk3'))
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let pk3Names = (await layeredDir(modname)).filter(dir => dir.match(/\.pk3/i))
+
   if(pk3File.length == 0) {
     return await renderDirectoryIndex(modname, pk3Names.map(pk3 => {
       let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
@@ -85,6 +97,7 @@ async function serveRepacked(request, response, next) {
     }), true, isIndex, response)
   }
 
+
   if(!pk3Names.length || !pk3File.match(/\.pk3/i)
       // pk3 not found so pk3dir wont exist either
       || (pk3File != 'pak0.pk3' && !pk3Names.includes(pk3File))
@@ -92,12 +105,9 @@ async function serveRepacked(request, response, next) {
     return next(new Error('Not in pk3s: ' + pk3File))
   }
 
-  console.log(pk3InnerPath)
-  if(pk3InnerPath.length == 0) {
-    let directory = (await listCached(pk3File))
-    return await renderDirectoryIndex(filename, directory, true, isIndex, response)
-  }
-  
+  let directory = (await listCached(modname, pk3File, pk3InnerPath))
+  return await renderDirectoryIndex(filename, directory, true, isIndex, response)
+
 
   // TODO: CODE REVIEW, reduce cascading curlys event though code
   //   is redundant there's still less complexity overall

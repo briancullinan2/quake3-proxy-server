@@ -42,7 +42,8 @@ function listGames() {
     for(let i = 0; i < GAME_ORDER.length; i++) {
       let exists = fs.existsSync(GAME_ORDER[i])
       allGames.push({
-        name: path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i]),
+        name: path.basename(path.dirname(GAME_ORDER[i])) 
+            + '/' + path.basename(GAME_ORDER[i]),
         mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
         absolute: path.dirname(GAME_ORDER[i]),
         exists: exists,
