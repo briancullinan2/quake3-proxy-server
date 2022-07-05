@@ -64,7 +64,19 @@ async function serveRepacked(request, response, next) {
   let modname = filename.split('/')[0]
 
   if(!modname || modname.length == 0) {
-    let allGames = listGames()
+    let dir = ''
+    let allGames = listGames().reduce((list, g) => {
+      if(dir != g.link) {
+        dir = g.link
+        list.push(Object.assign({}, g))
+        list[list.length - 1].exists = true
+        list[list.length - 1].name = path.basename(g.link) + '/'
+        list[list.length - 1].absolute = '(virtual)/.'
+      }
+      g.exists = false 
+      list.push(g)
+      return list
+    }, [])
     return await renderDirectoryIndex(filename, allGames, false, isIndex, response)
   } else {
     filename = filename.substring(modname.length + 1)
@@ -79,11 +91,12 @@ async function serveRepacked(request, response, next) {
   let pk3File = path.basename(filename.replace(/\.pk3.*/gi, '.pk3'))
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let pk3Names = (await layeredDir(modname)).filter(dir => dir.match(/\.pk3/i))
+      .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
 
   if(pk3File.length == 0) {
     return await renderDirectoryIndex(modname, pk3Names.map(pk3 => {
       let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
-      let newFile = findFile(pk3)
+      let newFile = findFile(modname + '/' + pk3)
       let stat
       if(newFile) {
         stat = fs.statSync(newFile)
@@ -91,7 +104,7 @@ async function serveRepacked(request, response, next) {
       return {
         name: pk3Name + 'dir/',
         link: `/repacked/${pk3}dir/`,
-        absolute: newFile || ('repacked/' + pk3 + '/.'),
+        absolute: newFile || ('(repacked)/' + pk3 + '/.'),
         mtime: stat ? (stat.mtime || stat.ctime) : void 0,
       }
     }), true, isIndex, response)

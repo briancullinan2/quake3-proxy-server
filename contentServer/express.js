@@ -45,7 +45,8 @@ function createApplication(features) {
 
   setupExtensions(features, app)
 
-  app.use('*', function (req, res, next) {
+  app.use(function (err, req, res, next) {
+    console.error(err)
     if (req.headers['accept']
       && !req.headers['accept'].includes('text/html')
       && req.headers['accept'].includes('application/json')) {
@@ -57,7 +58,9 @@ function createApplication(features) {
         return res.sendFile(UNKNOWN)
       }
     // index page
-    let index = renderIndex(`<div>Cannot ${req.method} ${req.originalUrl}</div>`)
+    let index = renderIndex(`<div><p>
+    ${err ? `<br />${err.message}` : `Cannot ${req.method} ${req.originalUrl}`}
+    ${err ? `<br /><pre>${err.stack}</pre>` : ''}</p></div>`)
     return res.status(404).send(index)
   })
 

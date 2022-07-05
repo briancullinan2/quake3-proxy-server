@@ -19,10 +19,10 @@ let ASSET_MENU = [{
   link: 'assets/#games'
 }, {
   title: 'Virtual FS',
-  link: 'baseq3/pak0.pk3dir?index',
+  link: 'baseq3/pak0.pk3dir/?index',
 }, {
   title: 'Repacked Cache',
-  link: 'repacked/baseq3/pak0.pk3dir?index',
+  link: 'repacked/baseq3/pak0.pk3dir/?index',
 }, {
   title: 'Live Dev',
   link: 'build?index',
@@ -32,17 +32,17 @@ let ASSET_MENU = [{
 }]
 
 
-function listGames() {
+function listGames(unexisting) {
   let allGames = []
   let GAME_MODS = getGames()
   for(let j = 0; j < GAME_MODS.length; j++) {
-    let GAME_ORDER = gameDirectories(GAME_MODS[j], true)
+    let GAME_ORDER = gameDirectories(GAME_MODS[j], unexisting)
     //let nonExistingGames = []
     //let includedGames = []
     for(let i = 0; i < GAME_ORDER.length; i++) {
       let exists = fs.existsSync(GAME_ORDER[i])
       allGames.push({
-        name: path.basename(path.dirname(GAME_ORDER[i])) 
+        name: (exists === false ? '(missing) ' : '') + path.basename(path.dirname(GAME_ORDER[i])) 
             + '/' + path.basename(GAME_ORDER[i]),
         mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
         absolute: path.dirname(GAME_ORDER[i]),
@@ -58,7 +58,7 @@ function listGames() {
 function renderFilelist(node) {
   let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
   if(node.name.endsWith('/') || typeof node.size == 'undefined') {
-    result += `<a href="${node.link}?index">${node.exists === false ? '(missing) ' : ''}${node.name}</a>`
+    result += `<a href="${node.link}?index">${node.name}</a>`
     result += `<span>&nbsp;</span>`
   } else {
     result += `<a href="${node.link}?alt">${node.name}</a>`
@@ -115,7 +115,7 @@ async function serveSettings(request, response, next) {
     }
   }
 
-  let allGames = listGames()
+  let allGames = listGames(true)
 
 
   return response.send(renderIndex(
@@ -144,7 +144,7 @@ async function serveSettings(request, response, next) {
   <ol class="directory-list">${repackedCache().map(dir => {
     let exists = fs.existsSync(dir)
     return {
-      name: dir,
+      name: (exists === false ? '(missing) ' : '') + dir,
       absolute: dir,
       exists: exists,
       mtime: exists ? fs.statSync(dir).mtime : void 0,
@@ -159,7 +159,7 @@ async function serveSettings(request, response, next) {
   <ol class="directory-list">${downloadCache().map(dir => {
     let exists = fs.existsSync(dir)
     return {
-      name: dir,
+      name: (exists === false ? '(missing) ' : '') + dir,
       absolute: dir,
       exists: exists,
       mtime: exists ? fs.statSync(dir).mtime : void 0,

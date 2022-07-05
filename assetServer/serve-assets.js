@@ -9,11 +9,11 @@ async function serveAssets(request, response, next) {
   let ASSET_FEATURES = [{
     title: 'Virtual FS',
     subtitle: 'Combined baseq3/pak0.pk3dir',
-    link: 'baseq3/pak0.pk3dir?index',
+    link: 'baseq3/pak0.pk3dir/?index',
   }, {
     title: 'Repacked Cache',
     subtitle: 'On Demand Transcoding',
-    link: 'repacked/baseq3/pak0.pk3dir?index',
+    link: 'repacked/baseq3/pak0.pk3dir/?index',
   }, {
     title: 'Live Dev',
     subtitle: 'FS Watcher / Hot-reloading',

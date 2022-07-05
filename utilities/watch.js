@@ -20,6 +20,59 @@ const FILESYSTEM_WATCHERS = [{
   absolute: 'reload/mounts/.',
 }]
 
+const DIRECTORY_TIMES = {}
+const DIRECTORY_SIZES = {}
+const DIRECTORY_DIRS = {}
+const DIRECTORY_QUEUE = []
+let directoryTimer
+
+async function calculateSize(directory, callback) {
+  if(!directoryTimer) {
+    directoryTimer = setInterval(function () {
+      Promise.resolve(DIRECTORY_QUEUE.pop())
+    }, 100)
+  }
+
+  let key = directory.toLocaleLowerCase()
+  let stat = fs.statSync(directory)
+  if(!stat.isDirectory()) {
+    return stat.size
+  }
+
+  if(typeof DIRECTORY_TIMES[key] != 'undefined'
+    // if the directory hasn't changed, use the size
+    //   and list of directories from memory, instead
+    //   of reading from disk again
+    && DIRECTORY_TIMES[key] >= stat.mtime) {
+    // recheck subdirectories for changes because child 
+    //   changes to not propogate to parent directories
+    return Promise.all(DIRECTORY_DIRS[key].map(dir => {
+      return calculateSize(dir, callback)
+    })).then(subsize => subsize + DIRECTORY_SIZES[key])
+  }
+  DIRECTORY_TIMES[key] = stat.mtime
+  // TODO: rate limit to not pound hard drive while playing
+  let dirs = fs.readdirSync(directory)
+  let subdirs = []
+  let totalSize = 0
+  // queue up the folder inside this folder before resolving
+  for(let i = 0; i < dirs.length; i++) {
+    let stat = fs.statSync(path.join(directory, dirs[i]))
+    if(stat.isDirectory()) {
+      subdirs.push(path.join(directory, dirs[i]))
+    } else {
+      totalSize += stat.size
+    }
+  }
+  DIRECTORY_SIZES[key] = totalSize
+  DIRECTORY_DIRS[key] = subdirs
+  return Promise.all(subdirs.map(dir => {
+    return calculateSize(dir, callback)
+  })).then(subsize => subsize + totalSize)
+
+}
+
+
 let childProcess
 let debounceTimer
 let PROJECT_WATCHER
@@ -140,5 +193,6 @@ module.exports = {
   FILESYSTEM_WATCHERS,
   projectWatcher,
   contentWatcher,
+  calculateSize,
 }
 
