@@ -29,8 +29,11 @@ let directoryTimer
 async function calculateSize(directory, callback) {
   if(!directoryTimer) {
     directoryTimer = setInterval(function () {
-      Promise.resolve(DIRECTORY_QUEUE.pop())
-    }, 100)
+      let func = DIRECTORY_QUEUE.shift()
+      if(func) {
+        Promise.resolve(func())
+      }
+    }, 1000/60)
   }
 
   let key = directory.toLocaleLowerCase()
@@ -48,15 +51,23 @@ async function calculateSize(directory, callback) {
     //   changes to not propogate to parent directories
     return Promise.all(DIRECTORY_DIRS[key].map(dir => {
       return calculateSize(dir, callback)
-    })).then(subsize => subsize + DIRECTORY_SIZES[key])
+    })).then(subsizes => subsizes.reduce((s, i) => (s + i), 0) + DIRECTORY_SIZES[key])
   }
-  DIRECTORY_TIMES[key] = stat.mtime
+
   // TODO: rate limit to not pound hard drive while playing
-  let dirs = fs.readdirSync(directory)
+  let dirs = await new Promise(resolve => {
+    DIRECTORY_QUEUE.push(function () {
+      console.log('Scanning: ', directory)
+      resolve(fs.readdirSync(directory))
+    })
+  })
   let subdirs = []
   let totalSize = 0
   // queue up the folder inside this folder before resolving
   for(let i = 0; i < dirs.length; i++) {
+    if(!fs.existsSync(path.join(directory, dirs[i]))) {
+      continue
+    }
     let stat = fs.statSync(path.join(directory, dirs[i]))
     if(stat.isDirectory()) {
       subdirs.push(path.join(directory, dirs[i]))
@@ -64,11 +75,14 @@ async function calculateSize(directory, callback) {
       totalSize += stat.size
     }
   }
+
+  DIRECTORY_TIMES[key] = stat.mtime
   DIRECTORY_SIZES[key] = totalSize
   DIRECTORY_DIRS[key] = subdirs
+
   return Promise.all(subdirs.map(dir => {
     return calculateSize(dir, callback)
-  })).then(subsize => subsize + totalSize)
+  })).then(subsizes => subsizes.reduce((s, i) => (s + i), 0) + totalSize)
 
 }
 

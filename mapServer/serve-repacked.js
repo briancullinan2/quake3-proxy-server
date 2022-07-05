@@ -65,7 +65,7 @@ async function serveRepacked(request, response, next) {
 
   if(!modname || modname.length == 0) {
     let dir = ''
-    let allGames = listGames().reduce((list, g) => {
+    let allGames = (await listGames()).reduce((list, g) => {
       if(dir != g.link) {
         dir = g.link
         list.push(Object.assign({}, g))

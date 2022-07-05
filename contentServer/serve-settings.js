@@ -3,7 +3,7 @@ const path = require('path')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
 const { getGames, repackedCache, downloadCache } = require('../utilities/env.js')
-const { FILESYSTEM_WATCHERS } = require('../utilities/watch.js')
+const { FILESYSTEM_WATCHERS, calculateSize } = require('../utilities/watch.js')
 
 let ASSET_MENU = [{
   title: 'Skins',
@@ -32,7 +32,7 @@ let ASSET_MENU = [{
 }]
 
 
-function listGames(unexisting) {
+async function listGames(unexisting) {
   let allGames = []
   let GAME_MODS = getGames()
   for(let j = 0; j < GAME_MODS.length; j++) {
@@ -47,6 +47,7 @@ function listGames(unexisting) {
         mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
         absolute: path.dirname(GAME_ORDER[i]),
         exists: exists,
+        size: exists ? await calculateSize(GAME_ORDER[i]) : 0,
         link: GAME_MODS[j] + '/',
       })
     }
@@ -115,7 +116,7 @@ async function serveSettings(request, response, next) {
     }
   }
 
-  let allGames = listGames(true)
+  let allGames = await listGames(true)
 
 
   return response.send(renderIndex(
