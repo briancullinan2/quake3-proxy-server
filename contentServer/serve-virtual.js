@@ -10,31 +10,30 @@ const { findFile } = require('../assetServer/virtual.js')
 //   and build/convert from remote sources
 async function serveVirtualPk3dir(filename) {
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  if (pk3File.startsWith('/')) {
-    pk3File = pk3File.substr(1)
+  if(!fs.existsSync(pk3File)) {
+    if (pk3File.startsWith('/')) {
+      pk3File = pk3File.substr(1)
+    }
+    pk3File = findFile(pk3File)
   }
-  let pk3Path = findFile(pk3File)
-  if (!pk3Path) {
+  if(!fs.existsSync(pk3File)) {
     return []
   }
-  let index = await getIndex(pk3Path)
+  let index = await getIndex(pk3File)
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let directory = []
   for (let i = 0; i < index.length; i++) {
-    let newPath = index[i].name.replace(/\\/ig, '/')
-      .replace(/\/$/, '')
+    let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
     let currentPath = newPath.substr(0, pk3InnerPath.length)
     let relativePath = newPath.substr(pk3InnerPath.length + 1)
     let isSubdir = relativePath.indexOf('/')
-
-    if ((pk3InnerPath.length == 0 
+    if ((pk3InnerPath.length <= 1 
       || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
       && relativePath.length && newPath[pk3InnerPath.length] == '/')
       // recursive directory inside pk3?
       && (isSubdir == -1 || isSubdir == relativePath.length - 1)
       && newPath.length > currentPath.length
     ) {
-      console.log(newPath, currentPath)
       directory.push(path.join(pk3File + 'dir', newPath))
     }
   }
@@ -97,6 +96,7 @@ async function serveVirtual(request, response, next) {
 }
 
 module.exports = {
+  serveVirtualPk3dir,
   serveVirtual,
 }
 

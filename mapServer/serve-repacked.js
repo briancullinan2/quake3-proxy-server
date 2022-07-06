@@ -7,6 +7,7 @@ const { layeredDir } = require('../assetServer/layered.js')
 const { listGames } = require('../contentServer/serve-settings.js')
 const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
 const { calculateSize } = require('../utilities/watch.js')
+const { getIndex } = require('../utilities/zip.js')
 
 
 async function listCached(modname, filename, pk3InnerPath) {
@@ -18,12 +19,43 @@ async function listCached(modname, filename, pk3InnerPath) {
     filename = filename.substring(1)
   }
   //let modname = filename.split('/')[0]
+  let pk3File = findFile(modname + '/' + path.basename(filename))
+  if(pk3File) {
+    let stat = fs.statSync(pk3File)
+    let index = await getIndex(pk3File)
+    for (let i = 0; i < index.length; i++) {
+      let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
+      let currentPath = newPath.substr(0, pk3InnerPath.length)
+      let relativePath = newPath.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
+      let isSubdir = relativePath.indexOf('/')
+      if ((pk3InnerPath.length <= 1 
+        || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
+        && relativePath.length && newPath[pk3InnerPath.length] == '/')
+        // recursive directory inside pk3?
+        && (isSubdir == -1 || isSubdir == relativePath.length - 1)
+        && newPath.length > currentPath.length
+        // TODO: zip files sometimes miss directory creation to add a virtual
+        //   directory if any file descendents exist for this path
+      ) {
+        //console.log(pk3InnerPath, currentPath, ' -> ', relativePath)
+        directory.push({
+          name: relativePath + (index[i].isDirectory ? '/' : ''),
+          link: `/repacked/${modname}/${filename}/${index[i].name}${index[i].isDirectory ? '/' : ''}`,
+          absolute: path.join(pk3File + 'dir', newPath),
+          mtime: new Date(index[i].time) || stat.mtime,
 
+        })
+        lowercasePaths.push((relativePath + (index[i].isDirectory ? '/' : '')).toLocaleLowerCase())
+      }
+    }
+  }
+  //console.log(directory)
+
+  // TODO: add base directory conversions
   for(let i = 0; i < CACHE_ORDER.length; i++) {
     let newDir = path.join(CACHE_ORDER[i], 
         /* modname + '-converted', */
         filename + 'dir', pk3InnerPath)
-
     if(!fs.existsSync(newDir)) {
       continue
     }
@@ -35,13 +67,12 @@ async function listCached(modname, filename, pk3InnerPath) {
       let stat = fs.statSync(path.join(newDir, subdirectory[j]))
       directory.push({
         name: subdirectory[j] + (stat.isDirectory() ? '/' : ''),
-        link: `/repacked/${modname}/${filename}/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
+        link: `/repacked/${modname}/${filename}dir/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
         absolute: path.join(path.basename(path.dirname(CACHE_ORDER[i])), path.basename(CACHE_ORDER[i])) + '/.',
         mtime: stat.mtime || stat.ctime,
         size: await Promise.any([
           calculateSize(path.join(newDir, subdirectory[j])),
           new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))]),
-
       })
       lowercasePaths.push((subdirectory[j] + (stat.isDirectory() ? '/' : '')).toLocaleLowerCase())
     }

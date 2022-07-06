@@ -72,19 +72,20 @@ async function listGames(unexisting) {
 function renderFilelist(node) {
   let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
   if(node.name.endsWith('/') || typeof node.size == 'undefined') {
-    result += `<span><a href="${node.link}?index">${node.name}</a></span>`
-    result += `<span>${node.size ? formatSize(node.size) : '&nbsp;'}</span>`
+    result += `<div><a href="${node.link}?index">${node.name}</a></div>`
+    result += `<div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>`
   } else {
-    result += `<span><a href="${node.link}?${node.name.endsWith('/') ? 'index' : 'alt'}">${node.name}</a></span>`
-    result += `<span>${formatSize(node.size)}</span>`
+    result += `<div><a href="${node.link}?${node.name.endsWith('/') 
+        ? 'index' : 'alt'}">${node.name}</a></div>`
+    result += `<div>${formatSize(node.size)}</div>`
   }
   if(typeof node.mtime != 'undefined') {
-    result += `<span>${node.mtime.getMonth() + 1}/${node.mtime.getDate()} `
-    result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</span>`
+    result += `<div>${node.mtime.getMonth() + 1}/${node.mtime.getDate()} `
+    result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</div>`
   } else {
-    result += `<span>&nbsp;</span>`
+    result += `<div>&nbsp;</div>`
   }
-  result += `<span>${path.dirname(node.absolute)}</span>`
+  result += `<div>${path.dirname(node.absolute)}</div>`
   result += '</li>'
   return result
 }
