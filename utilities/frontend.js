@@ -289,7 +289,7 @@ function socketMessage(evt) {
     for(let i = length - 1; i > 0; --i) { // don't remove menu
       document.body.children[i].remove()
     }
-    document.body.innerHTML += (/<body>[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
+    document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
     return
   } else
   if(typeof evt.data == 'string'

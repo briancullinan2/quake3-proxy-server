@@ -7,7 +7,8 @@ const { layeredDir } = require('../assetServer/layered.js')
 const { listGames } = require('../contentServer/serve-settings.js')
 const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { getIndex } = require('../utilities/zip.js')
+const { fileKey, getIndex } = require('../utilities/zip.js')
+const { renderIndex } = require('../utilities/render.js')
 
 
 async function listCached(modname, filename, pk3InnerPath) {
@@ -40,10 +41,10 @@ async function listCached(modname, filename, pk3InnerPath) {
         //console.log(pk3InnerPath, currentPath, ' -> ', relativePath)
         directory.push({
           name: relativePath + (index[i].isDirectory ? '/' : ''),
-          link: `/repacked/${modname}/${filename}/${index[i].name}${index[i].isDirectory ? '/' : ''}`,
-          absolute: path.join(pk3File + 'dir', newPath),
+          link: `/repacked/${modname}/${filename}dir/${index[i].name}${index[i].isDirectory ? '/' : ''}`,
+          absolute: path.join(path.basename(path.dirname(pk3File)), path.basename(pk3File)) + '/.',
           mtime: new Date(index[i].time) || stat.mtime,
-
+          exists: false,
         })
         lowercasePaths.push((relativePath + (index[i].isDirectory ? '/' : '')).toLocaleLowerCase())
       }
@@ -73,6 +74,7 @@ async function listCached(modname, filename, pk3InnerPath) {
         size: await Promise.any([
           calculateSize(path.join(newDir, subdirectory[j])),
           new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))]),
+        exists: true,
       })
       lowercasePaths.push((subdirectory[j] + (stat.isDirectory() ? '/' : '')).toLocaleLowerCase())
     }
@@ -170,25 +172,57 @@ async function serveRepacked(request, response, next) {
     return next(new Error('Not in pk3s: ' + pk3File))
   }
 
+  if(!isIndex) {
+    return next()
+  }
+
+
+  let newFile = findFile(modname + '/' + pk3File)
+  if(newFile) {
+    let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
+    let imgIndex = directory
+        .map(img => path.basename(img.link))
+        .indexOf(path.basename(pk3InnerPath))
+    if (await fileKey(newFile, pk3InnerPath, response)) {
+      // TODO: render image scroller view like Apple album shuffle
+      let index = renderIndex(`
+      <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
+      <div id="album-view">
+      <h2><a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath)}/?index">
+      ${path.basename(path.dirname(path.join(newFile, pk3InnerPath)))}</a>
+      /
+      ${path.basename(pk3InnerPath)}</h2>
+      <ol>
+      ${directory.map((img, i, arr) => {
+        let order = ''
+        if(i == imgIndex) {
+          order = 'class="middle"'
+        } else 
+        if(i + 2 == imgIndex) {
+          order = 'class="left2"'
+        } else
+        if(i + 1 == imgIndex) {
+          order = 'class="left"'
+        } else
+        if(i - 1 == imgIndex) {
+          order = 'class="right"'
+        }
+        if(i - 2 == imgIndex) {
+          order = 'class="right2"'
+        }
+        return `<li ${order}><a href=""><img src="${img.link}" /></a></li>`
+      }).join('\n')}
+      </ol>
+      </div>`)
+      return response.send(index)
+    }
+  }
+
   let directory = (await listCached(modname, pk3File, pk3InnerPath))
   return await renderDirectoryIndex(filename, directory, true, isIndex, response)
 
-
-  // TODO: CODE REVIEW, reduce cascading curlys event though code
-  //   is redundant there's still less complexity overall
-  return next(new Error('Not in repack: ' + filename))
-
-  let newFile = findFile(filename)
-  if (newFile && newFile.match(/\.pk3$/i)) {
-    // serve unsupported images with ?alt in URL
-    if (await streamFileKey(newFile, pk3InnerPath, response)) {
-      return
-    }
-  } else
-  if (newFile && newFile.includes('.pk3dir\/')) {
-    return response.sendFile(newFile)
-  }
 }
+
 
 module.exports = {
   serveRepacked,

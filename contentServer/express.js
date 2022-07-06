@@ -45,27 +45,36 @@ function createApplication(features) {
 
   setupExtensions(features, app)
 
-  app.use(function (err, req, res, next) {
-    console.error(err)
-    if (req.headers['accept']
-      && !req.headers['accept'].includes('text/html')
-      && req.headers['accept'].includes('application/json')) {
-      return res.json({ error: `Cannot ${req.method} ${req.originalUrl}` })
-    } else
-      if (req.headers['accept']
-        && !req.headers['accept'].includes('text/html')
-        && req.headers['accept'].includes('image/')) {
-        return res.sendFile(UNKNOWN)
-      }
-    // index page
-    let index = renderIndex(`<div><p>
-    ${err ? `<br />${err.message}` : `Cannot ${req.method} ${req.originalUrl}`}
-    ${err ? `<br /><pre>${err.stack}</pre>` : ''}</p></div>`)
-    return res.status(404).send(index)
+  app.use(unhandledResponse)
+
+  app.use('*', function (req, res, next) {
+    return unhandledResponse(void 0, req, res, next)
   })
 
 
   return app
+}
+
+
+function unhandledResponse(err, req, res, next) {
+  if(err) {
+    console.error(err)
+  }
+  if (req.headers['accept']
+    && !req.headers['accept'].includes('text/html')
+    && req.headers['accept'].includes('application/json')) {
+    return res.json({ error: `Cannot ${req.method} ${req.originalUrl}` })
+  } else
+    if (req.headers['accept']
+      && !req.headers['accept'].includes('text/html')
+      && req.headers['accept'].includes('image/')) {
+      return res.sendFile(UNKNOWN)
+    }
+  // index page
+  let index = renderIndex(`<div><p>
+  ${err ? `<br />${err.message}` : `Cannot ${req.method} ${req.originalUrl}`}
+  ${err ? `<br /><pre>${err.stack}</pre>` : ''}</p></div>`)
+  return res.status(404).send(index)
 }
 
 

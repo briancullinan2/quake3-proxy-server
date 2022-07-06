@@ -6,6 +6,13 @@ html, body {
   white-space: nowrap;
   font: 16px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
   color: #CCC;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 body > img {
@@ -16,13 +23,91 @@ body > img {
   box-sizing: border-box;
 }
 
-#map-info, .info-layout {
-  position:relative;
+
+#album-view ol {
+  list-style: none;
+  margin: 1px auto;
+  padding: 0 0 50% 0;
+  overflow: hidden;
+  perspective: 600px;
+  width: 90%;
+}
+
+#album-view li {
+  margin:0;
+  list-style: none;
+  width: 50%;
+  display: block;
+  position: absolute;
+  border-radius: 10px;
+  -webkit-box-reflect: below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(.85, transparent), to(rgba(255,255,255,0.15)));
+  transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+  z-index: 0;
+  text-align: center;
+  left: 25%;
+}
+
+
+#album-view li a {
+  /* text-align: center; */
+}
+
+#album-view img {
+  min-height: 200px;
+  min-width: 200px;
+}
+
+h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h2 a:hover {
+  text-decoration: underline;
+}
+
+#album-view ol a {
+  display: block;
+  border-radius: 10px;
+}
+
+#album-view li.left2 {
+  transform: rotateY(25deg) translateX(-220px) skewY(-5deg) scale(0.4, 0.6);
+  opacity: 0.7;
+}
+
+#album-view li.left {
+  transform: rotateY(15deg) translateX(-120px) skewY(-3deg) scale(0.6, 0.8);
+  opacity: 0.7;
+}
+
+#album-view li.middle {
+  z-index:1;
+  transform: rotateY(0deg) translateX(0) scale(1);
+}
+
+#album-view li.right {
+  transform: rotateY(-15deg) translateX(120px) skewY(3deg) scale(0.6, 0.8);
+  opacity: 0.7;
+}
+
+#album-view li.right2 {
+  transform: rotateY(-25deg) translateX(220px) skewY(5deg) scale(0.4, 0.6);
+  opacity: 0.7;
+}
+
+
+#map-info, .info-layout, #album-view {
+  position:
+  relative;
   z-index: 1;
   backdrop-filter: blur(10px);
   background-color: rgba(0, 0, 0, 0.5);
   margin: 50px;
   padding: 20px;
+  /* min-height: 100%; */
+  flex-basis: 100%;
+  flex-grow: 1;
 }
 
 #map-info h2, .info-layout h2 {
@@ -46,13 +131,18 @@ body > img {
   width:100%;
   z-index: 0;
   opacity: 0.5;
+  text-align: center;
+  display: flex;
 }
 
 .loading-blur img {
   min-height:100%;
-  width:auto;
-  height:auto;
+  width:
+  auto;
+  height:
+  auto;
   min-width:100%;
+  margin: auto;
 }
 
 #map-info ol, .info-layout ol {

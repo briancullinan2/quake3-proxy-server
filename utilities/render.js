@@ -47,9 +47,11 @@ function renderFeatureMenu() {
   return renderMenu(getFeatureFilter())
 }
 
-function renderIndex(body) {
-  let offset = INDEX.match('<body>').index + 6
-  let index = INDEX.substring(0, offset)
+function renderIndex(body, bodyClass) {
+  let bodyTag = INDEX.match(/<body[\n\r.^>]*?>/i)
+  let offset = bodyTag.index + bodyTag[0].length
+  let index = INDEX.substring(0, offset).replace('<body', 
+    `<body ${bodyClass ? bodyClass : ''} `)
     + renderFeatureMenu()
     + body + INDEX.substring(offset, INDEX.length)
   return index
