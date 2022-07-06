@@ -158,23 +158,22 @@ async function serveLive(request, response, next) {
 
 
 async function renderDirectoryIndex(filename, directoryFiltered, isSub, isIndex, response) {
-
-  if (isSub) {
-    directoryFiltered.unshift({
-      name: '../',
-      link: `../`,
-      mtime: new Date(),
-      absolute: filename,
-    })
-  }
-
   if (isIndex) {
     return response.send(renderIndex(
       renderMenu(ASSET_MENU, 'asset-menu')
       + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-    <a class="close-files" href="/build/${filename}${filename.length > 1 ? '/' : ''}">X</a>
     <div class="info-layout">
-    <h2>Directory: /${filename}${filename.length > 1 ? '/' : ''}</h2>
+    <a class="close-files" href="/${filename}${filename.length > 1 ? '/' : ''}">X</a>
+    <h2>Directory: 
+    ${path.dirname(filename).includes('/') ? 
+    `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
+    /
+    ` : ''}
+    ${filename.includes('/') ?
+    `<a href="/${path.dirname(filename)}/?index">${path.basename(path.dirname(filename))}</a>
+    /
+    ` : ''}
+    ${path.basename(filename)}</h2>
     <ol class="directory-list">${directoryFiltered.map(renderFilelist).join('\n')}
     </ol>
     </div>

@@ -27,24 +27,25 @@ window.addEventListener('load', (event) => {
   startLive()
 
   document.addEventListener('click', function (evt) {
-    for(let i = 0; i < evt.path.length; i++) {
-      if(evt.path[i].tagName != 'A' || !evt.path[i].href) {
+    let eventPath = evt.composedPath()
+    for(let i = 0; i < eventPath.length; i++) {
+      if(eventPath[i].tagName != 'A' || !eventPath[i].href) {
         continue
       }
-      if(window.location.pathname == evt.path[i].pathname
-        && window.location.search == evt.path[i].search) {
-        if(window.location.hash != evt.path[i].hash) {
+      if(window.location.pathname == eventPath[i].pathname
+        && window.location.search == eventPath[i].search) {
+        if(window.location.hash != eventPath[i].hash) {
           return false
         }
         evt.preventDefault()
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
-      socket1.send(evt.path[i].href, { binary: false })
+      socket1.send(eventPath[i].href, { binary: false })
       history.pushState(
         {location: window.location.pathname}, 
         header ? 'Quake III Arena: ' + header : document.title, 
-        evt.path[i].href)
+        eventPath[i].href)
       evt.preventDefault()
       return false
     }

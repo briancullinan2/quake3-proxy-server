@@ -7,7 +7,7 @@ const { layeredDir } = require('../assetServer/layered.js')
 const { listGames } = require('../contentServer/serve-settings.js')
 const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { fileKey, getIndex } = require('../utilities/zip.js')
+const { fileKey, getIndex, streamFileKey } = require('../utilities/zip.js')
 const { renderIndex } = require('../utilities/render.js')
 
 
@@ -119,7 +119,7 @@ async function serveRepacked(request, response, next) {
       list.push(g)
       return list
     }, [])
-    return await renderDirectoryIndex(filename, allGames, false, isIndex, response)
+    return await renderDirectoryIndex('repacked (virtual)', allGames, false, isIndex, response)
   } else {
     filename = filename.substring(modname.length + 1)
   }
@@ -144,7 +144,7 @@ async function serveRepacked(request, response, next) {
       .concat(['pak0.pk3']) 
 
   if(pk3File.length == 0) {
-    return await renderDirectoryIndex(modname, pk3Names.map(pk3 => {
+    return await renderDirectoryIndex(path.join('repacked', modname), pk3Names.map(pk3 => {
       let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
       let newFile = findFile(modname + '/' + pk3Name)
       if(!newFile) {
@@ -172,12 +172,16 @@ async function serveRepacked(request, response, next) {
     return next(new Error('Not in pk3s: ' + pk3File))
   }
 
-  if(!isIndex) {
+  let newFile = findFile(modname + '/' + pk3File)
+
+  if (!isIndex && await streamFileKey(newFile, pk3InnerPath, response)) {
+    return
+  }
+
+  if(!isIndex || !newFile) {
     return next()
   }
 
-
-  let newFile = findFile(modname + '/' + pk3File)
   if(newFile) {
     let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
     let imgIndex = directory
@@ -188,13 +192,17 @@ async function serveRepacked(request, response, next) {
       let index = renderIndex(`
       <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
       <div id="album-view">
-      <h2><a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath)}/?index">
+      <h2>Images: 
+      <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/') ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
+      ..</a>
+      /
+      <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
       ${path.basename(path.dirname(path.join(newFile, pk3InnerPath)))}</a>
       /
       ${path.basename(pk3InnerPath)}</h2>
       <ol>
-      <li class="album-prev"><a href="${directory[imgIndex-1].link}?index">&nbsp;</a></li>
-      <li class="album-next"><a href="${directory[imgIndex+1].link}?index">&nbsp;</a></li>
+      <li class="album-prev"><a href="${directory[imgIndex <= 0 ? directory.length - 1 : imgIndex-1].link}?index">&nbsp;</a></li>
+      <li class="album-next"><a href="${directory[imgIndex >= directory.length - 1 ? 0 : imgIndex+1].link}?index">&nbsp;</a></li>
 
       ${directory.map((img, i, arr) => {
         let order = ''
@@ -213,7 +221,9 @@ async function serveRepacked(request, response, next) {
         if(i - 2 == imgIndex) {
           order = 'class="right2"'
         }
-        return `<li ${order}><a href=""><img src="${img.link}" /></a></li>`
+        return `<li ${order}>
+          <a style="background-image:url('${img.link}?alt')" href="${img.link}?index">
+            <img src="${img.link}?alt" /></a></li>`
       }).join('\n')}
       </ol>
       </div>`)
@@ -222,7 +232,7 @@ async function serveRepacked(request, response, next) {
   }
 
   let directory = (await listCached(modname, pk3File, pk3InnerPath))
-  return await renderDirectoryIndex(filename, directory, true, isIndex, response)
+  return await renderDirectoryIndex(path.join('repacked', modname, filename), directory, true, isIndex, response)
 
 }
 

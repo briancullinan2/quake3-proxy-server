@@ -1,5 +1,5 @@
-
-html, body {
+html,
+body {
   padding: 0;
   margin: 0;
   background: #000;
@@ -15,11 +15,13 @@ body {
   min-height: 100%;
 }
 
-body > img {
+body>img {
   /* opacity: .01; */
 }
 
-*, ::after, ::before {
+*,
+::after,
+::before {
   box-sizing: border-box;
 }
 
@@ -28,33 +30,57 @@ body > img {
   list-style: none;
   margin: 1px auto;
   padding: 0 0 50% 0;
-  overflow: hidden;
+  /* overflow: hidden; */
   perspective: 600px;
   width: 90%;
+  max-height: 400px;
 }
 
 #album-view li {
-  margin:0;
+  margin: 0;
   list-style: none;
   width: 50%;
-  display: block;
   position: absolute;
   border-radius: 10px;
-  -webkit-box-reflect: below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(.85, transparent), to(rgba(255,255,255,0.15)));
   transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
   z-index: 0;
   text-align: center;
   left: 25%;
+  background:
+    none;
+  background-size: 0;
+  background-repeat: no-repeat;
+  display: none;
 }
 
+#album-view li a:after {
+  content: " ";
+  display: block;
+  background-image: inherit;
+  transform: scaleY(-1);
+  width: 100%;
+  height: 40px;
+  top: 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0.2;
+}
 
 #album-view li a {
-  /* text-align: center; */
+  position: relative;
+  display: inline-block;
+  border-radius: 10px;
+  background: none;
+  background-size: 0;
+  background-repeat: no-repeat;
 }
 
 #album-view img {
   min-height: 200px;
   min-width: 200px;
+  /* -webkit-box-reflect: below 5px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(0.75, transparent), to(rgba(255,255,255,0.2))); */
+  position: relative;
 }
 
 h2 a {
@@ -77,13 +103,13 @@ h2 a:hover {
   width: 50px;
   position: absolute;
   top: -100px;
-  left: 5px;
+  left: 10px;
   transition: background-color 0.2s ease-in-out;
   background-color: rgba(0, 0, 0, 0.2);
   text-decoration: none;
   color:
-  transparent;
-  z-index:101;
+    transparent;
+  z-index: 101;
 }
 
 #album-view .album-prev:hover a,
@@ -94,8 +120,8 @@ h2 a:hover {
 }
 
 #album-view .album-next a {
-  left:auto;
-  right:-10px;
+  left: auto;
+  right: 10px;
 }
 
 #album-view .album-next:hover,
@@ -103,38 +129,45 @@ h2 a:hover {
   opacity: 1;
 }
 
-#album-view .album-prev:before,
-#album-view .album-next:before {
+#album-view .album-prev a:before,
+#album-view .album-next a:before {
   width: 0;
   height: 0;
   border-top: 20px solid transparent;
   border-bottom: 20px solid transparent;
   border-left: 20px solid white;
   content: " ";
-  display:
-  block;
+  display: inline-block;
   z-index: 110;
   position: relative;
-  margin-top:-20px;
+  margin-top: -20px;
+  top: 50%;
+  right:15px;
+  left:
+  auto;
+  position: absolute;
 }
 
 
-#album-view .album-prev:before {
-  border-left: 20px solid transparent;
+#album-view .album-prev a:before {
+  right:auto;
+  left:15px;
+  border-left: 0 solid transparent;
   border-right: 20px solid white;
 }
 
 
 #album-view .album-next,
 #album-view .album-prev {
-  position:absolute;
-  top:50%;
+  position: absolute;
+  top: 50%;
   border-radius: 0;
   z-index: 100;
   opacity: 0.5;
   transition: opacity 0.2s ease-in-out;
-  width:auto;
+  width: auto;
   cursor: pointer;
+  display:block;
 }
 
 #album-view .album-next {
@@ -146,40 +179,43 @@ h2 a:hover {
   left: 20px;
 }
 
-#album-view ol a {
-  display: block;
-  border-radius: 10px;
-}
-
 #album-view li.left2 {
-  transform: rotateY(25deg) translateX(-220px) skewY(-5deg) scale(0.4, 0.6);
-  opacity: 0.7;
+  transform: rotateY(25deg) translateX(-80%) skewY(-5deg) scale(0.4, 0.6);
+  opacity: 0.3;
+  display: block;
 }
 
 #album-view li.left {
-  transform: rotateY(15deg) translateX(-120px) skewY(-3deg) scale(0.6, 0.8);
+  transform: rotateY(15deg) translateX(-50%) skewY(-3deg) scale(0.6, 0.8);
   opacity: 0.7;
+  display: block;
 }
 
 #album-view li.middle {
-  z-index:1;
-  transform: rotateY(0deg) translateX(0) scale(1);
+  z-index: 1;
+  transform: rotateY(-0.1deg) translateX(1px) skewY(0.1deg) scale(0.99, 0.99);
+  opacity: 0.95;
+  display: block;
 }
 
 #album-view li.right {
-  transform: rotateY(-15deg) translateX(120px) skewY(3deg) scale(0.6, 0.8);
+  transform: rotateY(-15deg) translateX(50%) skewY(3deg) scale(0.6, 0.8);
   opacity: 0.7;
+  display: block;
 }
 
 #album-view li.right2 {
-  transform: rotateY(-25deg) translateX(220px) skewY(5deg) scale(0.4, 0.6);
-  opacity: 0.7;
+  transform: rotateY(-25deg) translateX(80%) skewY(5deg) scale(0.4, 0.6);
+  opacity: 0.3;
+  display: block;
 }
 
 
-#map-info, .info-layout, #album-view {
+#map-info,
+.info-layout,
+#album-view {
   position:
-  relative;
+    relative;
   z-index: 1;
   backdrop-filter: blur(10px);
   background-color: rgba(0, 0, 0, 0.5);
@@ -190,25 +226,26 @@ h2 a:hover {
   flex-grow: 1;
 }
 
-#map-info h2, .info-layout h2 {
-  margin:0;
+#map-info h2,
+.info-layout h2 {
+  margin: 0;
   padding: 0;
   max-width: 100%;
 }
 
 .info-layout p {
-  max-width:100%;
+  max-width: 100%;
   white-space: normal;
 }
 
 .loading-blur {
   position: fixed;
-  top:0;
-  left:0;
-  bottom:0;
-  right:0;
-  height:100%;
-  width:100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
   z-index: 0;
   opacity: 0.5;
   text-align: center;
@@ -216,50 +253,60 @@ h2 a:hover {
 }
 
 .loading-blur img {
-  min-height:100%;
+  min-height: 100%;
   width:
-  auto;
+    auto;
   height:
-  auto;
-  min-width:100%;
+    auto;
+  min-width: 100%;
   margin: auto;
 }
 
-#map-info ol, .info-layout ol {
+#map-info ol,
+.info-layout ol {
   display:
-  flex;
+    flex;
   flex-wrap: wrap;
 }
 
-#map-info ol, #map-info ol li, .info-layout ol, .info-layout ol li, .main-menu, .main-menu li {
-  list-style:none;
-  margin:0;
-  padding:0;
+#map-info ol,
+#map-info ol li,
+.info-layout ol,
+.info-layout ol li,
+.main-menu,
+.main-menu li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   max-width: 100%;
 }
 
 
-#map-info ol li, .info-layout ol li, .main-menu li {
+#map-info ol li,
+.info-layout ol li,
+.main-menu li {
   max-width: 200px;
   display:
-  inline-block;
-  margin:10px;
+    inline-block;
+  margin: 10px;
   white-space: normal;
   position: relative;
 }
 
-#map-info ol li, .info-layout ol li {
+#map-info ol li,
+.info-layout ol li {
   flex-shrink: 0;
 }
 
-#map-info ol a, .info-layout ol a {
+#map-info ol a,
+.info-layout ol a {
   display: inline-block;
   color: #CCC;
   text-decoration: none;
 }
 
 ol.directory-list {
-  flex-direction:column;
+  flex-direction: column;
   flex-wrap: nowrap;
 }
 
@@ -280,10 +327,10 @@ ol.directory-list li {
   max-width: 100%;
   display: inline-block;
   /* padding: 3px 10px; */
-  margin:  0;
+  margin: 0;
 }
 
-.directory-list li > *:nth-child(1) {
+.directory-list li>*:nth-child(1) {
   display: inline-block;
   flex-grow: 1;
   flex-basis: 60%;
@@ -295,7 +342,7 @@ ol.directory-list li {
 }
 
 
-.directory-list li > *:nth-child(2) {
+.directory-list li>*:nth-child(2) {
   flex-shrink: 1;
   flex-grow: 1;
   min-width: 100px;
@@ -304,7 +351,7 @@ ol.directory-list li {
   /* flex-basis: 50%; */
 }
 
-.directory-list li > *:nth-child(3) {
+.directory-list li>*:nth-child(3) {
   flex-grow: 0;
   flex-shrink: 0;
   width: 150px;
@@ -315,7 +362,7 @@ ol.directory-list li {
   padding: 0 10px;
 }
 
-.directory-list li > *:nth-child(4) {
+.directory-list li>*:nth-child(4) {
   flex-grow: 1;
   flex-shrink: 1;
   /* width: 30%; */
@@ -337,10 +384,10 @@ ol.directory-list li {
 
 .close-files {
   position: absolute;
-  top:100px;
-  right:50px;
-  font-size:50px;
-  z-index:500;
+  top: 20px;
+  right: 50px;
+  font-size: 50px;
+  z-index: 500;
   text-decoration: none;
   color: white;
   font-family: monospace;
@@ -386,10 +433,11 @@ ol.directory-list li {
   display: inline-block;
 }
 
-#map-info ol .title, .info-layout ol .title {
+#map-info ol .title,
+.info-layout ol .title {
   width: 100px;
   display:
-  flex;
+    flex;
   /* flex-direction: column; */
   text-align: center;
   vertical-align: middle;
@@ -399,7 +447,8 @@ ol.directory-list li {
   padding-bottom: 40px;
 }
 
-#map-info ol .title span, .info-layout ol .title span {
+#map-info ol .title span,
+.info-layout ol .title span {
   flex-grow: 1;
   vertical-align: middle;
   margin: auto 0;
@@ -407,19 +456,20 @@ ol.directory-list li {
 }
 
 
-#map-info ol img, .info-layout ol img {
+#map-info ol img,
+.info-layout ol img {
   width: 100%;
   max-height: 160px;
   max-width: 200px;
   box-shadow: 0px 0px 10px rgb(255 255 255 / 50%);
   margin:
-  auto;
+    auto;
 }
 
 #map-info .code {
   color: #111;
   background-color: rgba(255, 255, 255, .5);
-  display:inline-block;
+  display: inline-block;
   box-shadow: 0px 0px 10px rgb(255 255 255 / 50%);
   padding: 20px;
   max-height: 400px;
@@ -430,12 +480,14 @@ ol.directory-list li {
   max-height: unset;
 }
 
-#map-list, #game-list, .stream-list {
+#map-list,
+#game-list,
+.stream-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  text-align:center;
-  display:flex;
+  text-align: center;
+  display: flex;
   flex-wrap: wrap;
 }
 
@@ -443,11 +495,13 @@ ol.directory-list li {
   width: 200px;
 }
 
-#map-list li, #game-list li, .stream-list li {
+#map-list li,
+#game-list li,
+.stream-list li {
   width: 300px;
   white-space: normal;
   display:
-  flex;
+    flex;
   flex-direction: column;
   height: 200px;
   margin: 5px;
@@ -461,8 +515,9 @@ ol.directory-list li {
   flex-basis: 300px;
 }
 
-#map-list li::before, #game-list li::before
-, .stream-list li::before {
+#map-list li::before,
+#game-list li::before,
+.stream-list li::before {
   content: "";
   height: 100%;
   width: 100%;
@@ -477,8 +532,8 @@ ol.directory-list li {
   border-radius: 10px 10px 0 0;
 }
 
-#map-list li::after, 
-#game-list li::after, 
+#map-list li::after,
+#game-list li::after,
 .stream-list li::after {
   content: "";
   height: 100%;
@@ -491,9 +546,11 @@ ol.directory-list li {
   border-radius: 10px 10px 0 0;
 }
 
-#map-list img, #game-list img, .stream-list img {
+#map-list img,
+#game-list img,
+.stream-list img {
   display:
-  block;
+    block;
   margin: 0 auto;
   flex-grow: 1;
   flex-shrink: 0;
@@ -504,14 +561,16 @@ ol.directory-list li {
 }
 
 
-#map-list img.unknownmap, 
-#game-list img.unknownmap, 
+#map-list img.unknownmap,
+#game-list img.unknownmap,
 .stream-list img.unknownmap {
   height: 120px;
   width: 180px;
 }
 
-#map-list h3, #game-list h3, .stream-list h3 {
+#map-list h3,
+#game-list h3,
+.stream-list h3 {
   background-color: rgb(68 21 169);
   border-radius: 10px 10px 0 0;
   margin: 0;
@@ -547,6 +606,7 @@ ol.directory-list li {
 #map-info ol.tracemaps li {
   max-width: 100px;
 }
+
 #map-info ol.shaders li {
   max-width: 100px;
 }
@@ -559,12 +619,13 @@ ol.directory-list li {
 
 
 .shaders li a,
-#map-list h3 span, #game-list h3 span
-, .stream-list h3 span {
+#map-list h3 span,
+#game-list h3 span,
+.stream-list h3 span {
   white-space: nowrap;
   transform: translateX(0);
   transition: 1s;
-  display:inline-block;
+  display: inline-block;
   min-width: 100%;
   padding: 0 20px;
 }
@@ -574,9 +635,9 @@ ol.directory-list li {
   transform: translateX(calc(100px - 100%));
 }
 
-#map-info ol.shaders li img + a + img {
+#map-info ol.shaders li img+a+img {
   position:
-  absolute;
+    absolute;
   top: 20px;
   left: 20px;
   right: 20px;
@@ -584,31 +645,36 @@ ol.directory-list li {
   min-width: 70%;
   min-height: 0;
   width:
-  auto;
+    auto;
 }
 
-#map-info ol.shaders li img + a + img + a + img {
-  position:absolute;
+#map-info ol.shaders li img+a+img+a+img {
+  position: absolute;
   top: 40px;
   left: 40px;
   right: 40px;
   bottom: 40px;
   min-width: 40%;
   min-height: 0;
-  width:auto;
+  width: auto;
 }
 
 
-#map-list a:hover span, #game-list a:hover span, .stream-list a:hover span {
+#map-list a:hover span,
+#game-list a:hover span,
+.stream-list a:hover span {
   width: auto;
   transform: translateX(calc(300px - 100%));
 }
 
-#shader-list a:hover span, .info-layout a:hover span {
+#shader-list a:hover span,
+.info-layout a:hover span {
   transform: translateX(calc(200px - 100%));
 }
 
-#map-list li a, #game-list li a, .stream-list li a {
+#map-list li a,
+#game-list li a,
+.stream-list li a {
   color: #FFF;
   text-decoration: none;
   display: block;
@@ -617,12 +683,16 @@ ol.directory-list li {
   overflow: hidden;
 }
 
-#map-list li > a, #game-list li > a, .stream-list li > a {
+#map-list li>a,
+#game-list li>a,
+.stream-list li>a {
   transition: text-shadow 0.3s ease-in-out;
   text-shadow: 0px 1px 2px rgba(0, 0, 0, 1), 0px 1px 2px rgba(255, 255, 255, 1);
 }
 
-#map-list li > a:hover, #game-list li > a:hover, .stream-list li > a:hover {
+#map-list li>a:hover,
+#game-list li>a:hover,
+.stream-list li>a:hover {
   text-shadow: 2px 3px 4px rgba(0, 0, 0, 1), 0px 2px 6px rgba(255, 255, 255, 1);
 }
 
@@ -665,6 +735,5 @@ ol li.unused-path a,
   flex-grow: 1;
   flex-shrink: 1;
   flex-basis: auto;
-  display:inline-block;
+  display: inline-block;
 }
-
