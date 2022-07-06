@@ -4,5 +4,7 @@
   "--add-repacked",
   "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-cc",
   "--add-game",
-  "baseq3a"
+  "baseq3a",
+  "--add-game",
+  "multigame"
 ]

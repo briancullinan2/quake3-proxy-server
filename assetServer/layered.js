@@ -15,7 +15,7 @@ function layeredDir(filepath, includeBuild) {
   if (filepath.length == 0) {
     // list available mods
     if (fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
-      result.push.apply(result, fs.readdirSync(FS_BASEPATH))
+      result.push.apply(result, fs.readdirSync(FS_BASEPATH).filter(r => fs.existsSync(path.join(FS_BASEPATH, r))))
     }
   }
 
@@ -24,7 +24,7 @@ function layeredDir(filepath, includeBuild) {
     for(let i = 0; i < BUILD_ORDER.length; i++) {
       let newPath = path.join(BUILD_ORDER[i], filepath)
       if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
-        result.push.apply(result, fs.readdirSync(newPath))
+        result.push.apply(result, fs.readdirSync(newPath).filter(r => fs.existsSync(path.join(newPath, r))))
       }
     }
   }
@@ -35,10 +35,11 @@ function layeredDir(filepath, includeBuild) {
     for (let i = 0; i < GAME_ORDER.length; i++) {
       let newPath = path.join(GAME_ORDER[i], filepath.substr(MODS[basename].length))
       if (fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
-        result.push.apply(result, fs.readdirSync(newPath))
+        result.push.apply(result, fs.readdirSync(newPath).filter(r => fs.existsSync(path.join(newPath, r))))
       }
     }
   }
+
   // because even if its empty, there will be a link to parent ..
   if (result.length) {
     return result.filter((r, i, arr) =>

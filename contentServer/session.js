@@ -54,7 +54,7 @@ async function updatePageViewers(route) {
         updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route)
       } else {
         let sess = Object.keys(SESSION_IDS).filter(k => SESSION_IDS[k] == ports[i])
-        if(sess[0] 
+        /*if(sess[0] 
           && SESSION_URLS[sess[0]]
           && SESSION_URLS[sess[0]].match(route)) {
 
@@ -64,14 +64,15 @@ async function updatePageViewers(route) {
             updateClient(UDP_CLIENTS[ports[i]][j], fetch(SESSION_URLS[sess[0]])
               .then(response => {
                 //CODE REVIEW: this makes it synchronous because it waits for stdio?
-                // console.log('Sending: ' + route)
+                console.log('Sending: ', route, SESSION_URLS[sess[0]])
                 return response.text()
               }))
           }
 
         } else {
+          */
           updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route)
-        }
+        //}
       }
 
       count++

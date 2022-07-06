@@ -113,16 +113,16 @@ async function serveRepacked(request, response, next) {
   if(pk3File.length == 0) {
     return await renderDirectoryIndex(modname, pk3Names.map(pk3 => {
       let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
-      let newFile = findFile(modname + '/' + pk3)
+      let newFile = findFile(modname + '/' + pk3Name)
       if(!newFile) {
-        newFile = findFile(modname + '/' + pk3 + 'dir')
+        newFile = findFile(modname + '/' + pk3Name + 'dir')
       }
       let stat
       if(newFile) {
         stat = fs.statSync(newFile)
       }
       return {
-        name: (newFile ? '' : '(virtual) ') + pk3Name + 'dir/',
+        name: (!newFile && pk3Name == 'pak0.pk3' ? '(virtual) ' : '') + pk3Name + 'dir/',
         link: `/repacked/${modname}/${pk3}dir/`,
         absolute: newFile || '',
         exists: !!newFile,
