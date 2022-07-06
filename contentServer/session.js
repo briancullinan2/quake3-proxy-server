@@ -24,30 +24,27 @@ async function updatePageViewers(route) {
     }, 1000/60)
   }
 
-  let promises = []
   let ports = Object.keys(UDP_CLIENTS)
   let count = 0
 
   function updateClient(client, promise) {
     if(typeof client.pageUpdate == 'undefined') {
       client.pageUpdate = {}
+      client.pageTime = {}
     }
-    promises.push(new Promise(resolve => {
-      CLIENT_QUEUE.push(function () {
-        if(client.pageUpdate[route]) {
-          //clearTimeout(client.pageUpdate)
-          return resolve()
-        }
-        client.pageUpdate[route] = setTimeout(function () {
-          client.pageUpdate[route] = null
-          // AHHHHH, if I do this beforehand the fetch() will fire too soon and not wait
-          Promise.resolve(promise)
-          .then(html2 => {
-            client.send(html2, {binary: false})
-          })
-        }, 100)
-        resolve()
-      })
+    if(typeof client.pageUpdate[route] != 'undefined'
+      && Date.now() - client.pageTime[route] < 1000) {
+      return
+    }
+    client.pageTime[route] = Date.now()
+    CLIENT_QUEUE.push((client.pageUpdate[route] = function () {
+      // AHHHHH, if I do this beforehand the fetch() will fire too soon and not wait
+      Promise.resolve(new Promise(resolve => setTimeout(resolve, 1000))
+      .then(() => Promise.resolve(promise))
+      .then(html2 => {
+        delete client.pageUpdate[route]
+        client.send(html2, {binary: false})
+      }))
     }))
   }
 
@@ -81,7 +78,6 @@ async function updatePageViewers(route) {
     }
   }
 
-  Promise.resolve(Promise.all(promises))
 }
 
 function parseCookies(cookie) {

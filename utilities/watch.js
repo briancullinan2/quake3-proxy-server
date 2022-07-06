@@ -122,9 +122,8 @@ async function calculateSize(directory, callback) {
     }
     DIRECTORY_WAITS[key].splice(0)
   }
-  setTimeout(function () {
-    updatePageViewers('/settings')
-  }, 100)
+  updatePageViewers('/settings')
+  updatePageViewers('\/?index')
   return size
 }
 
@@ -163,7 +162,7 @@ const CONTENT_WATCHES = {}
 let lastRun = 0
 
 function contentWatcher() {
-  updatePageViewers('\\?index')
+  updatePageViewers('\/?index')
   updatePageViewers('/settings')
   // debounce, in case multiple files change
   if(Date.now() - lastRun < 1000) {

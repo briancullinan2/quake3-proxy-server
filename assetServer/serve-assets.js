@@ -17,7 +17,7 @@ async function serveAssets(request, response, next) {
   }, {
     title: 'Live Dev',
     subtitle: 'FS Watcher / Hot-reloading',
-    link: 'build?index',
+    link: 'build/?index',
   }, {
     title: 'Directories',
     subtitle: 'Settings / Auto-detect',

@@ -25,7 +25,7 @@ let ASSET_MENU = [{
   link: 'repacked/baseq3/pak0.pk3dir/?index',
 }, {
   title: 'Live Dev',
-  link: 'build?index',
+  link: 'build/?index',
 }, {
   title: 'Directories',
   link: 'settings'
@@ -72,7 +72,7 @@ function renderFilelist(node) {
   let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
   if(node.name.endsWith('/') || typeof node.size == 'undefined') {
     result += `<span><a href="${node.link}?index">${node.name}</a></span>`
-    result += `<span>&nbsp;</span>`
+    result += `<span>${node.size ? formatSize(node.size) : '&nbsp;'}</span>`
   } else {
     result += `<span><a href="${node.link}?alt">${node.name}</a></span>`
     result += `<span>${formatSize(node.size)}</span>`
@@ -94,7 +94,7 @@ function formatSize(size) {
   let number
   if(typeof size == 'number') {
     number = size
-    formatted = []
+    formatted = [size + '']
   } else if (typeof size == 'undefined'
     || typeof size == 'object' && !size) {
     return ''

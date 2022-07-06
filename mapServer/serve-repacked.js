@@ -42,6 +42,10 @@ async function listCached(modname, filename, pk3InnerPath) {
     }
   }
 
+  // TODO: list directories and files inside of pk3s available for repackaging
+
+
+
   let directoryFiltered = directory
     .filter((d, i) => d.name && !d.name.startsWith('.') 
       && lowercasePaths.indexOf(d.name.toLocaleLowerCase()) == i)
