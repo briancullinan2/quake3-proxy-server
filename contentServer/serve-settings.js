@@ -47,8 +47,9 @@ async function listGames(unexisting) {
       // page will return MUCH faster this way 
       async function returnPromise() {
         return {
-          name: (exists === false ? '(missing) ' : '') + path.basename(path.dirname(GAME_ORDER[i])) 
-              + '/' + path.basename(GAME_ORDER[i]),
+          name: (exists === false ? '(missing) ' : '') 
+            + path.basename(path.dirname(GAME_ORDER[i])) 
+            + '/' + path.basename(GAME_ORDER[i]) + '/',
           mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
           absolute: path.dirname(GAME_ORDER[i]),
           exists: exists,
@@ -74,7 +75,7 @@ function renderFilelist(node) {
     result += `<span><a href="${node.link}?index">${node.name}</a></span>`
     result += `<span>${node.size ? formatSize(node.size) : '&nbsp;'}</span>`
   } else {
-    result += `<span><a href="${node.link}?alt">${node.name}</a></span>`
+    result += `<span><a href="${node.link}?${node.name.endsWith('/') ? 'index' : 'alt'}">${node.name}</a></span>`
     result += `<span>${formatSize(node.size)}</span>`
   }
   if(typeof node.mtime != 'undefined') {

@@ -4,13 +4,16 @@ const path = require('path')
 const {
   BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME,
   ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
-  getGames,
+  getGames, MODS_NAMES,
 } = require('../utilities/env.js')
 
 
 function gameDirectories(basegame, unexisting) {
   const GAME_MODS = getGames()
-  if(!GAME_MODS.includes(basegame)) {
+  if(!GAME_MODS.includes(basegame)
+    // CODE REVIEW: allow other detected directory names to
+    //   be used in development automatically? might make setup easier.
+    && !MODS_NAMES.includes(basegame.toLocaleLowerCase())) {
     return []
   }
   const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + basegame)

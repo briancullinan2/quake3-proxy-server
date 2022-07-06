@@ -1,13 +1,13 @@
 const path = require('path')
 const fs = require('fs')
 const { MODS_NAMES, MODS } = require('../utilities/env.js')
-const { gameDirectories } = require('../assetServer/virtual.js')
+const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
 
 
 // virtual directory
 //  TODO: use in /home/ path for async game assets
 //  like switching mods, downloading skins / maps
-function layeredDir(filepath) {
+function layeredDir(filepath, includeBuild) {
   if (filepath.startsWith('/')) {
     filepath = filepath.substr(1)
   }
@@ -18,15 +18,17 @@ function layeredDir(filepath) {
       result.push.apply(result, fs.readdirSync(FS_BASEPATH))
     }
   }
-  /*
-  let BUILD_ORDER = buildDirectories()
-  for(let i = 0; i < BUILD_ORDER.length; i++) {
-    let newPath = path.join(BUILD_ORDER[i], filepath)
-    if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
-      result.push.apply(result, fs.readdirSync(newPath))
+
+  if(includeBuild) {
+    let BUILD_ORDER = buildDirectories()
+    for(let i = 0; i < BUILD_ORDER.length; i++) {
+      let newPath = path.join(BUILD_ORDER[i], filepath)
+      if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
+        result.push.apply(result, fs.readdirSync(newPath))
+      }
     }
   }
-  */
+
   let basename = MODS_NAMES.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
   if (basename > -1) {
     let GAME_ORDER = gameDirectories(MODS[basename])

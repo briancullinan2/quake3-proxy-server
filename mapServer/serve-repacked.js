@@ -6,6 +6,7 @@ const { repackedCache, getGames } = require('../utilities/env.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { listGames } = require('../contentServer/serve-settings.js')
 const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
+const { calculateSize } = require('../utilities/watch.js')
 
 
 async function listCached(modname, filename, pk3InnerPath) {
@@ -35,8 +36,12 @@ async function listCached(modname, filename, pk3InnerPath) {
       directory.push({
         name: subdirectory[j] + (stat.isDirectory() ? '/' : ''),
         link: `/repacked/${modname}/${filename}/${subdirectory[j]}${stat.isDirectory() ? '/' : ''}`,
-        absolute: path.join(path.basename(path.dirname(CACHE_ORDER[i])), path.basename(CACHE_ORDER[i])),
+        absolute: path.join(path.basename(path.dirname(CACHE_ORDER[i])), path.basename(CACHE_ORDER[i])) + '/.',
         mtime: stat.mtime || stat.ctime,
+        size: await Promise.any([
+          calculateSize(path.join(newDir, subdirectory[j])),
+          new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))]),
+
       })
       lowercasePaths.push((subdirectory[j] + (stat.isDirectory() ? '/' : '')).toLocaleLowerCase())
     }
@@ -46,7 +51,7 @@ async function listCached(modname, filename, pk3InnerPath) {
 
 
 
-  let directoryFiltered = directory
+  let directoryFiltered = (await Promise.all(directory))
     .filter((d, i) => d.name && !d.name.startsWith('.') 
       && lowercasePaths.indexOf(d.name.toLocaleLowerCase()) == i)
   directoryFiltered.sort(function (a, b) {
@@ -94,21 +99,33 @@ async function serveRepacked(request, response, next) {
   
   let pk3File = path.basename(filename.replace(/\.pk3.*/gi, '.pk3'))
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let pk3Names = (await layeredDir(modname)).filter(dir => dir.match(/\.pk3/i))
+  let pk3Names = (await layeredDir(modname, true))
+      // build directories are include here in repacked because
+      //   it is showing what will become, but in "Virtual" mode
+      //   only what is currently built is listed with all of the
+      //   alternative overrides.
+      .filter(dir => dir.match(/\.pk3/i))
       .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
+      // always included for repack 
+      //   because this is how baseq3a is built
+      .concat(['pak0.pk3']) 
 
   if(pk3File.length == 0) {
     return await renderDirectoryIndex(modname, pk3Names.map(pk3 => {
       let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
       let newFile = findFile(modname + '/' + pk3)
+      if(!newFile) {
+        newFile = findFile(modname + '/' + pk3 + 'dir')
+      }
       let stat
       if(newFile) {
         stat = fs.statSync(newFile)
       }
       return {
-        name: pk3Name + 'dir/',
+        name: (newFile ? '' : '(virtual) ') + pk3Name + 'dir/',
         link: `/repacked/${modname}/${pk3}dir/`,
-        absolute: newFile || ('(repacked)/' + pk3 + '/.'),
+        absolute: newFile || '',
+        exists: !!newFile,
         mtime: stat ? (stat.mtime || stat.ctime) : void 0,
       }
     }), true, isIndex, response)
