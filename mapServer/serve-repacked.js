@@ -193,6 +193,9 @@ async function serveRepacked(request, response, next) {
       /
       ${path.basename(pk3InnerPath)}</h2>
       <ol>
+      <li class="album-prev"><a href="${directory[imgIndex-1].link}?index">&nbsp;</a></li>
+      <li class="album-next"><a href="${directory[imgIndex+1].link}?index">&nbsp;</a></li>
+
       ${directory.map((img, i, arr) => {
         let order = ''
         if(i == imgIndex) {

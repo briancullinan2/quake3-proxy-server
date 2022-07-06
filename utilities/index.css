@@ -41,7 +41,7 @@ body > img {
   position: absolute;
   border-radius: 10px;
   -webkit-box-reflect: below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(.85, transparent), to(rgba(255,255,255,0.15)));
-  transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
   z-index: 0;
   text-align: center;
   left: 25%;
@@ -64,6 +64,86 @@ h2 a {
 
 h2 a:hover {
   text-decoration: underline;
+}
+
+#album-view ol {
+  position: relative;
+}
+
+#album-view .album-prev a,
+#album-view .album-next a {
+  display: block;
+  height: 200px;
+  width: 50px;
+  position: absolute;
+  top: -100px;
+  left: 5px;
+  transition: background-color 0.2s ease-in-out;
+  background-color: rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  color:
+  transparent;
+  z-index:101;
+}
+
+#album-view .album-prev:hover a,
+#album-view .album-next:hover a,
+#album-view .album-prev a:hover,
+#album-view .album-next a:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+#album-view .album-next a {
+  left:auto;
+  right:-10px;
+}
+
+#album-view .album-next:hover,
+#album-view .album-prev:hover {
+  opacity: 1;
+}
+
+#album-view .album-prev:before,
+#album-view .album-next:before {
+  width: 0;
+  height: 0;
+  border-top: 20px solid transparent;
+  border-bottom: 20px solid transparent;
+  border-left: 20px solid white;
+  content: " ";
+  display:
+  block;
+  z-index: 110;
+  position: relative;
+  margin-top:-20px;
+}
+
+
+#album-view .album-prev:before {
+  border-left: 20px solid transparent;
+  border-right: 20px solid white;
+}
+
+
+#album-view .album-next,
+#album-view .album-prev {
+  position:absolute;
+  top:50%;
+  border-radius: 0;
+  z-index: 100;
+  opacity: 0.5;
+  transition: opacity 0.2s ease-in-out;
+  width:auto;
+  cursor: pointer;
+}
+
+#album-view .album-next {
+  left: auto;
+  right: 20px;
+}
+
+#album-view .album-prev {
+  left: 20px;
 }
 
 #album-view ol a {
