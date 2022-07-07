@@ -71,14 +71,14 @@ async function calculateSize(directory, callback) {
 
   // TODO: rate limit to not pound hard drive while playing / developing
   let dirs = await new Promise(resolve => {
-    console.log('Queuing: ', directory)
+    //console.log('Queuing: ', directory)
     DIRECTORY_QUEUE.push(function () {
       // check again if cache was updated with list
       if(typeof DIRECTORY_DIRS[key] != 'undefined'
         && DIRECTORY_TIMES[key] >= compareTime) {
         resolve(DIRECTORY_DIRS[key])
       } else {
-        console.log('Scanning: ', directory)
+        //console.log('Scanning: ', directory)
         resolve(fs.readdirSync(directory))
       }
     })

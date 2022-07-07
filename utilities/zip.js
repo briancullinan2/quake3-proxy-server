@@ -67,8 +67,10 @@ async function streamFile(file, stream) {
         reject(new Error(err))
       }
       // TODO: result = await execCmd(command, stm)
+      //stream.cork()
       stm.pipe(stream);
       stm.on('end', function () {
+        //stream.uncork()
         delete EXTRACTING_ZIPS[fullPath]
         updatePageViewers('/process')
         resolve()

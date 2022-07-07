@@ -7,33 +7,37 @@ const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
 const { streamFileKey } = require('../utilities/zip.js')
 
-async function convertCmd(imagePath, unsupportedFormat, quality, outFile) {
+async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
   let unsupportedExt = path.extname(unsupportedFormat)
   if (imagePath.match(/\.pk3$/i)) {
     console.log('Converting: ', imagePath, unsupportedFormat)
     let passThrough = new PassThrough()
     streamFileKey(imagePath, unsupportedFormat, passThrough)
-    await execCmd('convert', ['-strip', '-interlace',
+    return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
       quality ? quality : '20%', '-auto-orient',
-      unsupportedExt.substring(1) + ':-', outFile
-    ], { 
+      unsupportedExt.substring(1) + ':-', 
+      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
+    ], {
+      write: typeof outFile == 'string' ? void 0 : outFile,
       pipe: passThrough,
-      later: !START_SERVICES.includes('convert')
+      later: !START_SERVICES.includes('all')
+          && !START_SERVICES.includes('convert')
     })
   } else {
     console.log('Converting: ', imagePath)
-    await execCmd('convert', ['-strip', '-interlace',
+    return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
-      quality ? quality : '20%', '-auto-orient', 
-      imagePath, outFile
-  ], {
-      later: !START_SERVICES.includes('convert')
+      quality ? quality : '20%', '-auto-orient', imagePath, 
+      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
+    ], {
+    write: typeof outFile == 'string' ? void 0 : outFile,
+    later: !START_SERVICES.includes('all')
+        && !START_SERVICES.includes('convert')
     })
     // ${isOpaque ? ' -colorspace RGB ' : ''} 
   }
   // TODO: don't wait for anything?
-  return outFile
 }
 
 

@@ -4,7 +4,7 @@ const path = require('path')
 const { PassThrough } = require('stream')
 
 const { execCmd } = require('../utilities/exec.js')
-const { streamFile } = require('../utilities/zip.js')
+const { fileKey, streamFile } = require('../utilities/zip.js')
 
 
 const CURRENTLY_IDENTIFYING = {}
@@ -48,7 +48,7 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
     let result = isOpaque.match(/true/ig)
     resolve(result)
     for(let i = 1; i < CURRENTLY_IDENTIFYING[imagePath].length; ++i) {
-      CURRENTLY_IDENTIFYING[imagePath](result)
+      CURRENTLY_IDENTIFYING[imagePath][i](result)
     }
     CURRENTLY_IDENTIFYING[imagePath].splice(0)
   })

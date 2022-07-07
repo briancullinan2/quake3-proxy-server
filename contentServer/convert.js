@@ -91,11 +91,11 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
   }
 
   fs.mkdirSync(path.dirname(newPath), { recursive: true })
-  let result = await convertCmd(imagePath, unsupportedFormat, quality, newPath)
+  let result = await convertCmd(imagePath, unsupportedFormat, quality, newPath, path.extname(newFile))
   return await new Promise(resolve => {
     resolve(result)
     for(let i = 1; i < CURRENTLY_CONVERTING[newPath].length; ++i) {
-      CURRENTLY_CONVERTING[newPath](result)
+      CURRENTLY_CONVERTING[newPath][i](result)
     }
     CURRENTLY_CONVERTING[newPath].splice(0)
     updatePageViewers('/process')

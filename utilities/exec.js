@@ -34,6 +34,9 @@ async function execCmd(cmd, args, options) {
     }
   }
 
+  //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+
+
   return await new Promise(function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
     if(options && options.later) {
@@ -51,12 +54,23 @@ async function execCmd(cmd, args, options) {
     updatePageViewers('/process')
     let stderr = ''
     let stdout = ''
-    ps.stderr.on('data', (data) => stderr += data.toString('utf-8'))
-    ps.stdout.on('data', (data) => stdout += data.toString('utf-8'))
+    ps.stderr.on('data', (data) => {
+      stderr += data.toString('utf-8')
+    })
+    if(options && typeof options.write == 'object') {
+      //options.stdout.cork()
+      ps.stdout.pipe(options.write)
+    }
+    ps.stdout.on('data', (data) => {
+      stdout += data.toString('utf-8')
+    })
     if(options && options.pipe) {
       options.pipe.pipe(ps.stdin)
     }
     ps.on('close', function (errCode) {
+      if(options && typeof options.write == 'object') {
+        //options.stdout.uncork()
+      }
       RUNNING--
       delete CHILD_PROCESS[pid]
       updatePageViewers('/process')

@@ -9,6 +9,8 @@ const { renderDirectoryIndex } = require('../contentServer/serve-live.js')
 const { calculateSize } = require('../utilities/watch.js')
 const { fileKey, getIndex, streamFileKey } = require('../utilities/zip.js')
 const { renderIndex } = require('../utilities/render.js')
+const { convertCmd } = require('../cmdServer/cmd-convert.js')
+const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 
 
 async function listCached(modname, filename, pk3InnerPath) {
@@ -164,7 +166,6 @@ async function serveRepacked(request, response, next) {
     }), true, isIndex, response)
   }
 
-
   if(!pk3Names.length || !pk3File.match(/\.pk3/i)
       // pk3 not found so pk3dir wont exist either
       || (pk3File != 'pak0.pk3' && !pk3Names.includes(pk3File))
@@ -173,6 +174,15 @@ async function serveRepacked(request, response, next) {
   }
 
   let newFile = findFile(modname + '/' + pk3File)
+
+  if(isAlt
+    && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
+    // try to find file by any extension, then convert
+    let isOpaque = await opaqueCmd(newFile, pk3InnerPath)
+    response.setHeader('content-type', 'image/' + (isOpaque ? 'png' : 'jpg'));
+    convertCmd(newFile, pk3InnerPath, void 0, response, isOpaque ? '.jpg' : '.png')
+    return
+  }
 
   if (!isIndex && await streamFileKey(newFile, pk3InnerPath, response)) {
     return
