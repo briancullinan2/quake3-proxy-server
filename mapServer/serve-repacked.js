@@ -13,6 +13,58 @@ const { convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 
 
+
+async function filteredIndex(pk3InnerPath, pk3File) {
+  let directory = []
+  let compareNames = []
+  // TODO: refactor all of this to 1) remove directories in the first pass, 
+  //   2) add all decendents no matter sub directories
+  //   3) add connecting subdirectories back in for all decendents
+  //   4) filter out decendents and only show current directory
+  let index = await getIndex(pk3File)
+  for (let i = 0; i < index.length; i++) {
+    let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
+    let currentPath = newPath.substr(0, pk3InnerPath.length)
+    let relativePath = newPath.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
+    if(index[i].isDirectory) {
+      continue
+    }
+    if (pk3InnerPath.length <= 1 && relativePath.length 
+      || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0
+      && newPath[pk3InnerPath.length] == '/')
+    ) {
+      compareNames.push(index[i].name.toLocaleLowerCase())
+      directory.push(index[i])
+    }
+  }
+
+  // TODO: zip files sometimes miss directory creation to add a virtual
+  //   directory if any file descendents exist for this path
+  let skip = pk3InnerPath.split('/').length
+  for (let i = 0; i < directory.length; i++) {
+    let subdirs = directory[i].name.split('/')
+    for(let j = skip; j < subdirs.length; j++) {
+      let currentPath = subdirs.slice(0, j).join('/')
+      if(compareNames.includes(currentPath.toLocaleLowerCase())) {
+        continue
+      }
+      compareNames.push(currentPath.toLocaleLowerCase())
+      directory.push({
+        isVirtual: true,
+        isDirectory: true,
+        name: currentPath,
+        time: new Date(),
+        mtime: new Date(),
+        ctime: new Date(),
+        size: 0,
+      })
+    }
+  }
+
+  return directory
+}
+
+
 async function listCached(modname, filename, pk3InnerPath) {
   let directory = []
   let lowercasePaths = []
@@ -25,26 +77,21 @@ async function listCached(modname, filename, pk3InnerPath) {
   let pk3File = findFile(modname + '/' + path.basename(filename))
   if(pk3File) {
     let stat = fs.statSync(pk3File)
-    let index = await getIndex(pk3File)
+    let index = await filteredIndex(pk3InnerPath, pk3File)
     for (let i = 0; i < index.length; i++) {
-      let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
-      let currentPath = newPath.substr(0, pk3InnerPath.length)
-      let relativePath = newPath.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
+      // recursive directory inside pk3?
+      let relativePath = index[i].name.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
       let isSubdir = relativePath.indexOf('/')
-      if ((pk3InnerPath.length <= 1 
-        || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
-        && relativePath.length && newPath[pk3InnerPath.length] == '/')
-        // recursive directory inside pk3?
-        && (isSubdir == -1 || isSubdir == relativePath.length - 1)
-        && newPath.length > currentPath.length
-        // TODO: zip files sometimes miss directory creation to add a virtual
-        //   directory if any file descendents exist for this path
+      if((isSubdir == -1 || isSubdir == relativePath.length - 1)
+        // don't include ./ current directory
+        && index[i].name.length > pk3InnerPath.length
       ) {
-        //console.log(pk3InnerPath, currentPath, ' -> ', relativePath)
         directory.push({
           name: relativePath + (index[i].isDirectory ? '/' : ''),
           link: `/repacked/${modname}/${filename}dir/${index[i].name}${index[i].isDirectory ? '/' : ''}`,
           absolute: path.join(path.basename(path.dirname(pk3File)), path.basename(pk3File)) + '/.',
+          // TODO: add all from index
+          size: void 0,
           mtime: new Date(index[i].time) || stat.mtime,
           exists: false,
         })
@@ -52,8 +99,8 @@ async function listCached(modname, filename, pk3InnerPath) {
       }
     }
   }
-  //console.log(directory)
 
+  
   // TODO: add base directory conversions
   for(let i = 0; i < CACHE_ORDER.length; i++) {
     let newDir = path.join(CACHE_ORDER[i], 
@@ -121,7 +168,10 @@ async function serveRepacked(request, response, next) {
       list.push(g)
       return list
     }, [])
-    return await renderDirectoryIndex('repacked (virtual)', allGames, false, isIndex, response)
+    return await renderDirectoryIndex('repacked (virtual)', allGames, `
+    <h2>Repacked Explaination:</h2>
+    <p>Repacked Cache only shows 1) image/audio assets exists in a .pk3 file or .pk3dir, 2) files that have been converted and cached on disk. It doesn't show a complete list of files, for that you should see the Virtual FS.</p>
+    `, isIndex, response)
   } else {
     filename = filename.substring(modname.length + 1)
   }
@@ -161,6 +211,7 @@ async function serveRepacked(request, response, next) {
         link: `/repacked/${modname}/${pk3}dir/`,
         absolute: newFile || '',
         exists: !!newFile,
+        size: stat ? stat.size : void 0,
         mtime: stat ? (stat.mtime || stat.ctime) : void 0,
       }
     }), true, isIndex, response)
@@ -188,11 +239,11 @@ async function serveRepacked(request, response, next) {
     return
   }
 
-  if(!isIndex || !newFile) {
+  if(!isIndex && !newFile) {
     return next()
   }
 
-  if(newFile) {
+  if(false && newFile) {
     let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
     let imgIndex = directory
         .map(img => path.basename(img.link))

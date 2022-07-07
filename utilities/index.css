@@ -34,6 +34,8 @@ body>img {
   perspective: 600px;
   width: 90%;
   max-height: 400px;
+  position: fixed;
+  margin-top:40px;
 }
 
 #album-view li {
@@ -90,10 +92,6 @@ h2 a {
 
 h2 a:hover {
   text-decoration: underline;
-}
-
-#album-view ol {
-  position: relative;
 }
 
 #album-view .album-prev a,
@@ -384,7 +382,7 @@ ol.directory-list li {
 
 .close-files {
   position: absolute;
-  top: 20px;
+  top: 0;
   right: 50px;
   font-size: 50px;
   z-index: 500;

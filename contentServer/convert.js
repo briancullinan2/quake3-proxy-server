@@ -56,7 +56,6 @@ async function convertAudio(audioPath, unsupportedFormat, quality) {
 
 
 
-const CURRENTLY_CONVERTING = {}
 
 async function convertImage(imagePath, unsupportedFormat, quality) {
   let unsupportedExt = path.extname(unsupportedFormat)
@@ -78,33 +77,18 @@ async function convertImage(imagePath, unsupportedFormat, quality) {
 
   // identify is based on original image path
   //   convert is based on output image path
-  if(typeof CURRENTLY_CONVERTING[newPath] != 'undefined'
-    && CURRENTLY_CONVERTING[newPath].length > 0) {
-    await new Promise(resolve => {
-      CURRENTLY_CONVERTING[newPath].push(resolve)
-    })
-  }
-  CURRENTLY_CONVERTING[newPath] = ['placeholder']
-  updatePageViewers('/process')
   if(!START_SERVICES.includes('convert')) {
     return
   }
 
   fs.mkdirSync(path.dirname(newPath), { recursive: true })
   let result = await convertCmd(imagePath, unsupportedFormat, quality, newPath, path.extname(newFile))
-  return await new Promise(resolve => {
-    resolve(result)
-    for(let i = 1; i < CURRENTLY_CONVERTING[newPath].length; ++i) {
-      CURRENTLY_CONVERTING[newPath][i](result)
-    }
-    CURRENTLY_CONVERTING[newPath].splice(0)
-    updatePageViewers('/process')
-  })
+
+  return result
 
 }
 
 module.exports = {
-  CURRENTLY_CONVERTING,
   convertImage,
   convertAudio,
 }

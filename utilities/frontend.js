@@ -184,7 +184,7 @@ async function refreshMaps() {
       pakname.href = '/maps/download/' + object.bsp
     }
     if(!pakname.innerText.includes(object.pakname)) {
-      pakname.innerText = `Download: ${object.pakname}`
+      pakname.innerText = `${object.pakname}`
     }
   }
 }

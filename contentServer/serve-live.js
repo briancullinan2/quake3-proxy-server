@@ -153,17 +153,21 @@ async function serveLive(request, response, next) {
   }
 
   let directoryFiltered = await listFiles(filename)
-  return await renderDirectoryIndex(filename, directoryFiltered, filename.length > 1, isIndex, response)
+  return await renderDirectoryIndex(filename.length <= 1 ? 'live (combined)' : filename, directoryFiltered, filename.length <= 1 ? `
+  <h2>Live Explaination:</h2>
+  <p>The "Live" directory shows all the files listed in build directories only. The purpose is to show exactly which source code files are being loaded into the final built .pk3 output. The files change, the output files are automatically triggered to be rebuilt so the new changes can be loaded in the page on refresh.</p>
+  ` : false, isIndex, response)
 }
 
 
-async function renderDirectoryIndex(filename, directoryFiltered, isSub, isIndex, response) {
+async function renderDirectoryIndex(filename, directoryFiltered, description, isIndex, response) {
   if (isIndex) {
     return response.send(renderIndex(
       renderMenu(ASSET_MENU, 'asset-menu')
       + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <div class="info-layout">
     <a class="close-files" href="/${filename}${filename.length > 1 ? '/' : ''}">X</a>
+    ${typeof description == 'string' ? description : ''}
     <h2>Directory: 
     ${path.dirname(filename).includes('/') ? 
     `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>

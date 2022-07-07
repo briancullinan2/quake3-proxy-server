@@ -5,7 +5,6 @@ const { renderIndex } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { EXECUTING_MAPS } = require('../mapServer/serve-lvlshot.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
-const { CURRENTLY_CONVERTING } = require('../contentServer/convert.js')
 
 const RESOLVE_DEDICATED = []
 
@@ -66,14 +65,6 @@ async function serveProcess(request, response, next) {
       assignments: process.pid,
     }
   })
-  let images = Object.keys(CURRENTLY_CONVERTING)
-  .filter(zip => CURRENTLY_CONVERTING[zip].length > 0)
-  .map(zip => {
-    return {
-      name: zip,
-      assignments: process.pid,
-    }
-  })
 
   return response.send(renderIndex(
     //renderMenu(PROXY_MENU, 'downloads-menu')
@@ -90,7 +81,7 @@ async function serveProcess(request, response, next) {
     <ol class="directory-list">${zips.map(renderProcess).join('\n')}
     </ol>
     <h3>Image Converter</h3>
-    <ol class="directory-list">${images.map(renderProcess).join('\n')}
+    <ol class="directory-list">
     </ol>
     </div>
     `))

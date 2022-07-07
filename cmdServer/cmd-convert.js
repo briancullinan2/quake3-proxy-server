@@ -8,6 +8,8 @@ const { execCmd } = require('../utilities/exec.js')
 const { streamFileKey } = require('../utilities/zip.js')
 
 async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
+
+
   let unsupportedExt = path.extname(unsupportedFormat)
   if (imagePath.match(/\.pk3$/i)) {
     console.log('Converting: ', imagePath, unsupportedFormat)
@@ -19,6 +21,7 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
       unsupportedExt.substring(1) + ':-', 
       typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
     ], {
+      once: path.join(imagePath, unsupportedFormat),
       write: typeof outFile == 'string' ? void 0 : outFile,
       pipe: passThrough,
       later: !START_SERVICES.includes('all')
@@ -31,9 +34,10 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
       quality ? quality : '20%', '-auto-orient', imagePath, 
       typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
     ], {
-    write: typeof outFile == 'string' ? void 0 : outFile,
-    later: !START_SERVICES.includes('all')
-        && !START_SERVICES.includes('convert')
+      once: imagePath,
+      write: typeof outFile == 'string' ? void 0 : outFile,
+      later: !START_SERVICES.includes('all')
+          && !START_SERVICES.includes('convert')
     })
     // ${isOpaque ? ' -colorspace RGB ' : ''} 
   }

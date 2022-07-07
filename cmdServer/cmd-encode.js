@@ -58,7 +58,6 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
   } else {
     logs = await execCmd(cmd, startArgs)
   }
-  //console.log(logs)
   return newPath
 }
 

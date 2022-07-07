@@ -6,7 +6,7 @@ const { findFile } = require('../assetServer/virtual.js')
 const { EXE_NAME, getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { CHILD_PROCESS } = require('../utilities/exec.js')
+const { CHILD_PROCESS, onceOrTimeout } = require('../utilities/exec.js')
 
 const EXECUTING_MAPS = {}
 
@@ -28,27 +28,10 @@ async function lvlshotCmd(mapname, startArgs, callback) {
   let client = findFile(EXE_NAME)
   const { execFile } = require('child_process')
 
-  // prevent clients from making multiple requests on 
-  //   the same map. just wait a few seconds
-  if (typeof EXECUTING_MAPS[mapname] == 'undefined') {
-    EXECUTING_MAPS[mapname] = []
-  }
-  if (EXECUTING_MAPS[mapname].length != 0) {
-    return await new Promise(function (resolve, reject) {
-      let rejectTimer = setTimeout(function () {
-        reject(new Error('Level Shot service timed out.'))
-      }, 10000)
-      EXECUTING_MAPS[mapname].push(function (/* logs */) {
-        clearTimeout(rejectTimer)
-        resolve()
-      })
-    })
-  }
-
   // TODO: CODE REVIEW, using the same technique in compress.js (CURRENTLY_UNPACKING)
   //   but the last resolve function would be here after the resolve(stderr)
   //   instead of after, in the encapsulating function call.
-  return await new Promise(function (resolve, reject) {
+  return await onceOrTimeout(mapname, new Promise(function (resolve, reject) {
     EXECUTING_MAPS[mapname].push('placeholder')
     let ps
     ps = execFile(client, startArgs,
@@ -57,12 +40,6 @@ async function lvlshotCmd(mapname, startArgs, callback) {
           reject(new Error(stderr))
         } else {
           resolve(stderr + stdout)
-          for(let i = 1; i < EXECUTING_MAPS[mapname].length; i++) {
-            EXECUTING_MAPS[mapname][i](stderr + stdout)
-          }
-          EXECUTING_MAPS[mapname].splice(0)
-          delete CHILD_PROCESS[ps.pid]
-          updatePageViewers('/process')
         }
       })
     let stderr = ''
@@ -81,7 +58,7 @@ async function lvlshotCmd(mapname, startArgs, callback) {
     })
     CHILD_PROCESS[ps.pid] = [EXE_NAME].concat(['+map', mapname]).join(' ')
     updatePageViewers('/process')
-  })
+  }))
 
 }
 
@@ -137,7 +114,6 @@ async function serveLevelshot(request, response, next) {
   // still can't find a levelshot or screenshot, execute the engine to generate
   try {
     let logs = await execLevelshot(mapname)
-    console.log(logs)
     levelshot = findFile(localLevelshot)
     if (levelshot) {
       return response.sendFile(levelshot)

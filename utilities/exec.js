@@ -2,6 +2,7 @@ const { updatePageViewers } = require('../contentServer/session.js')
 
 let LIMIT = 0
 let RUNNING = 0
+
 const PROCESS_TIMEOUT = 20000 // 20 seconds?
 const PROCESS_INTERVAL = 100
 const PROCESS_LIMIT = 5
@@ -35,9 +36,16 @@ async function execCmd(cmd, args, options) {
   }
 
   //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+  let transform = async function (key, result) {
+    return await Promise.resolve(result)
+  }
+  if(options && options.once) {
+    transform = onceOrTimeout
+  }
 
-
-  return await new Promise(function (resolve, reject) {
+  return await transform(options && options.once 
+    ? options.once : LIMIT + '', new Promise(
+    function (resolve, reject) {
     // we expect this to exit unlike the dedicated server
     if(options && options.later) {
       CHILD_PROCESS[LIMIT + ':' + 0] = [cmd].concat(args).join(' ')
@@ -76,18 +84,52 @@ async function execCmd(cmd, args, options) {
       updatePageViewers('/process')
       if(errCode > 0) {
         console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
-        console.log(stdout + stderr)
         reject(new Error('Process failed: ' + errCode))
       } else {
         resolve(stdout + stderr)
       }
     })
-  })
+  }))
 }
 
+const EXECUTING_ONCE = {}
+
+
+async function onceOrTimeout(key, promise) {
+
+  // prevent clients from making multiple requests on 
+  //   the same map. just wait a few seconds
+  if (typeof EXECUTING_ONCE[key] == 'undefined') {
+    EXECUTING_ONCE[key] = []
+  }
+  if (EXECUTING_ONCE[key].length != 0) {
+    return await new Promise(function (resolve, reject) {
+      let rejectTimer = setTimeout(function () {
+        reject(new Error('Service timed out.'))
+      }, 10000)
+      EXECUTING_ONCE[key].push(function (result) {
+        clearTimeout(rejectTimer)
+        resolve(result)
+      })
+    })
+  }
+  updatePageViewers('/process')
+
+  return await Promise.resolve(promise)
+  .then(result => new Promise(resolve => {
+    resolve(result)
+    for(let i = 1; i < EXECUTING_ONCE[key].length; ++i) {
+      EXECUTING_ONCE[key][i](result)
+    }
+    EXECUTING_ONCE[key].splice(0)
+    updatePageViewers('/process')
+  }))
+
+}
 
 
 module.exports = {
   CHILD_PROCESS,
-  execCmd
+  execCmd,
+  onceOrTimeout,
 }
