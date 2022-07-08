@@ -70,9 +70,9 @@ async function serveLive(request, response, next) {
   let directory = await combinedDir(
       filename.substring(modname.length), GAME_MODS.concat(BUILD_ORDER))
   let directoryFiltered = directory.map(filename => Object.assign({
-    name: path.basename(filename), absolute: filename,
+    name: path.basename(path.dirname(filename)) + '/' + path.basename(filename), 
+    absolute: path.dirname(filename),
   }, fs.statSync(filename)))
-
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
@@ -84,12 +84,12 @@ async function serveLive(request, response, next) {
 
 
 function formatDirname(filename) {
-  return path.dirname(filename).includes('/') ? 
+  return (path.dirname(filename).includes('/') ? 
   `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
-  / ` : ''
-  + filename.includes('/') ?
+  / ` : '')
+  + (filename.includes('/') ?
   `<a href="/${path.dirname(filename)}/?index">${path.basename(path.dirname(filename))}</a>
-  / ` : ''
+  / ` : '')
   + path.basename(filename)
 }
 
@@ -114,5 +114,6 @@ async function renderDirectory(filename, directoryFiltered, simple) {
 module.exports = {
   serveVersion,
   serveLive,
+  renderDirectory,
 }
 

@@ -4,12 +4,15 @@ const fs = require('fs')
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { repackedCache, getGames } = require('../utilities/env.js')
 const { layeredDir } = require('../assetServer/layered.js')
-const { listGames } = require('../contentServer/serve-settings.js')
+const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { fileKey, getIndex, streamFileKey } = require('../utilities/zip.js')
-const { renderIndex } = require('../utilities/render.js')
+const { fileKey, getIndex, streamFileKey, filteredDirectory } = require('../utilities/zip.js')
+const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
+const { listPk3s } = require('../assetServer/layered.js')
+const { renderDirectory } = require('../contentServer/serve-live.js')
+
 
 const REPACKED_DESCRIPTION = `
 <h2>Repacked Explaination:</h2>
@@ -17,23 +20,19 @@ const REPACKED_DESCRIPTION = `
 `
 
 
-async function formattedModList(isIndex, response) {
-  let dir = ''
-  let allGames = (await listGames()).reduce((list, g) => {
-    if(dir != g.link) {
-      dir = g.link
-      list.push(Object.assign({}, g, {
-        exists: true,
-        name: path.basename(g.link) + '/',
-        absolute: '(virtual)/.',
-      }))
-    }
-    g.name = path.basename(path.dirname(g.absolute)) + '/' 
-        + path.basename(g.absolute)
-    g.exists = false 
-    list.push(g)
-    return list
-  }, [])
+async function filteredGames(isIndex, response) {
+  let allGames = getGames().map(game => ({
+    isDirectory: true,
+    exists: true,
+    name: game,
+    absolute: '(virtual)/.',
+  })).map(game => [game].concat(gameDirectories(game.name)
+  .map(gameDir => Object.assign({
+    name: path.basename(path.dirname(gameDir)) + '/' + path.basename(gameDir),
+    absolute: path.dirname(gameDir),
+    exists: false,
+  }, fs.statSync(gameDir)))))
+  .flat(1)
   return allGames
 }
 
@@ -71,9 +70,12 @@ async function serveRepacked(request, response, next) {
   let modname = filename.split('/')[0]
 
   if(!modname || modname.length == 0) {
-    let allGames = formattedModList(isIndex, response)
-    return await renderDirectoryIndex('repacked (virtual)', 
-        allGames, REPACKED_DESCRIPTION, isIndex, response)
+    let allGames = await filteredGames(isIndex, response)
+    return response.send(renderIndex(`
+    ${renderMenu(ASSET_MENU, 'asset-menu')}
+    <div class="info-layout">${REPACKED_DESCRIPTION}
+      ${await renderDirectory('repacked (virtual)', allGames, !isIndex)}
+    </div>`))
   } else {
     filename = filename.substring(modname.length + 1)
   }

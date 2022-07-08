@@ -73,14 +73,20 @@ async function listGames(unexisting) {
 
 
 function renderFilelist(node) {
+  if(typeof node == 'string') {
+    node =  Object.assign({
+      name: path.basename(node),
+      absolute: node,
+    })
+  }
   let isDir = typeof isDirectory == 'function' 
       ? node.isDirectory() : node.isDirectory
   let result = `
   <li ${node.exists === false ? 'class="unused-path"' : ''}>
   <div><a href="${node.link || ('/' + node.name)}?${
     node.name.endsWith('/') ? 'index' : 'alt'}">${
-    path.basename(node.name)}${
-    node.name.endsWith('/') || isDir ? '/' : ''
+    node.name ? node.name : path.basename(node.absolute)}${
+    isDir && !node.name.endsWith('/') ? '/' : ''
   }</a></div>
   <div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>
   <div>${typeof node.mtime != 'undefined'
