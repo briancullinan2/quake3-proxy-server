@@ -7,7 +7,7 @@ make all -f /Users/briancullinan/quake3-proxy-server/Makefile --print-data-base 
 
 # This program built for i386-apple-darwin11.3.0
 
-# Make data base, printed on Fri Jul  8 07:19:18 2022
+# Make data base, printed on Fri Jul  8 12:44:13 2022
 
 # Variables
 
@@ -17,8 +17,6 @@ make all -f /Users/briancullinan/quake3-proxy-server/Makefile --print-data-base 
 ?F = $(notdir $?)
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 128)
 Q3OBJ = $(B)/rend2-cli/cl_main.o $(B)/rend2-cli/cl_jpeg.o $(B)/rend2-cli/sdl_glimp.o $(B)/rend2-cli/render.o $(B)/rend2-cli/files.o $(B)/rend2-cli/cmd.o $(B)/rend2-cli/cvar.o $(B)/rend2-cli/common.o $(B)/rend2-cli/unzip.o $(B)/rend2-cli/md4.o $(B)/rend2-cli/cm_load.o $(B)/rend2-cli/cm_patch.o $(B)/rend2-cli/cm_polylib.o $(B)/rend2-cli/cm_test.o $(B)/rend2-cli/cm_trace.o  $(B)/rend2-cli/unix_shared.o $(B)/rend2-cli/unix_main.o $(B)/rend2-cli/linux_signals.o $(Q3REND2OBJ) $(Q3REND2STROBJ)
-# environment
-VSCODE_LOG_NATIVE = false
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 21)
@@ -44,13 +42,9 @@ _ = /usr/bin/make
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 1)
 MAKEFILE_LIST :=  /Users/briancullinan/quake3-proxy-server/Makefile
 # environment
-VSCODE_VERBOSE_LOGGING = true
-# environment
 __CFBundleIdentifier = com.microsoft.VSCode
 # environment
 WASMER_DIR = /Users/briancullinan/.wasmer
-# environment
-VSCODE_IPC_HOOK_EXTHOST = /var/folders/gk/xqv2x4jn6l3ffpf3m3y4x2xh0000gn/T/vscode-ipc-d795f429-1ece-4589-9516-405b925156a3.sock
 # environment
 VSCODE_CWD = /
 # environment
@@ -64,29 +58,23 @@ Q3REND2STROBJ = $(B)/rend2-cli/glsl/bokeh_fp.o $(B)/rend2-cli/glsl/bokeh_vp.o $(
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 19)
 TARGET_CLIENT := quake3e_opengl_x86_64
 # environment
-LaunchInstanceID = D88AE33B-98B2-433F-BDB7-C8002C4BDD23
-# environment
-VSCODE_LOG_STACK = false
-# environment
 ELECTRON_RUN_AS_NODE = 1
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 135)
 LDFLAGS := -F/Library/Frameworks -framework SDL2 -ljpeg
 # default
 .FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
 # environment
-SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.skRhPOCWJy/Listeners
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.9lvIV7HSHr/Listeners
 # automatic
 %F = $(notdir $%)
 # environment
-DISPLAY = /private/tmp/com.apple.launchd.nrnr97GXVE/org.xquartz:0
+DISPLAY = /private/tmp/com.apple.launchd.fv7Fi7tUdF/org.xquartz:0
 # environment
 CONDA_EXE = /Users/briancullinan/opt/miniconda3/bin/conda
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 130)
 RENDCFLAGS := -DBUILD_CLI_RENDERER=1 -DUSE_SYSTEM_JPEG -DRENDERER_PREFIX=\"quake3e\" -I/Library/Frameworks/SDL2.framework/Headers
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 24)
 CDIR = $(MOUNT_DIR)/client
-# environment
-VSCODE_PIPE_LOGGING = true
 # environment
 PWD = /Users/briancullinan/quake3-proxy-server
 # environment
@@ -105,7 +93,7 @@ endef
 # default
 MAKEFILEPATH := /Applications/Xcode.app/Contents/Developer/Makefiles
 # environment
-VSCODE_CODE_CACHE_PATH = /Users/briancullinan/Library/Application Support/Code/CachedData/30d9c6cd9483b2cc586687151bcbcd635f373630
+VSCODE_CODE_CACHE_PATH = /Users/briancullinan/Library/Application Support/Code/CachedData/92d25e35d9bf1a6b16f7d0758f25d48ace11e5b9
 # environment
 LOGNAME = briancullinan
 # environment
@@ -144,9 +132,6 @@ MAKE_VERSION := 3.81
 USER = briancullinan
 # makefile
 .DEFAULT_GOAL := ../Quake3e/build/release-darwin-x86_64/quake3e_opengl_x86_64
- 
-/Users/briancullinan/quake3-proxy-server/Makefile:180: *** missing separator.  Stop.
-
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 18)
 RENDERER_PREFIX := quake3e
 # automatic
@@ -162,7 +147,12 @@ TMPDIR = /var/folders/gk/xqv2x4jn6l3ffpf3m3y4x2xh0000gn/T/
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /Users/briancullinan/Library/Application Support/Code/1.68.1-main.sock
+ 
+/Users/briancullinan/quake3-proxy-server/Makefile:180: *** missing separator.  Stop.
+
+VSCODE_IPC_HOOK = /Users/briancullinan/Library/Application Support/Code/1.69.0-main.sock
+# environment
+MallocNanoZone = 0
 # makefile (from `/Users/briancullinan/quake3-proxy-server/Makefile', line 4)
 ARCH := x86_64
 # makefile
@@ -172,7 +162,7 @@ MFLAGS = -Rrqp
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
-XPC_SERVICE_NAME = application.com.microsoft.VSCode.8801819285.8801819291
+XPC_SERVICE_NAME = application.com.microsoft.VSCode.8804250793.8804250799
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # automatic
@@ -195,8 +185,6 @@ SDLDIR = $(MOUNT_DIR)/sdl
 LC_ALL = C
 # environment
 CONDA_PYTHON_EXE = /Users/briancullinan/opt/miniconda3/bin/python
-# environment
-SECURITYSESSIONID = 186a3
 # automatic
 ^F = $(notdir $^)
 # default
@@ -210,13 +198,13 @@ MAKELEVEL := 0
 # environment
 CONDA_PREFIX = /Users/briancullinan/opt/miniconda3
 # environment
-VSCODE_PID = 451
+VSCODE_PID = 805
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=99/1024=10%, Rehash=0, Collisions=4/244=2%
+# Load=93/1024=9%, Rehash=0, Collisions=4/238=2%
 
 # Pattern-specific Variable Values
 
@@ -288,8 +276,8 @@ all:
 #  Modification time never checked.
 #  File has not been updated.
 
-../Quake3e/build/release-darwin-x86_64/quake3e_opengl_x86_64: renderer ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_jpeg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/sdl_glimp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/render.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/files.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cmd.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cvar.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/common.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unzip.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/md4.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_load.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_patch.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_polylib.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_test.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_trace.o  ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/linux_signals.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_animation.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_backend.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_bsp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_cmds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_curve.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_dsa.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extramath.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extensions.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_fbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_flares.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_font.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_glsl.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_bmp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_jpg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_pcx.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_png.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_tga.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_dds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_init.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_light.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_marks.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_mesh.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model_iqm.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_noise.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_postprocess.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_scene.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade_calc.o ../Quake3e/build/release-darwin-x 
-86_64/rend2-cli/tr_shader.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shadows.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_sky.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_surface.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_vbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_world.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/puff.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_math.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/dlight_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/dlight_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_vp.o
+../Quake3e/build/release-darwin-x86_64/quake3e_opengl_x86_64: renderer ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cl_jpeg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/sdl_glimp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/render.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/files.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cmd.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cvar.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/common.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unzip.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/md4.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_load.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_patch.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_polylib.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_test.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/cm_trace.o  ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/unix_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/linux_signals.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_animation.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_backend.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_bsp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_cmds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_curve.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_dsa.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extramath.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_extensions.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_fbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_flares.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_font.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_glsl.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_bmp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_jpg.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_pcx.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_png.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_tga.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_image_dds.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_init.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_light.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_main.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_marks.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_mesh.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_model_iqm.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_noise.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_postprocess.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_scene.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shade_calc.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shader.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_shadows.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_sky.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_surface.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_vbo.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/tr_world.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_shared.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/puff.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/q_math.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/bokeh_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/calclevels4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/depthblur_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/dlight_fp.o ../Quake3e/build/release-darwin-x86_64/rend2 
+-cli/glsl/dlight_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/down4x_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/fogpass_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/generic_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/lightall_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/pshadow_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowfill_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/shadowmask_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/ssao_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/texturecolor_vp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_fp.o ../Quake3e/build/release-darwin-x86_64/rend2-cli/glsl/tonemap_vp.o
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -335,6 +323,6 @@ renderer:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4046 / max = 4046 / min = 4046 / avg = 4046
 
-# Finished Make data base on Fri Jul  8 07:19:18 2022
+# Finished Make data base on Fri Jul  8 12:44:13 2022
 
  

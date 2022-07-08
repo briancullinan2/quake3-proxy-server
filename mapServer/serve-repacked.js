@@ -56,15 +56,7 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
       || SUPPORTED_FORMATS.includes(path.extname(file.name))
       || IMAGE_FORMATS.includes(path.extname(file.name))
       || AUDIO_FORMATS.includes(path.extname(file.name))
-  })
-  //if(result.length != supported.length) {
-    let excluded = (result.length - supported.length)
-    supported.push({
-      name: excluded + ' file' + (excluded > 1 ? 's' : '') + ' excluded.',
-      exists: false,
-    })
-  //}
-  return supported.map(file => {
+  }).map(file => {
     let exists = findFile(path.join(pk3InnerPath, file.name))
     return Object.assign({}, file, {
       // TODO: repackedCache() absolute path
@@ -75,6 +67,15 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
           file.name) + (file.isDirectory ? '/' : '')
     })
   })
+  //if(result.length != supported.length) {
+    let excluded = (result.length - supported.length)
+    supported.push({
+      name: excluded + ' file' + (excluded > 1 ? 's' : '') + ' excluded.',
+      exists: false,
+      link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/'
+    })
+  //}
+  return supported
   /* await Promise.all(result.map(async dir => ({
     name: path.basename(dir),
     absolute: dir,
@@ -182,7 +183,7 @@ async function serveRepacked(request, response, next) {
   }
 
   if(newFile && await fileKey(newFile, pk3InnerPath, response)) {
-    renderImages()
+    return response.send(await renderImages(pk3InnerPath, newFile, modname))
   }
 
 
@@ -197,8 +198,8 @@ async function serveRepacked(request, response, next) {
 }
 
 
-async function renderImages() {
-  let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
+async function renderImages(pk3InnerPath, pk3File, modname) {
+  let directory = await filteredPk3Directory(path.dirname(pk3InnerPath), pk3File, modname)
   let imgIndex = directory
       .map(img => path.basename(img.link))
       .indexOf(path.basename(pk3InnerPath))
@@ -211,7 +212,7 @@ async function renderImages() {
   ..</a>
   /
   <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
-  ${path.basename(path.dirname(path.join(newFile, pk3InnerPath)))}</a>
+  ${path.basename(path.dirname(path.join(pk3File, pk3InnerPath)))}</a>
   /
   ${path.basename(pk3InnerPath)}</h2>
   <ol>
@@ -241,7 +242,7 @@ async function renderImages() {
   }).join('\n')}
   </ol>
   </div>`)
-  return response.send(index)
+  return index
 
 }
 
