@@ -50,6 +50,51 @@ function layeredDir(filepath, includeBuild) {
   }
 }
 
+
+async function combinedDir(pk3InnerPath, orderedDir) {
+  let directory = []
+  let lowercasePaths = []
+  // TODO: add base directory conversions
+  for(let i = 0; i < orderedDir.length; i++) {
+    let newDir = path.join(orderedDir[i], pk3InnerPath)
+    if(!fs.existsSync(newDir)) {
+      continue
+    }
+    if(!fs.statSync(newDir).isDirectory())  {
+      continue
+    }
+    let subdir = fs.readdirSync(newDir)
+    for(let j = 0; j < subdir.length; j++) {
+      let stat = fs.statSync(path.join(newDir, subdir[j]))
+      let newFile = path.join(newDir, subdir[j]) + (stat.isDirectory() ? '/' : '')
+      directory.push(newFile)
+      lowercasePaths.push(subdir[j].toLocaleLowerCase())
+    }
+  }
+  let directoryFiltered = directory.filter((d, i) => d 
+      && !path.basename(d).startsWith('.') 
+      && lowercasePaths.indexOf(path.basename(d).toLocaleLowerCase()) == i)
+  return directoryFiltered
+}
+
+
+async function listPk3s(modname) {
+  return (await layeredDir(modname, true))
+  .filter(dir => dir.match(/\.pk3/i))
+  // build directories are include here in repacked because
+  //   it is showing what will become, but in "Virtual" mode
+  //   only what is currently built is listed with all of the
+  //   alternative overrides.
+  .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
+  // always included for repack 
+  //   because this is how baseq3a is built
+  .concat(['pak0.pk3'])
+}
+
+
+
 module.exports = {
   layeredDir,
+  combinedDir,
+  listPk3s,
 }

@@ -21,9 +21,9 @@ async function serveMetadata(request, response, next) {
     link: 'metadata/#games',
     subtitle: 'Master Servers / Mods'
   }]
-  return response.send(renderIndex(
-  renderMenu(METADATA_FEATURES, 'metadata-menu')
-  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  return response.send(renderIndex(`
+  ${renderMenu(METADATA_FEATURES, 'metadata-menu')}
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
   <h2>Metadata</h2>
   <p>Each of the following pages demonstrates pulling data from multiple sources

@@ -51,8 +51,11 @@ function renderIndex(body, bodyClass) {
   let bodyTag = INDEX.match(/<body[\n\r.^>]*?>/i)
   let offset = bodyTag.index + bodyTag[0].length
   let index = INDEX.substring(0, offset).replace('<body', 
-    `<body ${bodyClass ? bodyClass : ''} `)
+    `<body ${bodyClass ? bodyClass : ''} `) + bodyTag[0].substring(5)
     + renderFeatureMenu()
+    + `<div class="loading-blur">
+    <img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
+    </div>`
     + body + INDEX.substring(offset, INDEX.length)
   return index
 }

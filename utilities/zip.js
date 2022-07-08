@@ -51,9 +51,11 @@ async function getIndex(pk3Path) {
   return (EXISTING_ZIPS[pk3Path] = index)
 }
 
-const EXTRACTING_ZIPS = {
 
-}
+// TODO: abstract into some sort of process template
+const EXTRACTING_ZIPS = {}
+
+
 
 async function streamFile(file, stream) {
   return await new Promise(function (resolve, reject) {
@@ -120,6 +122,78 @@ async function readFileKey(pk3Path, fileKey) {
 }
 
 
+
+
+async function filteredIndex(pk3InnerPath, pk3File) {
+  let directory = []
+  let compareNames = []
+  // TODO: refactor all of this to 1) remove directories in the first pass, 
+  //   2) add all decendents no matter sub directories
+  //   3) add connecting subdirectories back in for all decendents
+  //   4) filter out decendents and only show current directory
+  let index = await getIndex(pk3File)
+  for (let i = 0; i < index.length; i++) {
+    let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
+    let currentPath = newPath.substr(0, pk3InnerPath.length)
+    let relativePath = newPath.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
+    if(index[i].isDirectory) {
+      continue
+    }
+    if (pk3InnerPath.length <= 1 && relativePath.length 
+      || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0
+      && newPath[pk3InnerPath.length] == '/')
+    ) {
+      compareNames.push(index[i].name.toLocaleLowerCase())
+      directory.push(index[i])
+    }
+  }
+
+  // TODO: zip files sometimes miss directory creation to add a virtual
+  //   directory if any file descendents exist for this path
+  let skip = pk3InnerPath.split('/').length
+  for (let i = 0; i < directory.length; i++) {
+    let subdirs = directory[i].name.split('/')
+    for(let j = skip; j < subdirs.length; j++) {
+      let currentPath = subdirs.slice(0, j).join('/')
+      if(compareNames.includes(currentPath.toLocaleLowerCase())) {
+        continue
+      }
+      compareNames.push(currentPath.toLocaleLowerCase())
+      directory.push({
+        isVirtual: true,
+        isDirectory: true,
+        name: currentPath,
+        time: new Date(),
+        size: void 0,
+      })
+    }
+  }
+
+  return directory
+}
+
+
+async function filteredDirectory(pk3InnerPath, pk3File) {
+  let directory = []
+  let index = await filteredIndex(pk3InnerPath, pk3File)
+  for (let i = 0; i < index.length; i++) {
+    // recursive directory inside pk3?
+    let relativePath = index[i].name.substr(pk3InnerPath.length
+        + (pk3InnerPath.length > 0 ? 1 : 0))
+    let isSubdir = relativePath.indexOf('/')
+    if((isSubdir == -1 || isSubdir == relativePath.length - 1)
+      // don't include ./ current directory
+      && index[i].name.length > pk3InnerPath.length
+    ) {
+      directory.push(index[i])
+    }
+  }
+  return directory
+}
+
+
+
+
 module.exports = {
   EXTRACTING_ZIPS,
   EXISTING_ZIPS,
@@ -128,4 +202,6 @@ module.exports = {
   streamFile,
   readFileKey,
   fileKey,
+  filteredIndex,
+  filteredDirectory,
 }

@@ -77,17 +77,21 @@ async function serveMapInfo(request, response, next) {
     })
   }
 
-  let index = renderIndex(
-    renderMenu(MAP_MENU, 'map-menu')
-    + `<div class="loading-blur"><img src="${mapInfo.levelshot}" /></div>
+  let index = renderIndex(`
+    ${renderMenu(MAP_MENU, 'map-menu')}
+    <div class="loading-blur"><img src="${mapInfo.levelshot}" /></div>
     <div id="map-info">
     <h2>${mapInfo.title}</h2>
     <h3><a name="screenshots">Screenshots</a></h3>
     <ol class="screenshots">
       <li class="title"><span>Levelshot</span></li>
-      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0001.jpg" /><a href="/${basegame}/screenshots/${mapname}_screenshot0001.jpg">Full resolution levelshot</a></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0001.jpg" />
+      <a href="/${basegame}/screenshots/${mapname}_screenshot0001.jpg">
+      Full resolution levelshot</a></li>
       <li class="title"><span>Birds-eye</span></li>
-      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0002.jpg" /><a href="/${basegame}/screenshots/${mapname}_screenshot0002.jpg">Top-down Full color</a></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0002.jpg" />
+      <a href="/${basegame}/screenshots/${mapname}_screenshot0002.jpg">
+      Top-down Full color</a></li>
     </ol>
     <h3><a name="arenas">Arenas</a></h3>
     <ol class="models">
@@ -114,20 +118,32 @@ async function serveMapInfo(request, response, next) {
     <h3>Trace-maps</h3>
     <ol class="tracemaps">
     <li class="title"><span>Single pass</span></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0001.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0001.jpg">Area mask</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0002.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0002.jpg">Basic top-down</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">Skybox height-map</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0004.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0004.jpg">Skybox bottom-up</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0005.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0005.jpg">Ground height-map</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0001.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0001.jpg">Area mask</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0002.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0002.jpg">Basic top-down</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">Skybox height-map</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0004.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0004.jpg">Skybox bottom-up</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0005.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0005.jpg">Ground height-map</a></li>
     <li class="title"><span>Occupyable Spaces</span></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0007.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0007.jpg">Skybox volumes (monochrome)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0006.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0006.jpg">Skybox volumes (RGB = top, bottom, diff)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0008.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0008.jpg">Skybox volumes (45 degrees)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0007.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0007.jpg">Skybox volumes (monochrome)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0006.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0006.jpg">Skybox volumes (RGB = top, bottom, diff)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0008.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0008.jpg">Skybox volumes (45 degrees)</a></li>
 
-    <!--<li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="">X-Ray (2-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (4-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (8-samples)</a></li>
-    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" /><a href="/${basegame}/maps/${mapname}_tracemap0003.jpg"></a></li>-->
+    <!--<li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" />
+    <a href="">X-Ray (2-samples)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (4-samples)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0003.jpg">X-Ray (8-samples)</a></li>
+    <li><img src="/${basegame}/maps/${mapname}_tracemap0003.jpg" />
+    <a href="/${basegame}/maps/${mapname}_tracemap0003.jpg"></a></li>-->
     <li class="title"><span>Mins/Maxs</span></li>
     <li class="title"><span>Scaled</span></li>
     <li class="title"><span>Multipass</span></li>

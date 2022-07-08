@@ -5,6 +5,8 @@ const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js
 const { getGames, repackedCache, downloadCache } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS, calculateSize } = require('../utilities/watch.js')
 
+
+
 let ASSET_MENU = [{
   title: 'Skins',
   link: 'assets/#skins'
@@ -58,7 +60,8 @@ async function listGames(unexisting) {
             //   and the server only tries to get done what it thinks it can in that.
             ? await Promise.any([
               calculateSize(GAME_ORDER[i]), 
-              new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))]) : void 0,
+              new Promise(resolve => setTimeout(resolve
+                  .bind(null, '0B (Calculating)'), 200))]) : void 0,
           link: GAME_MODS[j] + '/',
         }
       }
@@ -70,28 +73,23 @@ async function listGames(unexisting) {
 
 
 function renderFilelist(node) {
-  let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
-  if(node.name.endsWith('/') 
-    || node.isDirectory
-    || typeof node.size == 'undefined') {
-    result += `<div><a href="${node.link || ('/' + node.name)}?index">${
-      path.basename(node.name)}${
-      node.name.endsWith('/') || node.isDirectory ? '/' : ''
-    }</a></div>`
-    result += `<div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>`
-  } else {
-    result += `<div><a href="${node.link || ('/' + node.name)}?${node.name.endsWith('/') 
-        ? 'index' : 'alt'}">${path.basename(node.name)}</a></div>`
-    result += `<div>${formatSize(node.size)}</div>`
-  }
-  if(typeof node.mtime != 'undefined') {
-    result += `<div>${node.mtime.getMonth() + 1}/${node.mtime.getDate()} `
-    result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</div>`
-  } else {
-    result += `<div>&nbsp;</div>`
-  }
-  result += `<div>${node.absolute ? path.dirname(node.absolute) : path.dirname(node.name)}</div>`
-  result += '</li>'
+  let isDir = typeof isDirectory == 'function' 
+      ? node.isDirectory() : node.isDirectory
+  let result = `
+  <li ${node.exists === false ? 'class="unused-path"' : ''}>
+  <div><a href="${node.link || ('/' + node.name)}?${
+    node.name.endsWith('/') ? 'index' : 'alt'}">${
+    path.basename(node.name)}${
+    node.name.endsWith('/') || isDir ? '/' : ''
+  }</a></div>
+  <div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>
+  <div>${typeof node.mtime != 'undefined'
+      ? `${node.mtime.getMonth() + 1}/${node.mtime.getDate()} 
+      ${node.mtime.getHours()}:${node.mtime.getMinutes()}`
+      : '&nbsp;'}</div>
+  <div>${node.absolute ? path.dirname(node.absolute) 
+      : path.dirname(node.name)}</div>
+  </li>`
   return result
 }
 
@@ -153,9 +151,9 @@ async function serveSettings(request, response, next) {
   let allGames = await listGames(true)
 
 
-  return response.send(renderIndex(
-  renderMenu(ASSET_MENU, 'asset-menu')
-  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  return response.send(renderIndex(`
+  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
   <h2>Settings</h2>
   <p>Various paths are checked for files. Each directory is combined into a layered virtual

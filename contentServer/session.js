@@ -36,6 +36,12 @@ async function updatePageViewers(route) {
       && Date.now() - client.pageTime[route] < 1000) {
       return
     }
+
+    // TODO: send refresh signal over websocket/proxy
+    //   in a POSIX similar way? This would be cool
+    //   because then all remote clients will refresh
+    //   and reconnect to existing game
+
     client.pageTime[route] = Date.now()
     CLIENT_QUEUE.push((client.pageUpdate[route] = function () {
       // AHHHHH, if I do this beforehand the fetch() will fire too soon and not wait

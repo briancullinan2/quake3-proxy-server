@@ -28,9 +28,9 @@ async function serveAssets(request, response, next) {
     link: 'downloads',
   }]
 
-  return response.send(renderIndex(
-    renderMenu(ASSET_MENU, 'asset-menu')
-  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  return response.send(renderIndex(`
+  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
   <h2>Asset server</h2>
   <p>By default, the server responds with a plain HTML page with links for the
