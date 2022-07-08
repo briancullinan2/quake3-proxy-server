@@ -68,29 +68,35 @@ async function serveLive(request, response, next) {
   let GAME_MODS = [] // getGames()
   let modname = filename.split('/')[0]
   let directory = await combinedDir(
-      filename.substring(modname.length), GAME_MODS.concat(BUILD_ORDER))
-  let directoryFiltered = directory.map(filename => Object.assign({
-    name: path.basename(path.dirname(filename)) + '/' + path.basename(filename), 
+    filename.substring(modname.length), GAME_MODS.concat(BUILD_ORDER))
+
+  let directoryFiltered = directory.map(async filename => 
+  Object.assign(fs.statSync(filename), {
+    name: path.basename(path.dirname(filename)) + '/' + path.basename(filename),
     absolute: path.dirname(filename),
-  }, fs.statSync(filename)))
+    size: await Promise.any([calculateSize(filename), 
+      new Promise(resolve => setTimeout(resolve.bind(null, 
+        '0B (Calculating)'), 200))])
+  }))
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
   <div class="info-layout">${LIVE_EXPLAINATION}
-    ${await renderDirectory(filename.length <= 1 
-    ? 'live (combined)' : filename, directoryFiltered, !isIndex)}
+    ${await renderDirectory(filename.length <= 1
+    ? 'live (combined)' : filename, await Promise.all(directoryFiltered), !isIndex)}
   </div>`))
 }
 
 
 function formatDirname(filename) {
-  return (path.dirname(filename).includes('/') ? 
-  `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
+  return (path.dirname(filename).includes('/') ?
+    `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
   / ` : '')
-  + (filename.includes('/') ?
-  `<a href="/${path.dirname(filename)}/?index">${path.basename(path.dirname(filename))}</a>
+    + (filename.includes('/') ?
+      `<a href="/${path.dirname(filename)}/?index">${
+        path.basename(path.dirname(filename))}</a>
   / ` : '')
-  + path.basename(filename)
+    + path.basename(filename)
 }
 
 

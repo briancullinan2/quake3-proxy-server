@@ -2,11 +2,14 @@ const path = require('path')
 const fs = require('fs')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
-const { repackedCache, getGames } = require('../utilities/env.js')
+const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, 
+  repackedCache, getGames 
+} = require('../utilities/env.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { fileKey, getIndex, streamFileKey, filteredDirectory } = require('../utilities/zip.js')
+const { EXISTING_ZIPS, fileKey, getIndex, 
+    streamFileKey, filteredDirectory } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
@@ -16,44 +19,96 @@ const { renderDirectory } = require('../contentServer/serve-live.js')
 
 const REPACKED_DESCRIPTION = `
 <h2>Repacked Explaination:</h2>
-<p>Repacked Cache only shows 1) image/audio assets exists in a .pk3 file or .pk3dir, 2) files that have been converted and cached on disk. It doesn't show a complete list of files, for that you should see the Virtual FS.</p>
+<p>Repacked Cache only shows 1) image/audio assets exists in a .pk3 file or .pk3dir, 2) files that have been converted and cached on disk. It doesn't show a complete list of files, for that you should see the Virtual FS. Repacked should show a complete list of files that will go into the final output .pk3 files.</p>
 `
 
 
+// TODO: replace listGames()
 async function filteredGames(isIndex, response) {
   let allGames = getGames().map(game => ({
     isDirectory: true,
-    exists: true,
     name: game,
     absolute: '(virtual)/.',
+    exists: true,
+    link: path.join('/repacked', game) + '/',
   })).map(game => [game].concat(gameDirectories(game.name)
-  .map(gameDir => Object.assign({
+  .map(gameDir => Object.assign(fs.statSync(gameDir), {
+    isDirectory: true,
     name: path.basename(path.dirname(gameDir)) + '/' + path.basename(gameDir),
     absolute: path.dirname(gameDir),
     exists: false,
-  }, fs.statSync(gameDir)))))
+    link: path.join('/repacked', game.name) + '/'
+  }))))
   .flat(1)
   return allGames
 }
 
 
-async function formattedPk3List(isIndex, response) {
+
+async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
+  let pk3Dir = newFile.replace(path.extname(newFile), '.pk3dir')
+  let result = await filteredDirectory(pk3InnerPath, newFile)
+  let zeroTimer = new Promise(resolve => setTimeout(resolve
+      .bind(null, '0B (Calculating)'), 200))
+  // TODO: combine with repackedCache() combinedDir()
+  let supported = result.filter(file => {
+    return file.isDirectory 
+      || SUPPORTED_FORMATS.includes(path.extname(file.name))
+      || IMAGE_FORMATS.includes(path.extname(file.name))
+      || AUDIO_FORMATS.includes(path.extname(file.name))
+  })
+  //if(result.length != supported.length) {
+    let excluded = (result.length - supported.length)
+    supported.push({
+      name: excluded + ' file' + (excluded > 1 ? 's' : '') + ' excluded.',
+      exists: false,
+    })
+  //}
+  return supported.map(file => {
+    let exists = findFile(path.join(pk3InnerPath, file.name))
+    return Object.assign(file, {
+      // TODO: repackedCache()
+      name: path.basename(file.name),
+      exists: !!exists,
+      link: path.join('/repacked', modname, path.basename(pk3Dir), 
+          pk3InnerPath, path.basename(file.name)) 
+          + (file.isDirectory ? '/' : '')
+    })
+  })
+  /* await Promise.all(result.map(async dir => ({
+    name: path.basename(dir),
+    absolute: dir,
+    size: await Promise.any([ calculateSize(GAME_ORDER[i]), zeroTimer ])
+  })))*/
+}
+
+
+async function filteredPk3List(modname, pk3Names) {
   let directory = pk3Names.reduce((list, pk3) => {
     let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
     let newFile = findFile(modname + '/' + pk3Name)
     if(!newFile) {
       newFile = findFile(modname + '/' + pk3Name + 'dir')
     }
-    let stat
     if(newFile) {
-      stat = fs.statSync(newFile)
+      list.push(newFile)
     }
-    stat.absolute = newFile
-    list.push(stat)
     return list
-  }, [])
-  return await renderDirectoryIndex(path.join('repacked', modname), 
-      directory, true, isIndex, response)
+  }, []).map(newFile => {
+    let pk3Name = newFile.replace(path.extname(newFile), '.pk3')
+    let pk3Dir = newFile.replace(path.extname(newFile), '.pk3dir')
+    let loaded = typeof EXISTING_ZIPS[pk3Name] != 'undefined'
+    return Object.assign(fs.statSync(newFile), {
+      exists: loaded || fs.existsSync(pk3Dir),
+      name: path.basename(pk3Dir),
+      absolute: (loaded ? '(in memory) ' : '')
+          + path.basename(path.dirname(path.dirname(pk3Dir))) 
+          + '/' + path.basename(path.dirname(pk3Dir)) + '/.',
+      isDirectory: true,
+      link: path.join('/repacked', modname, path.basename(pk3Dir)) + '/'
+    })
+  })
+  return directory
 }
 
 
@@ -89,13 +144,18 @@ async function serveRepacked(request, response, next) {
 
   let pk3File = path.basename(filename.replace(/\.pk3.*/gi, '.pk3'))
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let pk3Names = await listPk3s(modname)
 
+  let pk3Names = await listPk3s(modname)
   if(pk3File.length == 0) {
-    return formattedPk3List(isIndex, response)
+    let directory = await filteredPk3List(modname, pk3Names)
+    return response.send(renderIndex(`
+    ${renderMenu(ASSET_MENU, 'asset-menu')}
+    <div class="info-layout">
+      ${await renderDirectory(path.join('repacked', modname), directory, !isIndex)}
+    </div>`))
   }
 
-  if(!pk3Names.length || !pk3File.match(/\.pk3/i)
+  if(!pk3File.match(/\.pk3/i)
       // pk3 not found so pk3dir wont exist either
       || (pk3File != 'pak0.pk3' && !pk3Names.includes(pk3File))
   ) {
@@ -108,7 +168,7 @@ async function serveRepacked(request, response, next) {
     && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
     // try to find file by any extension, then convert
     let isOpaque = await opaqueCmd(newFile, pk3InnerPath)
-    response.setHeader('content-type', 'image/' + (isOpaque ? 'png' : 'jpg'));
+    response.setHeader('content-type', 'image/' + (isOpaque ? 'png' : 'jpg'))
     convertCmd(newFile, pk3InnerPath, void 0, response, isOpaque ? '.jpg' : '.png')
     return
   }
@@ -127,22 +187,13 @@ async function serveRepacked(request, response, next) {
 
 
   // TODO: combine these paths, extracted / cached with pk3InnerPath list
-  if(newFile) {
-    let index = await filteredDirectory(pk3InnerPath, newFile)
-    return await renderDirectoryIndex(path.join('repacked', modname, filename), 
-        index, true, isIndex, response)
-  }
-
-
-  //let CACHE_ORDER = repackedCache()
-  //directoryFiltered.sort(function (a, b) {
-  //  return b.mtime - a.mtime // a.name.localeCompare(b.name, 'en', {sensitivity: 'base'})
-  //})
-
-  //let directory = (await listCached(modname, pk3File, pk3InnerPath))
-  return await renderDirectoryIndex(path.join('repacked', modname, filename), 
-      directory, true, isIndex, response)
-
+  let directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  return response.send(renderIndex(`
+  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  <div class="info-layout">
+    ${await renderDirectory(path.join('repacked', modname, pk3File + 'dir', 
+        path.dirname(pk3InnerPath)), directory, !isIndex)}
+  </div>`))
 }
 
 

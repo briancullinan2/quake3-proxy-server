@@ -34,6 +34,8 @@ let ASSET_MENU = [{
 }]
 
 
+// TODO: replace with filteredGames + formattedGames() 
+//   or something to add `size:` and promises
 async function listGames(unexisting) {
   let promises = []
   let GAME_MODS = getGames()
@@ -84,7 +86,7 @@ function renderFilelist(node) {
   let result = `
   <li ${node.exists === false ? 'class="unused-path"' : ''}>
   <div><a href="${node.link || ('/' + node.name)}?${
-    node.name.endsWith('/') ? 'index' : 'alt'}">${
+    node.name.endsWith('/') || isDir ? 'index' : 'alt'}">${
     node.name ? node.name : path.basename(node.absolute)}${
     isDir && !node.name.endsWith('/') ? '/' : ''
   }</a></div>

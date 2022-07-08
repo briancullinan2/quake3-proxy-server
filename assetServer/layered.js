@@ -88,7 +88,7 @@ async function listPk3s(modname) {
   .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
   // always included for repack 
   //   because this is how baseq3a is built
-  .concat(['pak0.pk3'])
+  .concat(['pak0.pk3']).filter((p, i, a) => a.indexOf(p) == i)
 }
 
 

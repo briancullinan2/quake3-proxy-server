@@ -151,7 +151,7 @@ async function filteredIndex(pk3InnerPath, pk3File) {
   // TODO: zip files sometimes miss directory creation to add a virtual
   //   directory if any file descendents exist for this path
   let skip = pk3InnerPath.split('/').length
-  for (let i = 0; i < directory.length; i++) {
+  for (let i = directory.length - 1; i >= 0; --i) {
     let subdirs = directory[i].name.split('/')
     for(let j = skip; j < subdirs.length; j++) {
       let currentPath = subdirs.slice(0, j).join('/')
@@ -159,12 +159,13 @@ async function filteredIndex(pk3InnerPath, pk3File) {
         continue
       }
       compareNames.push(currentPath.toLocaleLowerCase())
-      directory.push({
+      directory.unshift({
         isVirtual: true,
         isDirectory: true,
         name: currentPath,
         time: new Date(),
         size: void 0,
+        file: pk3File,
       })
     }
   }
