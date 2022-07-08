@@ -66,13 +66,13 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
   //}
   return supported.map(file => {
     let exists = findFile(path.join(pk3InnerPath, file.name))
-    return Object.assign(file, {
-      // TODO: repackedCache()
+    return Object.assign({}, file, {
+      // TODO: repackedCache() absolute path
+      isDirectory: true,
       name: path.basename(file.name),
       exists: !!exists,
-      link: path.join('/repacked', modname, path.basename(pk3Dir), 
-          pk3InnerPath, path.basename(file.name)) 
-          + (file.isDirectory ? '/' : '')
+      link: path.join('/repacked', modname, path.basename(pk3Dir),
+          file.name) + (file.isDirectory ? '/' : '')
     })
   })
   /* await Promise.all(result.map(async dir => ({
@@ -191,8 +191,8 @@ async function serveRepacked(request, response, next) {
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
   <div class="info-layout">
-    ${await renderDirectory(path.join('repacked', modname, pk3File + 'dir', 
-        path.dirname(pk3InnerPath)), directory, !isIndex)}
+    ${await renderDirectory(path.join('repacked', modname, 
+        pk3File + 'dir', pk3InnerPath), directory, !isIndex)}
   </div>`))
 }
 
