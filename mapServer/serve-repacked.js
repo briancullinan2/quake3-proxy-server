@@ -54,14 +54,45 @@ async function filteredIndex(pk3InnerPath, pk3File) {
         isDirectory: true,
         name: currentPath,
         time: new Date(),
-        mtime: new Date(),
-        ctime: new Date(),
-        size: 0,
+        size: void 0,
       })
     }
   }
 
   return directory
+}
+
+
+async function filteredDirectory(pk3InnerPath, pk3File) {
+  let directory = []
+  let index = await filteredIndex(pk3InnerPath, pk3File)
+  for (let i = 0; i < index.length; i++) {
+    // recursive directory inside pk3?
+    let relativePath = index[i].name.substr(pk3InnerPath.length
+        + (pk3InnerPath.length > 0 ? 1 : 0))
+    let isSubdir = relativePath.indexOf('/')
+    if((isSubdir == -1 || isSubdir == relativePath.length - 1)
+      // don't include ./ current directory
+      && index[i].name.length > pk3InnerPath.length
+    ) {
+      directory.push(index[i])
+    }
+  }
+  return directory
+}
+
+
+async function listPk3s(modname) {
+  return (await layeredDir(modname, true))
+  .filter(dir => dir.match(/\.pk3/i))
+  // build directories are include here in repacked because
+  //   it is showing what will become, but in "Virtual" mode
+  //   only what is currently built is listed with all of the
+  //   alternative overrides.
+  .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
+  // always included for repack 
+  //   because this is how baseq3a is built
+  .concat(['pak0.pk3'])
 }
 
 
@@ -72,32 +103,6 @@ async function listCached(modname, filename, pk3InnerPath) {
   let GAME_MODS = getGames()
   if(filename.startsWith('/')) {
     filename = filename.substring(1)
-  }
-  //let modname = filename.split('/')[0]
-  let pk3File = findFile(modname + '/' + path.basename(filename))
-  if(pk3File) {
-    let stat = fs.statSync(pk3File)
-    let index = await filteredIndex(pk3InnerPath, pk3File)
-    for (let i = 0; i < index.length; i++) {
-      // recursive directory inside pk3?
-      let relativePath = index[i].name.substr(pk3InnerPath.length + (pk3InnerPath.length > 0 ? 1 : 0))
-      let isSubdir = relativePath.indexOf('/')
-      if((isSubdir == -1 || isSubdir == relativePath.length - 1)
-        // don't include ./ current directory
-        && index[i].name.length > pk3InnerPath.length
-      ) {
-        directory.push({
-          name: relativePath + (index[i].isDirectory ? '/' : ''),
-          link: `/repacked/${modname}/${filename}dir/${index[i].name}${index[i].isDirectory ? '/' : ''}`,
-          absolute: path.join(path.basename(path.dirname(pk3File)), path.basename(pk3File)) + '/.',
-          // TODO: add all from index
-          size: void 0,
-          mtime: new Date(index[i].time) || stat.mtime,
-          exists: false,
-        })
-        lowercasePaths.push((relativePath + (index[i].isDirectory ? '/' : '')).toLocaleLowerCase())
-      }
-    }
   }
 
   
@@ -184,16 +189,7 @@ async function serveRepacked(request, response, next) {
   
   let pk3File = path.basename(filename.replace(/\.pk3.*/gi, '.pk3'))
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let pk3Names = (await layeredDir(modname, true))
-      // build directories are include here in repacked because
-      //   it is showing what will become, but in "Virtual" mode
-      //   only what is currently built is listed with all of the
-      //   alternative overrides.
-      .filter(dir => dir.match(/\.pk3/i))
-      .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
-      // always included for repack 
-      //   because this is how baseq3a is built
-      .concat(['pak0.pk3']) 
+  let pk3Names = await listPk3s(modname)
 
   if(pk3File.length == 0) {
     return await renderDirectoryIndex(path.join('repacked', modname), pk3Names.map(pk3 => {
@@ -243,59 +239,70 @@ async function serveRepacked(request, response, next) {
     return next()
   }
 
-  if(false && newFile) {
-    let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
-    let imgIndex = directory
-        .map(img => path.basename(img.link))
-        .indexOf(path.basename(pk3InnerPath))
-    if (await fileKey(newFile, pk3InnerPath, response)) {
-      // TODO: render image scroller view like Apple album shuffle
-      let index = renderIndex(`
-      <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
-      <div id="album-view">
-      <h2>Images: 
-      <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/') ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
-      ..</a>
-      /
-      <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
-      ${path.basename(path.dirname(path.join(newFile, pk3InnerPath)))}</a>
-      /
-      ${path.basename(pk3InnerPath)}</h2>
-      <ol>
-      <li class="album-prev"><a href="${directory[imgIndex <= 0 ? directory.length - 1 : imgIndex-1].link}?index">&nbsp;</a></li>
-      <li class="album-next"><a href="${directory[imgIndex >= directory.length - 1 ? 0 : imgIndex+1].link}?index">&nbsp;</a></li>
 
-      ${directory.map((img, i, arr) => {
-        let order = ''
-        if(i == imgIndex) {
-          order = 'class="middle"'
-        } else 
-        if(i + 2 == imgIndex) {
-          order = 'class="left2"'
-        } else
-        if(i + 1 == imgIndex) {
-          order = 'class="left"'
-        } else
-        if(i - 1 == imgIndex) {
-          order = 'class="right"'
-        }
-        if(i - 2 == imgIndex) {
-          order = 'class="right2"'
-        }
-        return `<li ${order}>
-          <a style="background-image:url('${img.link}?alt')" href="${img.link}?index">
-            <img src="${img.link}?alt" /></a></li>`
-      }).join('\n')}
-      </ol>
-      </div>`)
-      return response.send(index)
-    }
+  if(newFile && await fileKey(newFile, pk3InnerPath, response)) {
+    
+  }
+
+  if(newFile) {
+    let index = await filteredDirectory(pk3InnerPath, newFile)
+    return await renderDirectoryIndex(path.join('repacked', modname, filename), index, true, isIndex, response)
   }
 
   let directory = (await listCached(modname, pk3File, pk3InnerPath))
   return await renderDirectoryIndex(path.join('repacked', modname, filename), directory, true, isIndex, response)
 
 }
+
+
+async function renderImages() {
+  let directory = (await listCached(modname, pk3File, path.dirname(pk3InnerPath)))
+  let imgIndex = directory
+      .map(img => path.basename(img.link))
+      .indexOf(path.basename(pk3InnerPath))
+  // TODO: render image scroller view like Apple album shuffle
+  let index = renderIndex(`
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
+  <div id="album-view">
+  <h2>Images: 
+  <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/') ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
+  ..</a>
+  /
+  <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
+  ${path.basename(path.dirname(path.join(newFile, pk3InnerPath)))}</a>
+  /
+  ${path.basename(pk3InnerPath)}</h2>
+  <ol>
+  <li class="album-prev"><a href="${directory[imgIndex <= 0 ? directory.length - 1 : imgIndex-1].link}?index">&nbsp;</a></li>
+  <li class="album-next"><a href="${directory[imgIndex >= directory.length - 1 ? 0 : imgIndex+1].link}?index">&nbsp;</a></li>
+
+  ${directory.map((img, i, arr) => {
+    let order = ''
+    if(i == imgIndex) {
+      order = 'class="middle"'
+    } else 
+    if(i + 2 == imgIndex) {
+      order = 'class="left2"'
+    } else
+    if(i + 1 == imgIndex) {
+      order = 'class="left"'
+    } else
+    if(i - 1 == imgIndex) {
+      order = 'class="right"'
+    }
+    if(i - 2 == imgIndex) {
+      order = 'class="right2"'
+    }
+    return `<li ${order}>
+      <a style="background-image:url('${img.link}?alt')" href="${img.link}?index">
+        <img src="${img.link}?alt" /></a></li>`
+  }).join('\n')}
+  </ol>
+  </div>`)
+  return response.send(index)
+
+}
+
 
 
 module.exports = {

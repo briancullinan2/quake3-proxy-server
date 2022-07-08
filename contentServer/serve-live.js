@@ -161,32 +161,33 @@ async function serveLive(request, response, next) {
 
 
 async function renderDirectoryIndex(filename, directoryFiltered, description, isIndex, response) {
-  if (isIndex) {
-    return response.send(renderIndex(
-      renderMenu(ASSET_MENU, 'asset-menu')
-      + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-    <div class="info-layout">
-    <a class="close-files" href="/${filename}${filename.length > 1 ? '/' : ''}">X</a>
-    ${typeof description == 'string' ? description : ''}
-    <h2>Directory: 
-    ${path.dirname(filename).includes('/') ? 
-    `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
-    /
-    ` : ''}
-    ${filename.includes('/') ?
-    `<a href="/${path.dirname(filename)}/?index">${path.basename(path.dirname(filename))}</a>
-    /
-    ` : ''}
-    ${path.basename(filename)}</h2>
-    <ol class="directory-list">${directoryFiltered.map(renderFilelist).join('\n')}
-    </ol>
-    </div>
-    `))
-  } else {
+  if (!isIndex) {
     return response.send('<ol>' + directoryFiltered.map(node =>
       `<li><a href="${node.link}?alt">${node.name}</a></li>`).join('\n')
       + '</ol>')
   }
+
+  return response.send(renderIndex(
+  renderMenu(ASSET_MENU, 'asset-menu')
+  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  <div class="info-layout">
+  <a class="close-files" href="/${filename}${filename.length > 1 ? '/' : ''}">X</a>
+  ${typeof description == 'string' ? description : ''}
+  <h2>Directory: 
+  ${path.dirname(filename).includes('/') ? 
+  `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
+  /
+  ` : ''}
+  ${filename.includes('/') ?
+  `<a href="/${path.dirname(filename)}/?index">${path.basename(path.dirname(filename))}</a>
+  /
+  ` : ''}
+  ${path.basename(filename)}</h2>
+  <ol class="directory-list">${directoryFiltered.map(renderFilelist).join('\n')}
+  </ol>
+  </div>
+  `))
+
 }
 
 

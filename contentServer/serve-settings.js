@@ -71,12 +71,17 @@ async function listGames(unexisting) {
 
 function renderFilelist(node) {
   let result = `<li ${node.exists === false ? 'class="unused-path"' : ''}>`
-  if(node.name.endsWith('/') || typeof node.size == 'undefined') {
-    result += `<div><a href="${node.link}?index">${node.name}</a></div>`
+  if(node.name.endsWith('/') 
+    || node.isDirectory
+    || typeof node.size == 'undefined') {
+    result += `<div><a href="${node.link || ('/' + node.name)}?index">${
+      path.basename(node.name)}${
+      node.name.endsWith('/') || node.isDirectory ? '/' : ''
+    }</a></div>`
     result += `<div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>`
   } else {
-    result += `<div><a href="${node.link}?${node.name.endsWith('/') 
-        ? 'index' : 'alt'}">${node.name}</a></div>`
+    result += `<div><a href="${node.link || ('/' + node.name)}?${node.name.endsWith('/') 
+        ? 'index' : 'alt'}">${path.basename(node.name)}</a></div>`
     result += `<div>${formatSize(node.size)}</div>`
   }
   if(typeof node.mtime != 'undefined') {
@@ -85,7 +90,7 @@ function renderFilelist(node) {
   } else {
     result += `<div>&nbsp;</div>`
   }
-  result += `<div>${path.dirname(node.absolute)}</div>`
+  result += `<div>${node.absolute ? path.dirname(node.absolute) : path.dirname(node.name)}</div>`
   result += '</li>'
   return result
 }
