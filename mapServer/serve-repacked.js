@@ -61,12 +61,13 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     let exists = false
     for(let i = 0; i < CACHE_ORDER.length; i++) {
       // TODO: is pak0.pk3?
-      localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), 
-          pk3InnerPath, file.name)
+      localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, file.name)
       //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, file.name)
       if(fs.existsSync(localPath)) {
         exists = true
         break
+      } else {
+        localPath = null
       }
     }
     if(!localPath) {
@@ -119,7 +120,7 @@ async function filteredPk3List(modname, pk3Names) {
     if(!newFile) {
       newFile = findFile(modname + '/' + pk3Name + 'dir')
     }
-    if (newFile) {
+    if(newFile) {
       list.push(newFile)
     }
     return list
@@ -131,8 +132,8 @@ async function filteredPk3List(modname, pk3Names) {
       exists: loaded || fs.existsSync(pk3Dir),
       name: path.basename(pk3Dir),
       absolute: (loaded ? '(in memory) ' : '')
-        + path.basename(path.dirname(path.dirname(pk3Dir)))
-        + '/' + path.basename(path.dirname(pk3Dir)) + '/.',
+          + path.basename(path.dirname(path.dirname(pk3Dir)))
+          + '/' + path.basename(path.dirname(pk3Dir)) + '/.',
       isDirectory: true,
       link: path.join('/repacked', modname, path.basename(pk3Dir)) + '/'
     })

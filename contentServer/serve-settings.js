@@ -81,6 +81,10 @@ function renderFilelist(node) {
       absolute: node,
     })
   }
+  if(typeof node.time == 'number'
+    && typeof node.mtime == 'undefined') {
+    node.mtime = new Date(node.time)
+  }
   let isDir = typeof isDirectory == 'function' 
       ? node.isDirectory() : node.isDirectory
   let result = `
