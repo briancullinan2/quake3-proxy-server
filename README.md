@@ -18,6 +18,8 @@ launch the newly built client for automated integration testing.
 - contentServer - serve traditional HTTP content using a layered file-system
 similar to Quake 3's virtual file-system.
 
+![content](./screenshot.png?raw=true)
+
 - gameServer - list games like XQF / Gamedig. Simple process launcher for admins 
 to host games at specific times.
 
