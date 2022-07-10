@@ -188,7 +188,12 @@ async function serveRepacked(request, response, next) {
 
 
   // TODO: combine these paths, extracted / cached with pk3InnerPath list
-  let directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  let directory = []
+  if(newFile) {
+    directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  }
+  
+
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
   <div class="info-layout">
@@ -200,26 +205,30 @@ async function serveRepacked(request, response, next) {
 
 async function renderImages(pk3InnerPath, pk3File, modname) {
   let directory = await filteredPk3Directory(path.dirname(pk3InnerPath), pk3File, modname)
-  let imgIndex = directory
-      .map(img => path.basename(img.link))
+  let directoryFiltered = directory.filter(img => IMAGE_FORMATS.includes(path.extname(img.name)))
+  let imgIndex = directoryFiltered.map(img => path.basename(img.link))
       .indexOf(path.basename(pk3InnerPath))
   // TODO: render image scroller view like Apple album shuffle
   let index = renderIndex(`
   <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
   <div id="album-view">
   <h2>Images: 
-  <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/') ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
+  <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/') 
+    ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
   ..</a>
   /
-  <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
+  <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/') 
+    ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
   ${path.basename(path.dirname(path.join(pk3File, pk3InnerPath)))}</a>
   /
   ${path.basename(pk3InnerPath)}</h2>
   <ol>
-  <li class="album-prev"><a href="${directory[imgIndex <= 0 ? directory.length - 1 : imgIndex-1].link}?index">&nbsp;</a></li>
-  <li class="album-next"><a href="${directory[imgIndex >= directory.length - 1 ? 0 : imgIndex+1].link}?index">&nbsp;</a></li>
+  <li class="album-prev"><a href="${directoryFiltered[imgIndex <= 0 
+      ? directoryFiltered.length - 1 : imgIndex-1].link}?index">&nbsp;</a></li>
+  <li class="album-next"><a href="${directoryFiltered[imgIndex >= directoryFiltered.length - 1 
+      ? 0 : imgIndex+1].link}?index">&nbsp;</a></li>
 
-  ${directory.map((img, i, arr) => {
+  ${directoryFiltered.map((img, i, arr) => {
     let order = ''
     if(i == imgIndex) {
       order = 'class="middle"'

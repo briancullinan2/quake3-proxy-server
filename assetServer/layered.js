@@ -51,22 +51,24 @@ function layeredDir(filepath, includeBuild) {
 }
 
 
-async function combinedDir(pk3InnerPath, orderedDir) {
+async function combinedDir(orderedDir) {
   let directory = []
   let lowercasePaths = []
   // TODO: add base directory conversions
   for(let i = 0; i < orderedDir.length; i++) {
-    let newDir = path.join(orderedDir[i], pk3InnerPath)
-    if(!fs.existsSync(newDir)) {
+    if(!fs.existsSync(orderedDir[i])) {
       continue
     }
-    if(!fs.statSync(newDir).isDirectory())  {
+    if(!fs.statSync(orderedDir[i]).isDirectory())  {
       continue
     }
-    let subdir = fs.readdirSync(newDir)
+    let subdir = fs.readdirSync(orderedDir[i])
     for(let j = 0; j < subdir.length; j++) {
-      let stat = fs.statSync(path.join(newDir, subdir[j]))
-      let newFile = path.join(newDir, subdir[j]) + (stat.isDirectory() ? '/' : '')
+      if(!fs.existsSync(path.join(orderedDir[i], subdir[j]))) {
+        continue
+      }
+      let stat = fs.statSync(path.join(orderedDir[i], subdir[j]))
+      let newFile = path.join(orderedDir[i], subdir[j]) + (stat.isDirectory() ? '/' : '')
       directory.push(newFile)
       lowercasePaths.push(subdir[j].toLocaleLowerCase())
     }

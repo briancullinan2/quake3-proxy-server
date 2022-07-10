@@ -65,7 +65,7 @@ body>img {
   top: 100%;
   background-repeat: no-repeat;
   background-size: 100% 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  /* background-color: rgba(0, 0, 0, 0.5); */
   opacity: 0.2;
 }
 
@@ -178,32 +178,32 @@ h2 a:hover {
 }
 
 #album-view li.left2 {
-  transform: rotateY(25deg) translateX(-80%) skewY(-5deg) scale(0.4, 0.6);
+  transform: rotateY(25deg) translate(-80%, 25%) skewY(-5deg) scale(0.4, 0.6);
   opacity: 0.3;
   display: block;
 }
 
 #album-view li.left {
-  transform: rotateY(15deg) translateX(-50%) skewY(-3deg) scale(0.6, 0.8);
+  transform: rotateY(15deg) translate(-50%, 25%) skewY(-3deg) scale(0.6, 0.8);
   opacity: 0.7;
   display: block;
 }
 
 #album-view li.middle {
   z-index: 1;
-  transform: rotateY(-0.1deg) translateX(1px) skewY(0.1deg) scale(0.99, 0.99);
+  transform: rotateY(-0.1deg) translate(1px, 25%) skewY(0.1deg) scale(0.99, 0.99);
   opacity: 0.95;
   display: block;
 }
 
 #album-view li.right {
-  transform: rotateY(-15deg) translateX(50%) skewY(3deg) scale(0.6, 0.8);
+  transform: rotateY(-15deg) translate(50%, 25%) skewY(3deg) scale(0.6, 0.8);
   opacity: 0.7;
   display: block;
 }
 
 #album-view li.right2 {
-  transform: rotateY(-25deg) translateX(80%) skewY(5deg) scale(0.4, 0.6);
+  transform: rotateY(-25deg) translate(80%, 25%) skewY(5deg) scale(0.4, 0.6);
   opacity: 0.3;
   display: block;
 }
