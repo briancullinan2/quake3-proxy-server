@@ -57,17 +57,21 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     || IMAGE_FORMATS.includes(path.extname(file.name))
     || AUDIO_FORMATS.includes(path.extname(file.name))
   ).map(file => {
-    let exists = !!findFile(path.join(pk3InnerPath, file.name))
-    if(!exists) {
-      for(let i = 0; i < CACHE_ORDER.length; i++) {
-        // TODO: is pak0.pk3
-        //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, file.name)
-        let localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, file.name)
-        console.log(localPath)
-        if(fs.existsSync(localPath)) {
-          exists = true
-        }
+    let localPath 
+    let exists = false
+    for(let i = 0; i < CACHE_ORDER.length; i++) {
+      // TODO: is pak0.pk3?
+      localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), 
+          pk3InnerPath, file.name)
+      //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, file.name)
+      if(fs.existsSync(localPath)) {
+        exists = true
+        break
       }
+    }
+    if(!localPath) {
+      exists = !!findFile(path.join(pk3InnerPath, file.name))
+      localPath = newFile
     }
     return Object.assign({}, file, {
       // TODO: repackedCache() absolute path
@@ -76,8 +80,8 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
       exists: exists,
       link: path.join('/repacked', modname, path.basename(pk3Dir),
           file.name) + (file.isDirectory ? '/' : ''),
-      absolute: path.basename(path.dirname(path.dirname(newFile))) 
-          + '/' + path.basename(path.dirname(newFile)) + '/.',
+      absolute: path.basename(path.dirname(path.dirname(localPath))) 
+          + '/' + path.basename(path.dirname(localPath)) + '/.',
     })
   })
 
@@ -99,10 +103,20 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
 
 
 async function filteredPk3List(modname, pk3Names) {
+  let CACHE_ORDER = repackedCache()
   let directory = pk3Names.reduce((list, pk3) => {
     let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
-    let newFile = findFile(modname + '/' + pk3Name)
-    if (!newFile) {
+    let newFile
+    for(let i = 0; i < CACHE_ORDER.length; i++) {
+      let localFile = path.join(CACHE_ORDER[i], pk3Name + 'dir')
+      if(fs.existsSync(localFile)) {
+        newFile = localFile
+      }
+    }
+    if(!newFile) {
+      newFile = findFile(modname + '/' + pk3Name)
+    }
+    if(!newFile) {
       newFile = findFile(modname + '/' + pk3Name + 'dir')
     }
     if (newFile) {
