@@ -6,15 +6,15 @@ const SUPPORTED_SERVICES = [
   'proxy', 'maps', 'master', 'mirror', 'dedicated',
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 
-  'assets', 'metadata', 'logs', 'users', 'features',
+  'assets', 'metadata', 'logs', 'users', 'sitemap',
   'all'
 ]
 
 const CONTENT_FEATURES = {
-  'features': {
-    title: 'Features',
+  'sitemap': {
+    title: 'Site Map',
     subtitle: 'Feature List / Site map',
-    link: 'features',
+    link: 'sitemap',
     levelshot: ``,
   },
   'maps': {

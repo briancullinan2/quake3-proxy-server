@@ -39,7 +39,7 @@ function createApplication(features) {
     next()
   })
 
-  app.use(/\/features\/?$/i, function (req, res, next) {
+  app.use(/\/sitemap\/?$/i, function (req, res, next) {
     return serveFeatures(features, res)
   })
 

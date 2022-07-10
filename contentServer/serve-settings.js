@@ -51,7 +51,7 @@ async function listGames(unexisting) {
       // page will return MUCH faster this way 
       async function returnPromise() {
         return {
-          name: (exists === false ? '(missing) ' : '') 
+          name: (exists === false ? '(unused) ' : '') 
             + path.basename(path.dirname(GAME_ORDER[i])) 
             + '/' + path.basename(GAME_ORDER[i]) + '/',
           mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
@@ -144,7 +144,7 @@ async function serveSettings(request, response, next) {
     if (!fs.existsSync(BUILD_ORDER[i]) 
       || !fs.statSync(BUILD_ORDER[i]).isDirectory()) {
       nonExisting.push({
-        name: '(missing) ' + path.basename(path.dirname(BUILD_ORDER[i])) + '/' + path.basename(BUILD_ORDER[i]),
+        name: '(unused) ' + path.basename(path.dirname(BUILD_ORDER[i])) + '/' + path.basename(BUILD_ORDER[i]),
         absolute: path.dirname(BUILD_ORDER[i]),
       })
     } else {
