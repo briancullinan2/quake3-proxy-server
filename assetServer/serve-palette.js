@@ -26,7 +26,6 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
     } catch (e) {
       console.error(e)
     }
-
     console.log(mapInfo.images)
     palettesNeeded = palettesNeeded.filter()
   }
@@ -36,7 +35,9 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
 
 
   // only palettize the current range, not to do too much work per request
-  let existingNeeded = palettesNeeded.filter(shader => typeof existingPalette[shader.title.replace(path.extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
+  let existingNeeded = palettesNeeded.filter(shader => 
+    typeof existingPalette[shader.title.replace(path
+      .extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
   CACHED_PALETTE = await makePalette(palettes.concat(existingNeeded), existingPalette)
 
 

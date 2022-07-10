@@ -7,8 +7,11 @@ const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
 const { streamFileKey } = require('../utilities/zip.js')
 
-async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
+const CONVERTED_IMAGES = {
 
+}
+
+async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
 
   let unsupportedExt = path.extname(unsupportedFormat)
   if (imagePath.match(/\.pk3$/i)) {
@@ -46,5 +49,6 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
 
 
 module.exports = {
+  CONVERTED_IMAGES,
   convertCmd,
 }

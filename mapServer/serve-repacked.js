@@ -1,5 +1,6 @@
 const path = require('path')
 const fs = require('fs')
+const { PassThrough, Readable, Writable } = require('stream')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS,
@@ -11,7 +12,7 @@ const { calculateSize } = require('../utilities/watch.js')
 const { EXISTING_ZIPS, fileKey, getIndex,
   streamFileKey, filteredDirectory } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { convertCmd } = require('../cmdServer/cmd-convert.js')
+const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
@@ -59,10 +60,11 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
   ).map(file => {
     let localPath 
     let exists = false
+    let fileName = path.basename(file.name)
     for(let i = 0; i < CACHE_ORDER.length; i++) {
       // TODO: is pak0.pk3?
-      localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, file.name)
-      //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, file.name)
+      localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, fileName)
+      //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, fileName)
       if(fs.existsSync(localPath)) {
         exists = true
         break
@@ -71,17 +73,21 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
       }
     }
     if(!localPath) {
-      exists = !!findFile(path.join(pk3InnerPath, file.name))
+      exists = !!findFile(path.join(pk3InnerPath, fileName))
       localPath = newFile
+    }
+    if(typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined') {
+      exists = true
     }
     return Object.assign({}, file, {
       // TODO: repackedCache() absolute path
       isDirectory: true,
-      name: path.basename(file.name),
+      name: fileName,
       exists: exists,
       link: path.join('/repacked', modname, path.basename(pk3Dir),
           file.name) + (file.isDirectory ? '/' : ''),
-      absolute: path.basename(path.dirname(path.dirname(localPath))) 
+      absolute: (typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined'
+          ? '(in memory) ' : '') + path.basename(path.dirname(path.dirname(localPath))) 
           + '/' + path.basename(path.dirname(localPath)) + '/.',
     })
   })
@@ -196,10 +202,32 @@ async function serveRepacked(request, response, next) {
 
   if (isAlt
     && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
+    let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
     // try to find file by any extension, then convert
+    if(typeof CONVERTED_IMAGES[strippedPath + '.jpg'] != 'undefined') {
+      response.setHeader('content-type', 'image/jpg')
+      return response.send(CONVERTED_IMAGES[strippedPath + '.jpg'])
+    } else
+    if(typeof CONVERTED_IMAGES[strippedPath + '.png'] != 'undefined') {
+      response.setHeader('content-type', 'image/png')
+      return response.send(CONVERTED_IMAGES[strippedPath + '.png'])
+    }
     let isOpaque = await opaqueCmd(newFile, pk3InnerPath)
-    response.setHeader('content-type', 'image/' + (isOpaque ? 'png' : 'jpg'))
-    convertCmd(newFile, pk3InnerPath, void 0, response, isOpaque ? '.jpg' : '.png')
+    let newExt = isOpaque ? '.png' : '.jpg'
+    response.setHeader('content-type', 'image/' + newExt.substring(1))
+    const passThrough = new PassThrough()
+    const readable = Readable.from(passThrough)
+    // force async so other threads can answer page requests during conversion
+    Promise.resolve(new Promise(resolve => {
+      let chunks = []
+      readable.on('data', chunks.push.bind(chunks))
+      readable.on('end', resolve.bind(null, chunks))
+      passThrough.pipe(response)
+      convertCmd(newFile, pk3InnerPath, void 0, passThrough, newExt)
+    }).then(convertedFile => {
+      CONVERTED_IMAGES[path.join(newFile, pk3InnerPath)] = 
+      CONVERTED_IMAGES[strippedPath + newExt] = Buffer.concat(convertedFile)
+    }))
     return
   }
 
