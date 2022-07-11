@@ -1,8 +1,8 @@
 const fs = require('fs')
 const path = require('path')
-const { getIndex } = require('../utilities/zip.js')
+const { streamFileKey, getIndex } = require('../utilities/zip.js')
 const { findFile } = require('../assetServer/virtual.js')
-
+const { layeredDir } = require('../assetServer/layered.js')
 
 
 // TODO: would be cool if a virtual directory could span say: 
@@ -10,13 +10,13 @@ const { findFile } = require('../assetServer/virtual.js')
 //   and build/convert from remote sources
 async function serveVirtualPk3dir(filename) {
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  if(!fs.existsSync(pk3File)) {
+  if (!fs.existsSync(pk3File)) {
     if (pk3File.startsWith('/')) {
       pk3File = pk3File.substr(1)
     }
     pk3File = findFile(pk3File)
   }
-  if(!fs.existsSync(pk3File)) {
+  if (!fs.existsSync(pk3File)) {
     return []
   }
   let index = await getIndex(pk3File)
@@ -27,7 +27,7 @@ async function serveVirtualPk3dir(filename) {
     let currentPath = newPath.substr(0, pk3InnerPath.length)
     let relativePath = newPath.substr(pk3InnerPath.length + 1)
     let isSubdir = relativePath.indexOf('/')
-    if ((pk3InnerPath.length <= 1 
+    if ((pk3InnerPath.length <= 1
       || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
       && relativePath.length && newPath[pk3InnerPath.length] == '/')
       // recursive directory inside pk3?
@@ -51,13 +51,28 @@ Server admin control over pk3 content is a long
  outstanding issue.
 */
 async function serveVirtual(request, response, next) {
-  let isJson = request.url.match(/\?json/)
-  let filename = request.url.replace(/\?.*$/, '')
-  let directory = layeredDir(filename)
+  let isIndex = request.originalUrl.match(/\?index/)
+  let isJson = request.originalUrl.match(/\?json/)
+  let filename = request.originalUrl.replace(/\?.*$/, '')
+  if (filename.startsWith('/')) {
+    filename = filename.substring(1)
+  }
+  if (filename.endsWith('/')) {
+    filename = filename.substring(0, filename.length - 1)
+  }
 
+  let pk3File
+  if(filename.match(/\.pk3/i)) {
+    pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
+  }
+  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+  let directory = layeredDir(filename)
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
-  if (filename.includes('.pk3')) {
+  if (pk3File) {
+    if(await streamFileKey(pk3File, pk3InnerPath, response)) {
+      return
+    }
     let pk3directory = await serveVirtualPk3dir(filename)
     if (!directory) {
       directory = []
@@ -68,10 +83,10 @@ async function serveVirtual(request, response, next) {
       }
     }
   }
-  
+
 
   for (let i = 0; i < directory.length; i++) {
-    if(directory[i].match(/\.pk3$/i)) {
+    if (directory[i].match(/\.pk3$/i)) {
       if (!directory.includes(directory[i] + 'dir')) {
         directory.push(directory[i] + 'dir')
       }
@@ -80,7 +95,7 @@ async function serveVirtual(request, response, next) {
 
   // duck out early
   if (!directory || directory.length == 0) {
-    return next()
+    return next(new Error('Path not found: ' + filename))
   }
 
   directory.sort()
@@ -89,9 +104,9 @@ async function serveVirtual(request, response, next) {
   if (isJson) {
     return response.json(directory)
   } else {
-    return '<ol>' + response.send(directory.map(node =>
-        `<li><a href="/${node}?alt">${node}</a></li>`).join('\n'))
-        + '</ol>'
+    return response.send('<ol>' + directory.map(node =>
+      `<li><a href="/${filename}/${path.basename(node)
+      }?alt">${node}</a></li>`).join('\n') + '</ol>')
   }
 }
 
