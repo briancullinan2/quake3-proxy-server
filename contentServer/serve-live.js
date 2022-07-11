@@ -114,11 +114,17 @@ async function serveLive(request, response, next) {
 
 
 function formatDirname(filename) {
-  return (path.dirname(filename).includes('/') ?
-    `<a href="/${path.dirname(path.dirname(filename))}/?index">..</a>
+  return (path.dirname(filename).includes('/') 
+    || path.dirname(filename) == '/' ?
+    `<a href="${path.dirname(filename) != '/' 
+      && path.dirname(path.dirname(filename)) != '/' ? '/' : ''}${
+      path.dirname(filename) != '/' && path.dirname(path.dirname(filename)) != '/'
+        ? path.dirname(path.dirname(filename)) : ''}/?index">..</a>
   / ` : '')
-    + (filename.includes('/') ?
-      `<a href="/${path.dirname(filename)}/?index">${
+    + (filename.includes('/') && path.dirname(filename) != '/' ?
+      `<a href="${path.dirname(filename) != '/' 
+      && path.dirname(path.dirname(filename)) != '/' ? '/' : ''}${
+        path.dirname(filename)}/?index">${
         path.basename(path.dirname(filename))}</a>
   / ` : '')
     + path.basename(filename)

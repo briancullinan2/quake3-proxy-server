@@ -1,44 +1,13 @@
-const fs = require('fs')
+
 const path = require('path')
-const { streamFileKey, getIndex } = require('../utilities/zip.js')
+const { streamFileKey } = require('../utilities/zip.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
+const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
+const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
+const { ASSET_MENU } = require('../contentServer/serve-settings.js')
+const { renderDirectory } = require('../contentServer/serve-live.js')
 
-
-// TODO: would be cool if a virtual directory could span say: 
-//   https://github.com/xonotic/xonotic-data.pk3dir
-//   and build/convert from remote sources
-async function serveVirtualPk3dir(filename) {
-  let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
-  if (!fs.existsSync(pk3File)) {
-    if (pk3File.startsWith('/')) {
-      pk3File = pk3File.substr(1)
-    }
-    pk3File = findFile(pk3File)
-  }
-  if (!fs.existsSync(pk3File)) {
-    return []
-  }
-  let index = await getIndex(pk3File)
-  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let directory = []
-  for (let i = 0; i < index.length; i++) {
-    let newPath = index[i].name.replace(/\\/ig, '/').replace(/\/$/, '')
-    let currentPath = newPath.substr(0, pk3InnerPath.length)
-    let relativePath = newPath.substr(pk3InnerPath.length + 1)
-    let isSubdir = relativePath.indexOf('/')
-    if ((pk3InnerPath.length <= 1
-      || (currentPath.localeCompare(pk3InnerPath, 'en', { sensitivity: 'base' }) == 0)
-      && relativePath.length && newPath[pk3InnerPath.length] == '/')
-      // recursive directory inside pk3?
-      && (isSubdir == -1 || isSubdir == relativePath.length - 1)
-      && newPath.length > currentPath.length
-    ) {
-      directory.push(path.join(pk3File + 'dir', newPath))
-    }
-  }
-  return directory
-}
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -60,58 +29,41 @@ async function serveVirtual(request, response, next) {
   if (filename.endsWith('/')) {
     filename = filename.substring(0, filename.length - 1)
   }
-
+  let modname = filename.split('/')[0]
   let pk3File
   if(filename.match(/\.pk3/i)) {
     pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
   }
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let directory = layeredDir(filename)
+
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
+  let virtualPath = '/' + modname
   if (pk3File) {
     if(await streamFileKey(pk3File, pk3InnerPath, response)) {
       return
     }
-    let pk3directory = await serveVirtualPk3dir(filename)
-    if (!directory) {
-      directory = []
-    }
-    for (let i = 0; i < pk3directory.length; i++) {
-      if (!directory.includes(pk3directory[i])) {
-        directory.push(pk3directory[i])
-      }
-    }
+    directory = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
+    virtualPath = path.join('/' + modname, path.basename(pk3File) + 'dir', pk3InnerPath)
   }
-
-
-  for (let i = 0; i < directory.length; i++) {
-    if (directory[i].match(/\.pk3$/i)) {
-      if (!directory.includes(directory[i] + 'dir')) {
-        directory.push(directory[i] + 'dir')
-      }
-    }
-  }
+  //console.log(directory)
 
   // duck out early
-  if (!directory || directory.length == 0) {
+  if (!directory || directory.length <= 1) {
     return next(new Error('Path not found: ' + filename))
   }
 
-  directory.sort()
+  //directory.sort()
 
-  // at least one directory exists
-  if (isJson) {
-    return response.json(directory)
-  } else {
-    return response.send('<ol>' + directory.map(node =>
-      `<li><a href="/${filename}/${path.basename(node)
-      }?alt">${node}</a></li>`).join('\n') + '</ol>')
-  }
+  return response.send(renderIndex(`
+  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  <div class="info-layout">
+    ${await renderDirectory(virtualPath, directory, !isIndex)}
+  </div>`))
 }
 
 module.exports = {
-  serveVirtualPk3dir,
   serveVirtual,
 }
 
