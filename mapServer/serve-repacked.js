@@ -10,7 +10,7 @@ const { layeredDir } = require('../assetServer/layered.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { calculateSize } = require('../utilities/watch.js')
 const { EXISTING_ZIPS, fileKey, getIndex, indexedSize,
-  streamFileKey, filteredDirectory,  } = require('../utilities/zip.js')
+  streamFileKey, filteredDirectory, indexedDate } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
@@ -51,7 +51,9 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
   let result = await filteredDirectory(pk3InnerPath, newFile)
   let zeroTimer = new Promise(resolve => setTimeout(
       resolve.bind(null, '0B (Calculating)'), 200))
-  let CACHE_ORDER = repackedCache()
+  let voidTimer = new Promise(resolve => setTimeout(
+    resolve.bind(null, void 0), 200))
+    let CACHE_ORDER = repackedCache()
   
   let supported = result.filter(file => file.isDirectory
     || SUPPORTED_FORMATS.includes(path.extname(file.name))
@@ -61,23 +63,27 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     let localPath 
     let exists = false
     let fileName = path.basename(file.name)
+    let size = file.size
     for(let i = 0; i < CACHE_ORDER.length; i++) {
       // TODO: is pak0.pk3?
       localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, fileName)
       //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, fileName)
       if(fs.existsSync(localPath)) {
         exists = true
+        size = Promise.any([ calculateSize(localPath), zeroTimer ])
         break
       } else {
         localPath = null
       }
     }
-    let size = file.size
+    let mtime = new Date(file.time)
     if(!localPath) {
       exists = !!findFile(path.join(pk3InnerPath, fileName))
       localPath = newFile
       if(file.isDirectory) {
         size = Promise.any([ indexedSize(path.join(pk3InnerPath, fileName), newFile), zeroTimer ])
+        mtime = Promise.any([ indexedDate(path.join(pk3InnerPath, fileName), newFile), voidTimer ])
+          .then(time => time ? new Date(time) : void 0)
       }
     }
     if(typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined') {
@@ -85,6 +91,7 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     }
     return Object.assign({}, file, {
       // TODO: repackedCache() absolute path
+      mtime: await mtime,
       size: await size,
       isDirectory: true,
       name: fileName,
