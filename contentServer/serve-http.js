@@ -19,8 +19,11 @@ const { serveRepacked } = require('../mapServer/serve-repacked.js')
 function serveFeatures(features, response) {
   let featureList = getFeatureFilter(features)
   let index = renderIndex(
-    `<ol id="feature-list" class="stream-list">${featureList
-      .map(renderFeature).join('')}</ol>`)
+    `<div class="info-layout">
+    <h2>Site Map</h2>
+    <ol id="feature-list" class="stream-list">${featureList
+      .map(renderFeature).join('')}</ol>
+    </div>`)
   return response.send(index)
 }
 

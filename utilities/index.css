@@ -459,7 +459,7 @@ ol.directory-list li {
   width: 100%;
   max-height: 160px;
   max-width: 200px;
-  box-shadow: 0px 0px 10px rgb(255 255 255 / 50%);
+  /* box-shadow: 0px 0px 10px rgb(255 255 255 / 50%); */
   margin:
     auto;
 }
@@ -528,6 +528,8 @@ ol.directory-list li {
   background-size: cover;
   background-position: 50% 0;
   border-radius: 10px 10px 0 0;
+  opacity: 0.5;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 #map-list li::after,
@@ -542,6 +544,7 @@ ol.directory-list li {
   z-index: -1;
   backdrop-filter: blur(5px);
   border-radius: 10px 10px 0 0;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 #map-list img,
@@ -577,7 +580,7 @@ ol.directory-list li {
 }
 
 #game-list h3 {
-  background-color: rgb(16, 127, 47);
+  background-color: #107f2f;
 }
 
 #map-list h3 {
@@ -585,7 +588,7 @@ ol.directory-list li {
 }
 
 #feature-list h3 {
-  background-color: rgb(169, 147, 21);
+  background-color: #a99315;
 }
 
 #assets-list h3 {
@@ -593,7 +596,7 @@ ol.directory-list li {
 }
 
 #metadatas-list h3 {
-  background-color: rgb(21, 120, 169);
+  background-color: #1578a9;
 }
 
 

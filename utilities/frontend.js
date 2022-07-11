@@ -430,6 +430,7 @@ function startLive() {
    socket1 = new WebSocket(fullAddress /* , {headers: cookie: '__planet_quake_sess='} */)
    socket1.binaryType = 'arraybuffer';
    socket1.addEventListener('open', socketOpen, false)
+   socket1.addEventListener('close', socketError, false)
    socket1.addEventListener('message', socketMessage, false)
    socket1.addEventListener('error', socketError, false)
   }
@@ -437,6 +438,7 @@ function startLive() {
     socket2 = new WebSocket(fullAddress)
     socket2.binaryType = 'arraybuffer';
     socket2.addEventListener('open', socketOpen, false)
+    socket2.addEventListener('close', socketError, false)
     socket2.addEventListener('message', socketMessage, false)
     socket2.addEventListener('error', socketError, false)
   }

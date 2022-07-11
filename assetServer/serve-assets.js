@@ -10,14 +10,17 @@ async function serveAssets(request, response, next) {
     title: 'Virtual FS',
     subtitle: 'Combined baseq3/pak0.pk3dir',
     link: 'baseq3/pak0.pk3dir/?index',
+    levelshot: '/build/virtual.svg'
   }, {
     title: 'Repacked Cache',
     subtitle: 'On Demand Transcoding',
     link: 'repacked/baseq3/pak0.pk3dir/?index',
+    levelshot: '/build/repack.svg'
   }, {
     title: 'Live Dev',
     subtitle: 'FS Watcher / Hot-reloading',
     link: 'build/?index',
+    levelshot: '/build/livecode.svg'
   }, {
     title: 'Directories',
     subtitle: 'Settings / Auto-detect',
@@ -26,6 +29,7 @@ async function serveAssets(request, response, next) {
     title: 'Downloads',
     subtitle: 'Find Remote content',
     link: 'downloads',
+    levelshot: '/build/downloads.svg'
   }]
 
   return response.send(renderIndex(`

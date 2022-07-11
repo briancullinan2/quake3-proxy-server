@@ -47,6 +47,7 @@ async function serveVersion() {
 }
 
 
+// TODO: add --add-game to add multiple games
 async function serveLive(request, response, next) {
   let isIndex = request.url.match(/\?index/)
   let isJson = request.url.match(/\?json/)
@@ -62,20 +63,27 @@ async function serveLive(request, response, next) {
   let GAME_MODS = getGames()
   let GAME_ORDER = []
 
+  // TODO: add game development directories
   if(modname.length > 1
     && GAME_MODS.includes(modname.toLocaleLowerCase())) {
     GAME_ORDER = gameDirectories(modname).map(dir => path.join(dir, filename.substring(modname.length)))
   }
 
 
-  // TODO: add game development directories
-  // TODO: add --add-game to add multiple games
   // list all game mods added intentionally from settings.json
   let BUILD_ORDER = buildDirectories()
       .map(dir => path.join(dir, filename))
       .filter(dir => fs.existsSync(dir))
+      .concat(GAME_ORDER)
 
-  let directory = await combinedDir(GAME_ORDER.concat(BUILD_ORDER))
+  for(let i = 0; i < BUILD_ORDER.length; i++) {
+    if(fs.existsSync(BUILD_ORDER[i])
+      && !fs.statSync(BUILD_ORDER[i]).isDirectory()) {
+      return response.sendFile(BUILD_ORDER[i])
+    }
+  }
+      
+  let directory = await combinedDir(BUILD_ORDER)
 
   let directoryFiltered = directory.map(async file => 
   Object.assign(fs.statSync(file), {
@@ -98,7 +106,7 @@ async function serveLive(request, response, next) {
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
-  <div class="info-layout">${LIVE_EXPLAINATION}
+  <div class="info-layout">${filename.length <= 1 ? LIVE_EXPLAINATION : ''}
     ${await renderDirectory(filename.length <= 1
     ? 'live (combined)' : path.join('build', filename), await Promise.all(directoryFiltered), !isIndex)}
   </div>`))

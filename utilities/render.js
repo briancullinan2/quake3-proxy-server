@@ -7,7 +7,7 @@ function renderFeature(map) {
     return ''
   }
   let result = ''
-  result += `<li style="background-image: url('/${map.levelshot}')">`
+  result += `<li style="background-image: url('${map.levelshot}')">`
   result += `<h3 ${map.palette 
     ? `style="background-color: rgba(${map.palette})"` : ''}>`
   result += `<a href="/${map.link}">`
