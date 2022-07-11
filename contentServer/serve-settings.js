@@ -112,10 +112,12 @@ function formatSize(size) {
   if(typeof size == 'number') {
     number = size
     formatted = [size + '']
-  } else if (typeof size == 'undefined'
+  } else 
+  if (typeof size == 'undefined'
     || typeof size == 'object' && !size) {
     return ''
-  } else if (typeof size == 'string') {
+  } else 
+  if (typeof size == 'string') {
     if(size.length == 0) { return '' }
     formatted = size.split(' ')
     number = parseInt(formatted[0])

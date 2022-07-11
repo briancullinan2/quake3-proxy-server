@@ -192,7 +192,76 @@ async function filteredDirectory(pk3InnerPath, pk3File) {
   return directory
 }
 
+const INDEXED_QUEUE = []
+const INDEXED_DIRS = {}
+const INDEXED_TIMES = {}
+const INDEXED_SIZES = {}
+let indexedTimer
 
+async function indexedSize(pk3InnerPath, pk3File) {
+  if(!indexedTimer) {
+    indexedTimer = setInterval(function () {
+      let funcs = INDEXED_QUEUE.splice(0, 5)
+      funcs.forEach(func => func())
+    }, 1000/60)
+  }
+
+  let key = path.join(pk3File, pk3InnerPath).toLocaleLowerCase()
+  let stat = fs.statSync(pk3File)
+  let compareTime = stat.mtime.getTime()
+
+  if(typeof INDEXED_DIRS[key] != 'undefined'
+    // if the directory hasn't changed, use the size
+    //   and list of directories from memory, instead
+    //   of reading from disk again
+    && INDEXED_TIMES[key] >= compareTime) {
+    // recheck subdirectories for changes because child 
+    //   changes to not propogate to parent directories
+    //return Promise.all(INDEXED_DIRS[key].map(dir => {
+    //  return indexedSize(dir, callback)
+    //})).then(subsizes => subsizes.reduce((s, i) => (s + i), 0) + INDEXED_SIZES[key])
+    return INDEXED_SIZES[key]
+  }
+
+  INDEXED_TIMES[key] = compareTime
+
+  // TODO: rate limit to not pound hard drive while playing / developing
+  let dirs = await new Promise(resolve => {
+    //console.log('Queuing: ', directory)
+    INDEXED_QUEUE.push(function () {
+      // check again if cache was updated with list
+      if(typeof INDEXED_DIRS[key] != 'undefined'
+        && INDEXED_TIMES[key] >= compareTime) {
+        resolve(INDEXED_DIRS[key])
+      } else {
+        //console.log('Scanning: ', directory)
+        resolve(filteredIndex(pk3InnerPath, pk3File))
+      }
+    })
+  })
+
+  let subdirs = []
+  let totalSize = 0
+  // queue up the folder inside this folder before resolving
+  for(let i = 0; i < dirs.length; i++) {
+    if(dirs[i].isDirectory) {
+      subdirs.push(dirs[i].name)
+    } else {
+      totalSize += dirs[i].size
+    }
+  }
+
+  INDEXED_SIZES[key] = totalSize
+  INDEXED_DIRS[key] = subdirs
+  // TODO: update based on parent directories?
+
+  //let size = await Promise.all(subdirs.map(dir => indexedSize(dir, callback)))
+  //  .then(subsizes => subsizes.reduce((s, i) => (s + i), 0) + totalSize)
+
+  updatePageViewers('/settings')
+  updatePageViewers('\/?index')
+  return totalSize
+}
 
 
 module.exports = {
@@ -205,4 +274,5 @@ module.exports = {
   fileKey,
   filteredIndex,
   filteredDirectory,
+  indexedSize,
 }

@@ -9,8 +9,8 @@ const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS,
 const { layeredDir } = require('../assetServer/layered.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { EXISTING_ZIPS, fileKey, getIndex,
-  streamFileKey, filteredDirectory } = require('../utilities/zip.js')
+const { EXISTING_ZIPS, fileKey, getIndex, indexedSize,
+  streamFileKey, filteredDirectory,  } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
@@ -57,7 +57,7 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     || SUPPORTED_FORMATS.includes(path.extname(file.name))
     || IMAGE_FORMATS.includes(path.extname(file.name))
     || AUDIO_FORMATS.includes(path.extname(file.name))
-  ).map(file => {
+  ).map(async file => {
     let localPath 
     let exists = false
     let fileName = path.basename(file.name)
@@ -72,15 +72,20 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
         localPath = null
       }
     }
+    let size = file.size
     if(!localPath) {
       exists = !!findFile(path.join(pk3InnerPath, fileName))
       localPath = newFile
+      if(file.isDirectory) {
+        size = Promise.any([ indexedSize(path.join(pk3InnerPath, fileName), newFile), zeroTimer ])
+      }
     }
     if(typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined') {
       exists = true
     }
     return Object.assign({}, file, {
       // TODO: repackedCache() absolute path
+      size: await size,
       isDirectory: true,
       name: fileName,
       exists: exists,
@@ -100,7 +105,7 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
     link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/',
   })
   //}
-  return supported
+  return await Promise.all(supported)
   /* await Promise.all(result.map(async dir => ({
     name: path.basename(dir),
     absolute: dir,
