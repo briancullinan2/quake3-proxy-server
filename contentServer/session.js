@@ -28,12 +28,11 @@ async function updatePageViewers(route) {
   let count = 0
 
   function updateClient(client, promise) {
-    if(typeof client.pageUpdate == 'undefined') {
-      client.pageUpdate = {}
+    if(typeof client.pageTime == 'undefined') {
       client.pageTime = {}
     }
-    if(typeof client.pageUpdate[route] != 'undefined'
-      && Date.now() - client.pageTime[route] < 1000) {
+    if(typeof client.pageTime[route] != 'undefined'
+      && Date.now() - client.pageTime[route] < 800) {
       return
     }
 
@@ -43,15 +42,15 @@ async function updatePageViewers(route) {
     //   and reconnect to existing game
 
     client.pageTime[route] = Date.now()
-    CLIENT_QUEUE.push((client.pageUpdate[route] = function () {
+    CLIENT_QUEUE.push(function () {
       // AHHHHH, if I do this beforehand the fetch() will fire too soon and not wait
       Promise.resolve(new Promise(resolve => setTimeout(resolve, 1000))
       .then(() => Promise.resolve(promise))
       .then(html2 => {
-        delete client.pageUpdate[route]
         client.send(html2, {binary: false})
+        delete client.pageTime[route]
       }))
-    }))
+    })
   }
 
   for(let i = 0; i < ports.length; i++) {

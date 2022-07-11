@@ -106,7 +106,7 @@ function socketConnect(socket, request) {
       return multicast.indexOf(socket) == 0
     }).length > 0) {
       if(!SESSION_URLS[sessionId]) {
-        updatePageViewers(newUrl) // make sure a fresh copy of the page is sent
+        updatePageViewers((new URL(newUrl)).pathname) // make sure a fresh copy of the page is sent
       }
       SESSION_URLS[sessionId] = newUrl
     }

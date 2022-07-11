@@ -230,13 +230,7 @@ async function indexedSize(pk3InnerPath, pk3File) {
     //console.log('Queuing: ', directory)
     INDEXED_QUEUE.push(function () {
       // check again if cache was updated with list
-      if(typeof INDEXED_DIRS[key] != 'undefined'
-        && INDEXED_TIMES[key] >= compareTime) {
-        resolve(INDEXED_DIRS[key])
-      } else {
-        //console.log('Scanning: ', directory)
-        resolve(filteredIndex(pk3InnerPath, pk3File))
-      }
+      resolve(filteredIndex(pk3InnerPath, pk3File))
     })
   })
 
