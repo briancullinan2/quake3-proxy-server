@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const { MODS_NAMES, MODS } = require('../utilities/env.js')
+const { FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
 
 

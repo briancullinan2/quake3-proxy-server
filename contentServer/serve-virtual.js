@@ -8,6 +8,15 @@ const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
 
+const VIRTUAL_EXPLAINATION = `
+<h2>Virtual Explaination:</h2>
+<p>The "Virtual" directory shows all the files listed as they are expected to be
+in the final output state. That is files included in pk3s, and converted files.
+Files that aren't cached will trigger the conversion when they are first used.
+The virtual directory should also show the latest files compiled from development
+directories. Visiting some virtual paths will trigger events that take some time,
+like starting the engine and rendering a map to collect a sull screen levelshot.</p>
+`
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -58,8 +67,8 @@ async function serveVirtual(request, response, next) {
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
-  <div class="info-layout">
-    ${await renderDirectory(virtualPath, directory, !isIndex)}
+  <div class="info-layout">${filename.length <= 1 ? VIRTUAL_EXPLAINATION : ''}
+    ${await renderDirectory(filename.length <= 1 ? 'virtual' : virtualPath, directory, !isIndex)}
   </div>`))
 }
 

@@ -20,6 +20,7 @@ function createApplication(features) {
   app.set('etag', 'strong')
 
   app.use(function serveIndex(req, res, next) {
+    let isIndex = req.url.match(/\?index/)
     let filename = req.originalUrl.replace(/\?.*$/, '')
     if (filename.match('/index.css')) {
       return res.sendFile(STYLES)
@@ -31,6 +32,9 @@ function createApplication(features) {
       return res.sendFile(SCRIPTS)
     }
     if (filename.length <= 1 || filename.match('/index.html')) {
+      if(isIndex && (features.includes('all') || features.includes('virtual'))) {
+        return next()
+      }
       return serveFeatures(features, res)
     }
 
