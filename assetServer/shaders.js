@@ -3,18 +3,17 @@ const path = require('path')
 const fs = require('fs')
 
 const { getGame } = require('../utilities/env.js')
-const { layeredDir } = require('../assetServer/layered.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
 const { readFileKey } = require('../utilities/zip.js')
+const { listPk3s } = require('../assetServer/layered.js')
 
 
 async function existingShaders() {
   let chunk_size = 3
   let basegame = getGame()
   //let pk3names = Object.values(MAP_LIST_LOWER)
-  let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i)).sort().reverse()
+  let pk3files = (await listPk3s(basegame)).sort().reverse()
   // TODO: chunk out files into managable blocks
   let mapChunks = pk3files.map(function (e, i, arr) { 
     return i%chunk_size===0 ? arr.slice(i,i+chunk_size) : null; 

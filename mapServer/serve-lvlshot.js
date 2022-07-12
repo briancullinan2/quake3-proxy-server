@@ -101,16 +101,6 @@ async function serveLevelshot(request, response, next) {
     return response.sendFile(levelshot)
   }
 
-
-  /*
-  let gamedir = await layeredDir(basegame)
-  let pk3files = gamedir.filter(file => file.match(/\.pk3$/i))
-  let maps = (await Promise.all(pk3files.map(async function (pk3name) {
-    let basename = path.basename(pk3name)
-    let index = await getIndex(findFile(pk3name))
-  */
-
-
   // still can't find a levelshot or screenshot, execute the engine to generate
   try {
     let logs = await execLevelshot(mapname)

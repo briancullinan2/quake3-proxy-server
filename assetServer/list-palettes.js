@@ -1,9 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 
+const { listPk3s } = require('../assetServer/layered.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
-const { layeredDir } = require('../assetServer/layered.js')
 const { IMAGE_FORMATS, getGame, repackedCache } = require('../utilities/env.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig
@@ -29,17 +29,17 @@ async function parseExisting(pk3files) {
   let basegame = getGame()
   // TODO: CODE REVIEW: some sort of @Preamble template that handles type checking?
   if(!pk3files || pk3files.length == 0) {
-    let gamedir = await layeredDir(basegame)
+    pk3files = (await listPk3s(basegame)).sort().reverse()
     // TODO: automatically add palette and built QVMs
-    pk3files = gamedir
-        .filter(file => file.match(/\.pk3$/i))
-        .map(p => path.basename(p)).sort().reverse()
   }
   let existingPalette = {}
   let palettesNeeded = []
   let virtualPaths = []
   for(let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(path.join(getGame(), path.basename(pk3files[j])))
+    if(!newFile) {
+      continue
+    }
     let index = await getIndex(newFile)
     for(let i = 0; i < index.length; i++) {
       if(index[i].isDirectory) {

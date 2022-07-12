@@ -140,11 +140,13 @@ const SUPPORTED_FORMATS = [
   // '.map', '.aas', '.md5', 
   // '.bsp', '.md3',  '.iqm', '.mdr',
 ]
+const WEB_FORMATS = ['.js', '.wasm', '.css', '.html', '.jpg', '.png', '.jpeg', '.gif', '.svg']
 const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
 const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
 
 
 module.exports = {
+  WEB_FORMATS,
   SUPPORTED_FORMATS,
   IMAGE_FORMATS,
   AUDIO_FORMATS,

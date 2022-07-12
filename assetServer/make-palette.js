@@ -1,7 +1,9 @@
 const fs = require('fs')
 const path = require('path')
+
 const { getGame, repackedCache } = require('../utilities/env.js')
 const { paletteCmd } = require('../cmdServer/cmd-palette.js')
+const { listPk3s } = require('../assetServer/layered.js')
 
 
 async function makePalette(palettesNeeded, existingPalette) {
@@ -30,10 +32,8 @@ async function rebuildPalette(pk3files) {
       .map(p => path.basename(p.replace(/\.pk3.*?$/gi, '.pk3')))
       .filter((p, i, arr) => p && arr.indexOf(p) == i).sort().reverse()
   if(pk3sOnly.length == 0) {
-    let gamedir = await layeredDir(getGame())
+    pk3sOnly = (await listPk3s(getGame())).sort().reverse()
     // TODO: automatically add palette and built QVMs
-    pk3sOnly = gamedir.filter(file => file.match(/\.pk3$/i))
-        .map(p => path.basename(p)).sort().reverse()
   }
 
   let paletteFile = path.join(repackedCache(), pk3sOnly[0] + 'dir', '/scripts/palette.shader')

@@ -31,7 +31,7 @@ const { LVLWORLD_DB, downloadCache, getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
 const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
 const { renderFilelist } = require('../contentServer/serve-settings.js')
-const { layeredDir } = require('../assetServer/layered.js')
+const { listPk3s, filterPk3 } = require('../assetServer/layered.js')
 const { findFile } = require('../assetServer/virtual.js')
 
 
@@ -136,19 +136,16 @@ async function serveMaps(request, response, next) {
   return await serveMapsReal(start, end, isJson, response)
 }
 
-function filterPk3(file, i, arr) {
-  return !file.startsWith('.') && file.match(/\.pk3$/i) && arr.indexOf(file) === i
-}
-
 
 async function listDownloads() {
 
   // TODO: list downloaded and not downloaded pk3s
-  let pk3Names = (await layeredDir(getGame())).filter(filterPk3).map(findFile)
+  let pk3Names = (await listPk3s(getGame())).map(findFile)
   let downloads = downloadCache()
   for(let i = 0; i < downloads.length; i++) {
     if(fs.existsSync(downloads[i])) {
-      pk3Names.push.apply(pk3Names, fs.readdirSync(downloads[i]).filter(filterPk3).map(file => path.join(downloads[i], file)))
+      pk3Names.push.apply(pk3Names, fs.readdirSync(downloads[i])
+          .filter(filterPk3).map(file => path.join(downloads[i], file)))
     }
   }
   let pk3sFiltered = pk3Names.filter(pk3 => !path.basename(pk3).startsWith('pak'))

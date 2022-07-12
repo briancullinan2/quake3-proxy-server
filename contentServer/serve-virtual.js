@@ -1,5 +1,6 @@
-
+const fs = require('fs')
 const path = require('path')
+
 const { streamFileKey } = require('../utilities/zip.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
@@ -7,6 +8,8 @@ const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../map
 const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
+const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS } = require('../utilities/env.js')
+const { calculateSize } = require('../utilities/watch.js')
 
 const VIRTUAL_EXPLAINATION = `
 <h2>Virtual Explaination:</h2>
@@ -17,6 +20,51 @@ The virtual directory should also show the latest files compiled from developmen
 directories. Visiting some virtual paths will trigger events that take some time,
 like starting the engine and rendering a map to collect a fullscreen levelshot.</p>
 `
+
+
+async function filteredVirtual(pk3InnerPath, newFile, modname) {
+  let directory
+  if(newFile) {
+    // TODO: need full paths here so we can show/hide layers in virtual mode
+    directory = layeredDir(path.join(modname, newFile + 'dir', pk3InnerPath), true)
+  } else {
+    directory = layeredDir(modname, true)
+  }
+
+  let supported = []
+  if(!directory) {
+    directory = []
+  } else {
+    supported = await Promise.all(directory
+    .map(async file => 
+    Object.assign(fs.statSync(file), {
+      name: path.basename(path.dirname(file)) + '/' + path.basename(file),
+      absolute: path.dirname(file),
+      size: await Promise.any([calculateSize(file), 
+        new Promise(resolve => setTimeout(resolve.bind(null, 
+          '0B (Calculating)'), 200))]),
+      link: path.join('/', modname, path.basename(file)) + (file.isDirectory ? '/' : '')
+    })))
+    //.filter(file => file.isDirectory
+    //  || WEB_FORMATS.includes(path.extname(file.name)))
+  }
+  if(!newFile || !newFile.match(/\.pk3/i)) {
+    return supported
+  }
+  let pk3Dir = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  for(let i = 0; i < pk3Dir.length; i++) {
+    let file = pk3Dir[i]
+    if(!(file.isDirectory
+      || SUPPORTED_FORMATS.includes(path.extname(file.name))
+      || IMAGE_FORMATS.includes(path.extname(file.name))
+      || AUDIO_FORMATS.includes(path.extname(file.name)))) {
+      continue
+    }
+    supported.push(file)
+  }
+  return supported
+}
+
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -44,7 +92,6 @@ async function serveVirtual(request, response, next) {
     pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
   }
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let directory = layeredDir(filename)
 
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
@@ -53,11 +100,11 @@ async function serveVirtual(request, response, next) {
     if(await streamFileKey(pk3File, pk3InnerPath, response)) {
       return
     }
-    directory = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
     virtualPath = path.join('/' + modname, path.basename(pk3File) + 'dir', pk3InnerPath)
   }
-  //console.log(directory)
 
+  directory = await filteredVirtual(pk3InnerPath, pk3File, modname)
+  
   // duck out early
   if (!directory || directory.length <= 1) {
     return next(new Error('Path not found: ' + filename))
