@@ -49,6 +49,8 @@ async function serveVersion() {
 
 // TODO: add --add-game to add multiple games
 async function serveLive(request, response, next) {
+  let zeroTimer = new Promise(resolve => setTimeout(
+    resolve.bind(null, '0B (Calculating)'), 200))
   let isIndex = request.url.match(/\?index/)
   let isJson = request.url.match(/\?json/)
   let filename = request.url.replace(/\?.*$/, '')
@@ -89,9 +91,7 @@ async function serveLive(request, response, next) {
   Object.assign(fs.statSync(file), {
     name: path.basename(path.dirname(file)) + '/' + path.basename(file),
     absolute: path.dirname(file),
-    size: await Promise.any([calculateSize(file), 
-      new Promise(resolve => setTimeout(resolve.bind(null, 
-        '0B (Calculating)'), 200))]),
+    size: await Promise.any([calculateSize(file), zeroTimer]),
     link: path.join('/build', filename, path.basename(file)) + (file.isDirectory ? '/' : '')
   }))
   if(modname.length <= 1) {

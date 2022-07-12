@@ -23,46 +23,51 @@ like starting the engine and rendering a map to collect a fullscreen levelshot.<
 
 
 async function filteredVirtual(pk3InnerPath, newFile, modname) {
-  let directory
-  if(newFile) {
+  let zeroTimer = new Promise(resolve => setTimeout(
+    resolve.bind(null, '0B (Calculating)'), 200))
+  let directory = []
+  let localDirectory
+  if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
-    directory = layeredDir(path.join(modname, newFile + 'dir', pk3InnerPath), true)
+    localDirectory = layeredDir(path.join(modname, newFile + 'dir', pk3InnerPath), true)
   } else {
-    directory = layeredDir(modname, true)
+    localDirectory = layeredDir(modname, true)
   }
 
-  let supported = []
-  if(!directory) {
-    directory = []
-  } else {
-    supported = await Promise.all(directory
-    .map(async file => 
-    Object.assign(fs.statSync(file), {
-      name: path.basename(path.dirname(file)) + '/' + path.basename(file),
-      absolute: path.dirname(file),
-      size: await Promise.any([calculateSize(file), 
-        new Promise(resolve => setTimeout(resolve.bind(null, 
-          '0B (Calculating)'), 200))]),
-      link: path.join('/', modname, path.basename(file)) + (file.isDirectory ? '/' : '')
-    })))
-    //.filter(file => file.isDirectory
-    //  || WEB_FORMATS.includes(path.extname(file.name)))
-  }
-  if(!newFile || !newFile.match(/\.pk3/i)) {
-    return supported
-  }
-  let pk3Dir = await filteredPk3Directory(pk3InnerPath, newFile, modname)
-  for(let i = 0; i < pk3Dir.length; i++) {
-    let file = pk3Dir[i]
-    if(!(file.isDirectory
-      || SUPPORTED_FORMATS.includes(path.extname(file.name))
-      || IMAGE_FORMATS.includes(path.extname(file.name))
-      || AUDIO_FORMATS.includes(path.extname(file.name)))) {
-      continue
+  if (localDirectory) {
+    let supported = await Promise.all(localDirectory.map(async (file) =>
+      Object.assign({}, fs.statSync(file), {
+        name: path.basename(file),
+        absolute: path.basename(path.dirname(path.dirname(file)))
+          + '/' + path.basename(path.dirname(file)) + '/.',
+        size: await Promise.any([calculateSize(file), zeroTimer]),
+        link: path.join('/', modname, path.basename(file)) + (file.isDirectory ? '/' : '')
+      })))
+    for (let i = 0; i < supported.length; i++) {
+      directory.push(supported[i])
     }
-    supported.push(file)
   }
-  return supported
+
+  if (newFile && newFile.match(/\.pk3/i)) {
+    let pk3Dir = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+    for (let i = 0; i < pk3Dir.length; i++) {
+      let file = pk3Dir[i]
+      if (!(file.isDirectory
+        || SUPPORTED_FORMATS.includes(path.extname(file.name))
+        || IMAGE_FORMATS.includes(path.extname(file.name))
+        || AUDIO_FORMATS.includes(path.extname(file.name)))) {
+        continue
+      }
+      directory.push(file)
+    }
+  }
+
+  let allLowercase = directory.map(file => path.basename(file.name.toLocaleLowerCase()))
+  let uniqueDir = directory.map((file, i) => {
+    file.exists = allLowercase.indexOf(file.name.toLocaleLowerCase()) == i
+    return file
+  })
+  return uniqueDir
 }
 
 
@@ -88,7 +93,7 @@ async function serveVirtual(request, response, next) {
   }
   let modname = filename.split('/')[0]
   let pk3File
-  if(filename.match(/\.pk3/i)) {
+  if (filename.match(/\.pk3/i)) {
     pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
   }
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
@@ -97,14 +102,14 @@ async function serveVirtual(request, response, next) {
   // TODO: move to layeredDir()?
   let virtualPath = '/' + modname
   if (pk3File) {
-    if(await streamFileKey(pk3File, pk3InnerPath, response)) {
+    if (await streamFileKey(pk3File, pk3InnerPath, response)) {
       return
     }
     virtualPath = path.join('/' + modname, path.basename(pk3File) + 'dir', pk3InnerPath)
   }
 
   directory = await filteredVirtual(pk3InnerPath, pk3File, modname)
-  
+
   // duck out early
   if (!directory || directory.length <= 1) {
     return next(new Error('Path not found: ' + filename))

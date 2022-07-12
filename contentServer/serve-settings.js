@@ -37,6 +37,8 @@ let ASSET_MENU = [{
 // TODO: replace with filteredGames + formattedGames() 
 //   or something to add `size:` and promises
 async function listGames(unexisting) {
+  let zeroTimer = new Promise(resolve => setTimeout(
+    resolve.bind(null, '0B (Calculating)'), 200))
   let promises = []
   let GAME_MODS = getGames()
   for(let j = 0; j < GAME_MODS.length; j++) {
@@ -60,10 +62,7 @@ async function listGames(unexisting) {
           size: exists 
             // I had this idea, what if a page could take a specific amount of time,
             //   and the server only tries to get done what it thinks it can in that.
-            ? await Promise.any([
-              calculateSize(GAME_ORDER[i]), 
-              new Promise(resolve => setTimeout(resolve
-                  .bind(null, '0B (Calculating)'), 200))]) : void 0,
+            ? await Promise.any([calculateSize(GAME_ORDER[i]), zeroTimer]) : void 0,
           link: GAME_MODS[j] + '/',
         }
       }
