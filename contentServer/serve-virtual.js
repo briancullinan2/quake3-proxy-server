@@ -65,6 +65,9 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
   let allLowercase = directory.map(file => path.basename(file.name.toLocaleLowerCase()))
   let uniqueDir = directory.map((file, i) => {
     file.exists = allLowercase.indexOf(file.name.toLocaleLowerCase()) == i
+    if(!file.exists) {
+      file.name = '(overridden) '
+    }
     return file
   })
   return uniqueDir
@@ -91,12 +94,20 @@ async function serveVirtual(request, response, next) {
   if (filename.endsWith('/')) {
     filename = filename.substring(0, filename.length - 1)
   }
+
+  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let modname = filename.split('/')[0]
   let pk3File
+  let regularFile
   if (filename.match(/\.pk3/i)) {
     pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
+  } else {
+    regularFile = findFile(pk3InnerPath)
   }
-  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+
+  if(regularFile) {
+    return response.sendFile(regularFile)
+  }
 
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
@@ -109,6 +120,11 @@ async function serveVirtual(request, response, next) {
   }
 
   directory = await filteredVirtual(pk3InnerPath, pk3File, modname)
+  if(!pk3File) {
+    directory = directory.filter(function (file) {
+      return WEB_FORMATS.includes(path.extname(file.name))
+    })
+  }
 
   // duck out early
   if (!directory || directory.length <= 1) {

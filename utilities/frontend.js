@@ -3,6 +3,7 @@
 let mapList
 let gameList
 let mapInfo
+let waveForm
 
 
 window.addEventListener('load', (event) => {
@@ -22,6 +23,20 @@ window.addEventListener('load', (event) => {
   if(mapInfo) {
     setInterval(refreshMapinfo, 20)
     setInterval(function () { previousLine = -1 }, 2000)
+  }
+
+  let waveForm = document.getElementById('waveform')
+  if(waveForm) {
+    var wavesurfer = WaveSurfer.create({
+      container: '#waveform'
+    })
+    wavesurfer.load((window.location + '').replace(/\/?\?index/i, '?alt'))
+    wavesurfer.on('ready', function () {
+      wavesurfer.play()
+    })
+    waveForm.addEventListener('click', function () {
+      wavesurfer.play()
+    }, false)
   }
 
   startLive()

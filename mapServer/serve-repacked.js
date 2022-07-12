@@ -3,7 +3,7 @@ const path = require('path')
 const { PassThrough, Readable } = require('stream')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
-const { IMAGE_FORMATS } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { fileKey, streamFileKey } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
@@ -100,7 +100,7 @@ async function serveRepacked(request, response, next) {
 
   let newFile = findFile(modname + '/' + pk3File)
 
-  if (isAlt
+  if (isAlt && IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
     && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
     let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
     // try to find file by any extension, then convert
@@ -141,7 +141,15 @@ async function serveRepacked(request, response, next) {
 
   // TODO: add repackedCache()s
   if (newFile && await fileKey(newFile, pk3InnerPath, response)) {
-    return response.send(await renderImages(pk3InnerPath, newFile, modname))
+    let isImage = IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
+    let isAudio = AUDIO_FORMATS.includes(path.extname(pk3InnerPath))
+    if(isImage) {
+      return response.send(await renderImages(pk3InnerPath, newFile, modname))
+    } else if (isAudio) {
+      return response.send(await renderSounds(pk3InnerPath, newFile, modname))
+    } else {
+      return next(new Error('Can\'t handle file: ' + pk3InnerPath))
+    }
   }
 
 
@@ -164,12 +172,11 @@ async function serveRepacked(request, response, next) {
 async function renderImages(pk3InnerPath, pk3File, modname) {
   let directory = await filterRepacked(path.dirname(pk3InnerPath), pk3File, modname)
   let directoryFiltered = directory.filter(img => IMAGE_FORMATS.includes(path.extname(img.name)))
-  let imgIndex = directoryFiltered.map(img => path.basename(img.link))
-    .indexOf(path.basename(pk3InnerPath))
+  let imgIndex = directoryFiltered.map(img => path.basename(img.link)).indexOf(path.basename(pk3InnerPath))
   // TODO: render image scroller view like Apple album shuffle
   let index = renderIndex(`
   <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
-  <div id="album-view">
+  <div id="album-view" class="album-view">
   <h2>Images: 
   <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/')
       ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
@@ -208,6 +215,59 @@ async function renderImages(pk3InnerPath, pk3File, modname) {
         <img src="${img.link}?alt" /></a></li>`
       }).join('\n')}
   </ol>
+  </div>`)
+  return index
+
+}
+
+
+async function renderSounds(pk3InnerPath, pk3File, modname) {
+  let directory = await filterRepacked(path.dirname(pk3InnerPath), pk3File, modname)
+  let directoryFiltered = directory.filter(img => AUDIO_FORMATS.includes(path.extname(img.name)))
+  let imgIndex = directoryFiltered.map(img => path.basename(img.link)).indexOf(path.basename(pk3InnerPath))
+  let index = renderIndex(`
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
+  <div id="wave-view" class="album-view">
+  <h2>Sounds: 
+  <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/')
+      ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
+  ..</a>
+  /
+  <a href="/repacked/${modname}/${pk3File}dir/${pk3InnerPath.includes('/')
+      ? (path.dirname(pk3InnerPath) + '/') : ''}?index">
+  ${path.basename(path.dirname(path.join(pk3File, pk3InnerPath)))}</a>
+  /
+  ${path.basename(pk3InnerPath)}</h2>
+  <div id="waveform"></div>
+  <ol>
+  <li class="album-prev"><a href="${directoryFiltered[imgIndex <= 0
+      ? directoryFiltered.length - 1 : imgIndex - 1].link}?index">&nbsp;</a></li>
+  <li class="album-next"><a href="${directoryFiltered[imgIndex >= directoryFiltered.length - 1
+      ? 0 : imgIndex + 1].link}?index">&nbsp;</a></li>
+
+  ${directoryFiltered.map((img, i, arr) => {
+        let order = ''
+        if (i == imgIndex) {
+          order = 'class="middle"'
+        } else
+          if (i + 2 == imgIndex) {
+            order = 'class="left2"'
+          } else
+            if (i + 1 == imgIndex) {
+              order = 'class="left"'
+            } else
+              if (i - 1 == imgIndex) {
+                order = 'class="right"'
+              }
+        if (i - 2 == imgIndex) {
+          order = 'class="right2"'
+        }
+        return `<li ${order}>
+      <a style="background-image:url('${img.link}?alt')" href="${img.link}?index">
+        ${img.name}</a></li>`
+      }).join('\n')}
+  </ol>
+  <script src="/build/wavesurfer.js"></script>
   </div>`)
   return index
 
