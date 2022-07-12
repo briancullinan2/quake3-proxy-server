@@ -2,9 +2,9 @@ const path = require('path')
 const fs = require('fs')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
-const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, repackedCache, getGames} = require('../utilities/env.js')
+const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, repackedCache, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/watch.js')
-const { EXISTING_ZIPS, indexedSize, filteredDirectory, indexedDate } = require('../utilities/zip.js')
+const { EXISTING_ZIPS, indexedSize, filteredDirectory, indexedDate, fileKey } = require('../utilities/zip.js')
 const { CONVERTED_IMAGES } = require('../cmdServer/cmd-convert.js')
 
 
@@ -14,7 +14,7 @@ const { CONVERTED_IMAGES } = require('../cmdServer/cmd-convert.js')
 
 
 // TODO: replace listGames()
-async function filteredGames(isIndex, response) {
+async function filteredGames() {
   let allGames = getGames().map(game => ({
     isDirectory: true,
     name: game,
@@ -36,45 +36,45 @@ async function filteredGames(isIndex, response) {
 
 async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
   let pk3Dir = newFile.replace(path.extname(newFile), '.pk3dir')
-  let result = await filteredDirectory(pk3InnerPath, newFile)
   let zeroTimer = new Promise(resolve => setTimeout(
-      resolve.bind(null, '0B (Calculating)'), 200))
+    resolve.bind(null, '0B (Calculating)'), 200))
   let voidTimer = new Promise(resolve => setTimeout(
     resolve.bind(null, void 0), 200))
-    let CACHE_ORDER = repackedCache()
-  
-  let supported = result.filter(file => file.isDirectory
-  //  || SUPPORTED_FORMATS.includes(path.extname(file.name))
-    || IMAGE_FORMATS.includes(path.extname(file.name))
-    || AUDIO_FORMATS.includes(path.extname(file.name))
-  ).map(async file => {
-    let localPath 
+  let CACHE_ORDER = repackedCache()
+
+  let result = await filteredDirectory(pk3InnerPath, newFile)
+  let directory = result.map(async file => {
+    let localPath
     let exists = false
     let fileName = path.basename(file.name)
     let size = file.size
-    for(let i = 0; i < CACHE_ORDER.length; i++) {
+    for (let i = 0; i < CACHE_ORDER.length; i++) {
       // TODO: is pak0.pk3?
       localPath = path.join(CACHE_ORDER[i], path.basename(pk3Dir), pk3InnerPath, fileName)
       //let localPath = path.join(CACHE_ORDER[i], pk3InnerPath, fileName)
-      if(fs.existsSync(localPath)) {
+      if (fs.existsSync(localPath)) {
         exists = true
-        size = Promise.any([ calculateSize(localPath), zeroTimer ])
+        size = Promise.any([calculateSize(localPath), zeroTimer])
         break
       } else {
         localPath = null
       }
     }
     let mtime = new Date(file.time)
-    if(!localPath) {
-      exists = !!findFile(path.join(pk3InnerPath, fileName))
-      localPath = newFile
-      if(file.isDirectory) {
-        size = Promise.any([ indexedSize(path.join(pk3InnerPath, fileName), newFile), zeroTimer ])
-        mtime = Promise.any([ indexedDate(path.join(pk3InnerPath, fileName), newFile), voidTimer ])
+    if (!localPath) {
+      localPath = findFile(path.join(modname, pk3InnerPath, fileName))
+      if(!localPath) {
+        localPath = newFile
+      } else {
+        exists = true
+      }
+      if (file.isDirectory) {
+        size = Promise.any([indexedSize(path.join(pk3InnerPath, fileName), newFile), zeroTimer])
+        mtime = Promise.any([indexedDate(path.join(pk3InnerPath, fileName), newFile), voidTimer])
           .then(time => time ? new Date(time) : void 0)
       }
     }
-    if(typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined') {
+    if (typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined') {
       exists = true
     }
     return Object.assign({}, file, {
@@ -85,36 +85,17 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
       name: fileName,
       exists: exists,
       link: path.join('/repacked', modname, path.basename(pk3Dir),
-          file.name) + (file.isDirectory ? '/' : ''),
+        file.name) + (file.isDirectory ? '/' : ''),
       absolute: (typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined'
-          ? '(in memory) ' : '') + path.basename(path.dirname(path.dirname(localPath))) 
-          + '/' + path.basename(path.dirname(localPath)) + '/.',
+        ? '(in memory) ' : '') + path.basename(path.dirname(path.dirname(localPath)))
+        + '/' + path.basename(path.dirname(localPath)) + '/.',
     })
   })
 
-  //if(result.length != supported.length) {
-  let excluded = (result.length - supported.length)
-  if(excluded > 0) {
-    supported.push({
-      name: excluded + ' file' + (excluded > 1 ? 's' : '') + ' excluded.',
-      exists: false,
-      link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/',
-    })
-  } else {
-    supported.push({
-      name: 'View in virtual directory.',
-      exists: false,
-      link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/',
-    })  
-  }
-  //}
-  return await Promise.all(supported)
-  /* await Promise.all(result.map(async dir => ({
-    name: path.basename(dir),
-    absolute: dir,
-    size: await Promise.any([ calculateSize(GAME_ORDER[i]), zeroTimer ])
-  })))*/
+  return await Promise.all(directory)
 }
+
+
 
 
 async function filteredPk3List(modname, pk3Names) {
@@ -122,19 +103,19 @@ async function filteredPk3List(modname, pk3Names) {
   let directory = pk3Names.reduce((list, pk3) => {
     let pk3Name = path.basename(pk3).replace(path.extname(pk3), '.pk3')
     let newFile
-    for(let i = 0; i < CACHE_ORDER.length; i++) {
+    for (let i = 0; i < CACHE_ORDER.length; i++) {
       let localFile = path.join(CACHE_ORDER[i], pk3Name + 'dir')
-      if(fs.existsSync(localFile)) {
+      if (fs.existsSync(localFile)) {
         newFile = localFile
       }
     }
-    if(!newFile) {
+    if (!newFile) {
       newFile = findFile(modname + '/' + pk3Name)
     }
-    if(!newFile) {
+    if (!newFile) {
       newFile = findFile(modname + '/' + pk3Name + 'dir')
     }
-    if(newFile) {
+    if (newFile) {
       list.push(newFile)
     }
     return list
@@ -146,8 +127,8 @@ async function filteredPk3List(modname, pk3Names) {
       exists: loaded || fs.existsSync(pk3Dir),
       name: path.basename(pk3Dir),
       absolute: (loaded ? '(in memory) ' : '')
-          + path.basename(path.dirname(path.dirname(pk3Dir)))
-          + '/' + path.basename(path.dirname(pk3Dir)) + '/.',
+        + path.basename(path.dirname(path.dirname(pk3Dir)))
+        + '/' + path.basename(path.dirname(pk3Dir)) + '/.',
       isDirectory: true,
       link: path.join('/repacked', modname, path.basename(pk3Dir)) + '/'
     })

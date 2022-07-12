@@ -19,6 +19,35 @@ const REPACKED_DESCRIPTION = `
 <p>Repacked Cache only shows 1) image/audio assets exists in a .pk3 file or .pk3dir, 2) files that have been converted and cached on disk. It doesn't show a complete list of files, for that you should see the Virtual FS. Repacked should show a complete list of files that will go into the final output .pk3 files.</p>
 `
 
+
+async function redirectToVirtual(hasExcluded, pk3InnerPath, pk3Dir, modname) {
+  if (hasExcluded) {
+    return ({
+      name: excluded + ' file' + (excluded > 1 ? 's' : '') + ' excluded.',
+      exists: false,
+      link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/',
+    })
+  } else {
+    return ({
+      name: 'View in virtual directory.',
+      exists: false,
+      link: path.join('/' + modname, path.basename(pk3Dir), pk3InnerPath) + '/',
+    })
+  }
+}
+
+async function filterRepacked(pk3InnerPath, newFile, modname) {
+  let directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  let supported = directory.filter(file => file.isDirectory
+    //  || SUPPORTED_FORMATS.includes(path.extname(file.name))
+    || IMAGE_FORMATS.includes(path.extname(file.name))
+    || AUDIO_FORMATS.includes(path.extname(file.name))
+  )
+  supported.push(await redirectToVirtual(supported.length < directory, pk3InnerPath, newFile, modname))
+  return supported
+}
+
+
 async function serveRepacked(request, response, next) {
   let isIndex = request.url.match(/\?index/)
   let isAlt = !!request.url.match(/\?alt/)
@@ -32,7 +61,7 @@ async function serveRepacked(request, response, next) {
   let modname = filename.split('/')[0]
 
   if (!modname || modname.length == 0) {
-    let allGames = await filteredGames(isIndex, response)
+    let allGames = await filteredGames()
     return response.send(renderIndex(`
     ${renderMenu(ASSET_MENU, 'asset-menu')}
     <div class="info-layout">${REPACKED_DESCRIPTION}
@@ -119,7 +148,7 @@ async function serveRepacked(request, response, next) {
   // TODO: combine these paths, extracted / cached with pk3InnerPath list
   let directory = []
   if (newFile) {
-    directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+    directory = await filterRepacked(pk3InnerPath, newFile, modname)
   }
 
 
@@ -133,7 +162,7 @@ async function serveRepacked(request, response, next) {
 
 
 async function renderImages(pk3InnerPath, pk3File, modname) {
-  let directory = await filteredPk3Directory(path.dirname(pk3InnerPath), pk3File, modname)
+  let directory = await filterRepacked(path.dirname(pk3InnerPath), pk3File, modname)
   let directoryFiltered = directory.filter(img => IMAGE_FORMATS.includes(path.extname(img.name)))
   let imgIndex = directoryFiltered.map(img => path.basename(img.link))
     .indexOf(path.basename(pk3InnerPath))

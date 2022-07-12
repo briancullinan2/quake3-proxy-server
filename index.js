@@ -146,9 +146,6 @@ function printLogs(cmd) {
 }
 
 
-process.on('unhandledRejection', exceptionHandler)
-process.on('uncaughtException', exceptionHandler)
-
 isInside = false
 function exceptionHandler(ex) {
   if (isInside) {
@@ -215,6 +212,10 @@ function main() {
   if (!START_SERVICES.includes('holdup')
     && (START_SERVICES.includes('all')
       || START_SERVICES.includes('live'))) {
+
+    process.on('unhandledRejection', exceptionHandler)
+    process.on('uncaughtException', exceptionHandler)
+
     return projectWatcher()
   }
 

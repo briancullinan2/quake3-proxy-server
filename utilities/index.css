@@ -208,6 +208,10 @@ h2 a:hover {
   display: block;
 }
 
+.info-layout pre {
+  white-space: pre-wrap;
+}
+
 
 #map-info,
 .info-layout,

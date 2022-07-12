@@ -75,7 +75,7 @@ function unhandledResponse(err, req, res, next) {
       return res.sendFile(UNKNOWN)
     }
   // index page
-  let index = renderIndex(`<div><p>
+  let index = renderIndex(`<div class="info-layout"><p>
   ${err ? `<br />${err.message}` : `Cannot ${req.method} ${req.originalUrl}`}
   ${err ? `<br /><pre>${err.stack}</pre>` : ''}</p></div>`)
   return res.status(404).send(index)

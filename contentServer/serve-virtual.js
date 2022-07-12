@@ -15,7 +15,7 @@ in the final output state. That is files included in pk3s, and converted files.
 Files that aren't cached will trigger the conversion when they are first used.
 The virtual directory should also show the latest files compiled from development
 directories. Visiting some virtual paths will trigger events that take some time,
-like starting the engine and rendering a map to collect a sull screen levelshot.</p>
+like starting the engine and rendering a map to collect a fullscreen levelshot.</p>
 `
 
 /*
