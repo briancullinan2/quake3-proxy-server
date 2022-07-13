@@ -7,9 +7,7 @@ const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
 const { streamFileKey } = require('../utilities/zip.js')
 
-const CONVERTED_IMAGES = {
-
-}
+const CONVERTED_IMAGES = {}
 
 async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
 

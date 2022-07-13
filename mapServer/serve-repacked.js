@@ -12,6 +12,7 @@ const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
 const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
+const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 
 
 const REPACKED_DESCRIPTION = `
@@ -127,6 +128,30 @@ async function serveRepacked(request, response, next) {
     }).then(convertedFile => {
       CONVERTED_IMAGES[path.join(newFile, pk3InnerPath)] = 
       CONVERTED_IMAGES[strippedPath + newExt] = Buffer.concat(convertedFile)
+    }))
+    return
+  }
+
+  if (isAlt && AUDIO_FORMATS.includes(path.extname(pk3InnerPath))
+    && !path.extname(pk3InnerPath).match(/\.ogg$/i)) {
+    let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
+    if(typeof CONVERTED_SOUNDS[strippedPath + '.ogg'] != 'undefined') {
+      response.setHeader('content-type', 'audio/ogg')
+      return response.send(CONVERTED_SOUNDS[strippedPath + '.ogg'])
+    }
+    response.setHeader('content-type', 'audio/ogg')
+    const passThrough = new PassThrough()
+    const readable = Readable.from(passThrough)
+    // force async so other threads can answer page requests during conversion
+    Promise.resolve(new Promise(resolve => {
+      let chunks = []
+      readable.on('data', chunks.push.bind(chunks))
+      readable.on('end', resolve.bind(null, chunks))
+      passThrough.pipe(response)
+      encodeCmd(newFile, pk3InnerPath, void 0, passThrough)
+    }).then(convertedFile => {
+      CONVERTED_SOUNDS[path.join(newFile, pk3InnerPath)] = 
+      CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)
     }))
     return
   }

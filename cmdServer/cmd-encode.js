@@ -7,6 +7,8 @@ const { PassThrough } = require('stream')
 const { execCmd } = require('../utilities/exec.js')
 const { fileKey, streamFile } = require('../utilities/zip.js')
 
+const CONVERTED_SOUNDS = {}
+
 async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
   let cmd
   let file
@@ -30,7 +32,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
       startArgs.push(audioPath)
     }
     startArgs.push.apply(startArgs, [
-      '-c:a', 'libvorbis', '-q:a', '4', newPath
+      '-c:a', 'libvorbis', '-q:a', '4', typeof outFile == 'string' ? newPath : '-'
     ])
   } else {
     cmd = 'oggenc'
@@ -44,7 +46,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
       startArgs.push(audioPath)
     }
     startArgs.push.apply(startArgs, [
-      '-o', newPath
+      '-o', typeof outFile == 'string' ? newPath : '-'
     ])
   }
 
@@ -53,7 +55,10 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
   if(passThrough) {
     logs = (await Promise.all([
       streamFile(file, passThrough),
-      execCmd(cmd, startArgs, {pipe: passThrough})
+      execCmd(cmd, startArgs, {
+        write: typeof newPath == 'string' ? void 0 : newPath,
+        pipe: passThrough
+      })
     ]))[1]
   } else {
     logs = await execCmd(cmd, startArgs)
@@ -62,5 +67,6 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
 }
 
 module.exports = {
+  CONVERTED_SOUNDS,
   encodeCmd,
 }
