@@ -6,7 +6,7 @@ let mapInfo
 let waveForm
 
 
-window.addEventListener('load', (event) => {
+function pageBindings() {
   mapList = document.getElementById('map-list')
   if(mapList) {
     setInterval(refreshMaps, 20)
@@ -28,7 +28,15 @@ window.addEventListener('load', (event) => {
   let waveForm = document.getElementById('waveform')
   if(waveForm) {
     var wavesurfer = WaveSurfer.create({
-      container: '#waveform'
+      container: '#waveform',
+      waveColor: '#D9DCFF',
+      progressColor: '#4353FF',
+      cursorColor: '#4353FF',
+      barWidth: 3,
+      barRadius: 3,
+      cursorWidth: 1,
+      height: 200,
+      barGap: 3
     })
     wavesurfer.load((window.location + '').replace(/\/?\?index/i, '?alt'))
     wavesurfer.on('ready', function () {
@@ -39,7 +47,18 @@ window.addEventListener('load', (event) => {
     }, false)
   }
 
+}
+
+window.addEventListener('load', (event) => {
+
+  pageBindings()
+
   startLive()
+
+  initEvents()
+})
+
+async function initEvents() {
 
   document.addEventListener('click', function (evt) {
     let eventPath = evt.composedPath()
@@ -69,7 +88,7 @@ window.addEventListener('load', (event) => {
   window.addEventListener('popstate', function () {
     socket1.send(window.location, { binary: false })
   }, false)
-})
+}
 
 
 async function refreshMapinfo() {
@@ -306,6 +325,7 @@ function socketMessage(evt) {
       document.body.children[i].remove()
     }
     document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
+    pageBindings()
     return
   } else
   if(typeof evt.data == 'string'

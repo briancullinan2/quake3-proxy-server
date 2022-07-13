@@ -238,7 +238,6 @@ async function renderSounds(pk3InnerPath, pk3File, modname) {
   ${path.basename(path.dirname(path.join(pk3File, pk3InnerPath)))}</a>
   /
   ${path.basename(pk3InnerPath)}</h2>
-  <div id="waveform"></div>
   <ol>
   <li class="album-prev"><a href="${directoryFiltered[imgIndex <= 0
       ? directoryFiltered.length - 1 : imgIndex - 1].link}?index">&nbsp;</a></li>
@@ -262,9 +261,10 @@ async function renderSounds(pk3InnerPath, pk3File, modname) {
         if (i - 2 == imgIndex) {
           order = 'class="right2"'
         }
-        return `<li ${order}>
+        return `<li ${order}>${imgIndex == i ? `
+        <div id="waveform"></div>` : '' /* }
       <a style="background-image:url('${img.link}?alt')" href="${img.link}?index">
-        ${img.name}</a></li>`
+      ${img.name}</a> */ }</li>`
       }).join('\n')}
   </ol>
   <script src="/build/wavesurfer.js"></script>

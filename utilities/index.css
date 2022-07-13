@@ -26,6 +26,11 @@ body>img {
 }
 
 
+#wave-view.album-view li {
+  width: 100%;
+  left: 0;
+}
+
 .album-view ol, #waveform  {
   list-style: none;
   margin: 1px auto;
@@ -36,6 +41,10 @@ body>img {
   max-height: 400px;
   /* position: fixed; */
   margin-top:40px;
+}
+
+#waveform {
+  padding: 0;
 }
 
 .album-view li {
@@ -211,6 +220,8 @@ h2 a:hover {
 .info-layout pre {
   white-space: pre-wrap;
 }
+
+
 
 
 #map-info,
