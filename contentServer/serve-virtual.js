@@ -32,16 +32,18 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
 
   if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
-    localDirectory = layeredDir(path.join(modname, newFile + 'dir', pk3InnerPath), true)
+    localDirectory = layeredDir(path.join(modname, path.basename(newFile) + 'dir', pk3InnerPath), true)
   } else {
-    localDirectory = layeredDir(pk3InnerPath, true)
+    localDirectory = layeredDir(path.join(modname, pk3InnerPath), true)
   }
+
 
   if (localDirectory) {
     let supported = await Promise.all(localDirectory.map(async (file) =>
       Object.assign({}, fs.statSync(file), {
         name: path.basename(file),
-        absolute: path.basename(path.dirname(path.dirname(file)))
+        absolute: path.basename(path.dirname(path.dirname(path.dirname(file))))
+          + '/' + path.basename(path.dirname(path.dirname(file)))
           + '/' + path.basename(path.dirname(file)) + '/.',
         size: await Promise.any([calculateSize(file), zeroTimer]),
         link: path.join('/', modname, path.basename(file)) + (file.isDirectory ? '/' : '')
@@ -51,8 +53,9 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
     }
   }
 
-  if (newFile && newFile.match(/\.pk3/i)) {
-    let pk3Dir = await filteredPk3Directory(pk3InnerPath, newFile, modname)
+  let pk3File
+  if (newFile && (pk3File = findFile(modname + '/' + newFile))) {
+    let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
     for (let i = 0; i < pk3Dir.length; i++) {
       let file = pk3Dir[i]
       if (!(file.isDirectory
@@ -140,88 +143,96 @@ async function serveVirtual(request, response, next) {
   let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let modname = filename.split('/')[0]
   let pk3File
-  let regularFile
+  let pk3Name
 
   if (filename.match(/\.pk3/i)) {
-    pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
-  } else if(filename.length > 1) {
-    regularFile = findFile(pk3InnerPath)
-  }
-
-  if(regularFile && !fs.statSync(regularFile).isDirectory()) {
-    return response.sendFile(regularFile)
-  }
-
-  // TODO: server a file from inside a pk3 to the pk3dirs
-  // TODO: move to layeredDir()?
-  let virtualPath = '/' + modname
-  if (pk3File) {
-    if (await streamFileKey(pk3File, pk3InnerPath, response)) {
+    pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
+    pk3File = findFile(pk3Name)
+    if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
       return
     }
-    virtualPath = path.join('/' + modname, path.basename(pk3File) + 'dir', pk3InnerPath)
+  } else 
+  if(filename.length > 1) {
+    let regularFile = findFile(pk3InnerPath)
+    if(!fs.statSync(regularFile).isDirectory()) {
+      return response.sendFile(regularFile)
+    }
   }
 
   let directory = []
   let modNames = []
-
-  if(!modname) {
-    let games = await filteredGames()
-    for(let i = games.length - 1; i >= 0; --i) {
-      modNames.push(games[i].name.toLocaleLowerCase())
+  let games = await filteredGames()
+  for(let i = games.length - 1; i >= 0; --i) {
+    modNames.push(games[i].name.toLocaleLowerCase())
+    if(modname.length <= 1) {
       directory.unshift(games[i])
     }
+  }
+  if(modname && modNames.includes(modname.toLocaleLowerCase())) {
+    filename = filename.substring(modname.length + 1)
   } else {
-
+    modname = ''
   }
 
-  let virtual = await filteredVirtual(pk3InnerPath, pk3File, modname)
-  if(!pk3File) {
-    for(let i = 0; i < virtual.length; ++i) {
-      if(WEB_FORMATS.includes(path.extname(virtual[i].name))) {
+  // TODO: server a file from inside a pk3 to the pk3dirs
+  // TODO: move to layeredDir()?
+  let virtualPath
+  if(!pk3Name) {
+    //pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3dir'))
+    virtualPath = path.join('/' + modname, pk3InnerPath)
+  } else {
+    virtualPath = path.join('/' + modname, pk3Name + 'dir', pk3InnerPath)
+  }
+
+
+  let virtual = await filteredVirtual(pk3InnerPath, pk3Name, modname)
+  for(let i = 0; i < virtual.length; ++i) {
+    if(modname.length <= 1 
+      && WEB_FORMATS.includes(path.extname(virtual[i].name))) {
+      directory.push(virtual[i])
+    }
+    if(modname.length > 1 && virtual[i].name.match(/\.pk3/i)) {
+      if(virtual[i].name.includes('overridden')) {
         directory.push(virtual[i])
+        continue
       }
-      if(modname.length > 1 && virtual[i].name.match(/\.pk3/i)) {
-        if(virtual[i].name.includes('overridden')) {
-          directory.push(virtual[i])
-          continue
-        }
-        // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
-        // TODO: check repackedCache()
-        let isPk3dir = !!virtual[i].name.match(/\.pk3dir$/gi)
-        directory.push(Object.assign({}, virtual[i], {
-          name: (isPk3dir ? '(virtual) ' : '') 
-            + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3'),
-          exists: !virtual[i].overridden && !isPk3dir
-        }))
-        directory.push(Object.assign({}, virtual[i], {
-          name: (!isPk3dir ? '(virtual) ' : '') 
-            + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3dir'),
-          exists: !virtual[i].overridden && isPk3dir,
-          isDirectory: true,
-          link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
-            + (virtual[i].link.endsWith('/') ? '' : '/'),
-        }))
-      }
-    }
-    if(modname.length > 1) {
-      directory.unshift({
-        name: 'pak0.pk3dir',
-        exists: true,
+      // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
+      // TODO: check repackedCache()
+      let isPk3dir = !!virtual[i].name.match(/\.pk3dir$/gi)
+      directory.push(Object.assign({}, virtual[i], {
+        name: (isPk3dir ? '(virtual) ' : '') 
+          + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3'),
+        exists: !virtual[i].overridden && !isPk3dir
+      }))
+      directory.push(Object.assign({}, virtual[i], {
+        name: (!isPk3dir ? '(virtual) ' : '') 
+          + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3dir'),
+        exists: !virtual[i].overridden && isPk3dir,
         isDirectory: true,
-        link: path.join('/', modname, 'pak0.pk3dir') + '/',
-        absolute: '(virtual)/.',
-      })
-      directory.unshift({
-        name: 'pak0.pk3',
-        exists: true,
-        isDirectory: false,
-        link: path.join('/', modname, 'pak0.pk3'),
-        absolute: '(virtual)/.',
-      })
+        link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
+          + (virtual[i].link.endsWith('/') ? '' : '/'),
+      }))
+    }
+    if(pk3Name) {
+      directory.push(virtual[i])
     }
   }
-
+  if(modname.length > 1 && !pk3Name) {
+    directory.unshift({
+      name: 'pak0.pk3dir',
+      exists: true,
+      isDirectory: true,
+      link: path.join('/', modname, 'pak0.pk3dir') + '/',
+      absolute: '(virtual)/.',
+    })
+    directory.unshift({
+      name: 'pak0.pk3',
+      exists: true,
+      isDirectory: false,
+      link: path.join('/', modname, 'pak0.pk3'),
+      absolute: '(virtual)/.',
+    })
+  }
 
   // duck out early
   if (!directory || directory.length <= 1) {

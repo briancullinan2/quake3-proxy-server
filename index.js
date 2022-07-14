@@ -209,6 +209,7 @@ function addCommands(features) {
 
 function main() {
 
+
   if (!START_SERVICES.includes('holdup')
     && (START_SERVICES.includes('all')
       || START_SERVICES.includes('live'))) {

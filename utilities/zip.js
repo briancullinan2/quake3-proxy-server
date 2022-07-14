@@ -28,14 +28,14 @@ async function getIndex(pk3Path) {
     })
     zip.file = pk3Path
   }
-  const index = await new Promise(resolve => {
+  const index = await new Promise((resolve, reject) => {
     zip.on('ready', () => {
       console.log('Entries read: ' + zip.entriesCount + ' ' + path.basename(pk3Path))
       resolve(Object.values(zip.entries()))
     })
     zip.on('error', (err) => {
-      console.warn(err, pk3Path)
-      resolve([])
+      console.log(err, pk3Path)
+      reject(new Error(err))
     })
   })
 
