@@ -29,6 +29,7 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
   let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let directory = []
   let localDirectory
+  console.log(arguments)
 
   if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
@@ -36,7 +37,6 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
   } else {
     localDirectory = layeredDir(path.join(modname, pk3InnerPath), true)
   }
-
 
   if (localDirectory) {
     let supported = await Promise.all(localDirectory.map(async (file) =>
@@ -140,12 +140,13 @@ async function serveVirtual(request, response, next) {
     filename = filename.substring(0, filename.length - 1)
   }
 
-  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
+  let pk3InnerPath = ''
   let modname = filename.split('/')[0]
   let pk3File
   let pk3Name
 
   if (filename.match(/\.pk3/i)) {
+    pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
     pk3File = findFile(pk3Name)
     if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
@@ -191,7 +192,7 @@ async function serveVirtual(request, response, next) {
       && WEB_FORMATS.includes(path.extname(virtual[i].name))) {
       directory.push(virtual[i])
     }
-    if(modname.length > 1 && virtual[i].name.match(/\.pk3/i)) {
+    if(!pk3Name && virtual[i].name.match(/\.pk3/i)) {
       if(virtual[i].name.includes('overridden')) {
         directory.push(virtual[i])
         continue
@@ -217,6 +218,7 @@ async function serveVirtual(request, response, next) {
       directory.push(virtual[i])
     }
   }
+
   if(modname.length > 1 && !pk3Name) {
     directory.unshift({
       name: 'pak0.pk3dir',
