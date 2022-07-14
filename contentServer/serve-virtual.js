@@ -65,11 +65,18 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
     }
   }
 
+  directory.sort((a, b) => 
+    /* (a.name.includes('overridden') ? 0 : 2) - (b.name.includes('overridden') ? 0 : 2)
+    + */ path.basename(a.name).localeCompare(b.name, 'en', {sensitivity: 'base'}))
+
   let allLowercase = directory.map(file => path.basename(file.name.toLocaleLowerCase()))
   let uniqueDir = directory.map((file, i) => {
     file.exists = allLowercase.indexOf(file.name.toLocaleLowerCase()) == i
+    // is it the first occurence of the filename
     if(!file.exists) {
       file.name = '(overridden) ' + file.name
+      file.exists = false
+      file.overridden = true
     }
     return file
   })
@@ -84,7 +91,7 @@ async function filteredGames() {
     .reduce((list, game, i) => {
       let devDirectories = gameDirectories(game)
       let first = {
-        name: '(virtual) ' + game,
+        name: game,
         link: `/${game}/`,
         isDirectory: true,
         absolute: '/.'
@@ -175,23 +182,43 @@ async function serveVirtual(request, response, next) {
         directory.push(virtual[i])
       }
       if(modname.length > 1 && virtual[i].name.match(/\.pk3/i)) {
+        if(virtual[i].name.includes('overridden')) {
+          directory.push(virtual[i])
+          continue
+        }
         // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
         // TODO: check repackedCache()
         let isPk3dir = !!virtual[i].name.match(/\.pk3dir$/gi)
         directory.push(Object.assign({}, virtual[i], {
           name: (isPk3dir ? '(virtual) ' : '') 
             + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3'),
-          exists: !isPk3dir
+          exists: !virtual[i].overridden && !isPk3dir
         }))
         directory.push(Object.assign({}, virtual[i], {
           name: (!isPk3dir ? '(virtual) ' : '') 
             + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3dir'),
-          exists: isPk3dir,
+          exists: !virtual[i].overridden && isPk3dir,
           isDirectory: true,
           link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
             + (virtual[i].link.endsWith('/') ? '' : '/'),
         }))
       }
+    }
+    if(modname.length > 1) {
+      directory.unshift({
+        name: 'pak0.pk3dir',
+        exists: true,
+        isDirectory: true,
+        link: path.join('/', modname, 'pak0.pk3dir') + '/',
+        absolute: '(virtual)/.',
+      })
+      directory.unshift({
+        name: 'pak0.pk3',
+        exists: true,
+        isDirectory: false,
+        link: path.join('/', modname, 'pak0.pk3'),
+        absolute: '(virtual)/.',
+      })
     }
   }
 
