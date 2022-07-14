@@ -2,14 +2,17 @@ const fs = require('fs')
 const path = require('path')
 
 const { streamFileKey } = require('../utilities/zip.js')
-const { findFile } = require('../assetServer/virtual.js')
+const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
-const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
+const { filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
 const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
-const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS } = require('../utilities/env.js')
+const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
+  MODS_NAMES, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/watch.js')
+
+
 
 const VIRTUAL_EXPLAINATION = `
 <h2>Virtual Explaination:</h2>
@@ -23,15 +26,15 @@ like starting the engine and rendering a map to collect a fullscreen levelshot.<
 
 
 async function filteredVirtual(pk3InnerPath, newFile, modname) {
-  let zeroTimer = new Promise(resolve => setTimeout(
-    resolve.bind(null, '0B (Calculating)'), 200))
+  let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let directory = []
   let localDirectory
+
   if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
     localDirectory = layeredDir(path.join(modname, newFile + 'dir', pk3InnerPath), true)
   } else {
-    localDirectory = layeredDir(modname, true)
+    localDirectory = layeredDir(pk3InnerPath, true)
   }
 
   if (localDirectory) {
@@ -66,11 +69,43 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
   let uniqueDir = directory.map((file, i) => {
     file.exists = allLowercase.indexOf(file.name.toLocaleLowerCase()) == i
     if(!file.exists) {
-      file.name = '(overridden) '
+      file.name = '(overridden) ' + file.name
     }
     return file
   })
   return uniqueDir
+}
+
+
+async function filteredGames() {
+  let games = await Promise.all(Object.values(MODS_NAMES).concat(getGames())
+    .sort((a, b) => a.localeCompare(b, 'en', {sensitivity: 'base'}))
+    .filter((mod, i, arr) => arr.indexOf(mod) == i)
+    .reduce((list, game, i) => {
+      let devDirectories = gameDirectories(game)
+      let first = {
+        name: '(virtual) ' + game,
+        link: `/${game}/`,
+        isDirectory: true,
+        absolute: '/.'
+      }
+      list.push(first)
+      for(let j = 0; j < devDirectories.length; j++) {
+        if(j == 0) {
+          first.absolute = devDirectories[j]
+          continue
+        }
+        list.push({
+          name: path.basename(path.dirname(devDirectories[j])) + '/' + path.basename(devDirectories[j]),
+          exists: false,
+          link: `/${game}/`,
+          isDirectory: true,
+          absolute: path.dirname(devDirectories[j])
+        })
+      }
+      return list
+    }, []))
+  return games
 }
 
 
@@ -99,13 +134,14 @@ async function serveVirtual(request, response, next) {
   let modname = filename.split('/')[0]
   let pk3File
   let regularFile
+
   if (filename.match(/\.pk3/i)) {
     pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3'))
-  } else {
+  } else if(filename.length > 1) {
     regularFile = findFile(pk3InnerPath)
   }
 
-  if(regularFile) {
+  if(regularFile && !fs.statSync(regularFile).isDirectory()) {
     return response.sendFile(regularFile)
   }
 
@@ -119,12 +155,46 @@ async function serveVirtual(request, response, next) {
     virtualPath = path.join('/' + modname, path.basename(pk3File) + 'dir', pk3InnerPath)
   }
 
-  directory = await filteredVirtual(pk3InnerPath, pk3File, modname)
-  if(!pk3File) {
-    directory = directory.filter(function (file) {
-      return WEB_FORMATS.includes(path.extname(file.name))
-    })
+  let directory = []
+  let modNames = []
+
+  if(!modname) {
+    let games = await filteredGames()
+    for(let i = games.length - 1; i >= 0; --i) {
+      modNames.push(games[i].name.toLocaleLowerCase())
+      directory.unshift(games[i])
+    }
+  } else {
+
   }
+
+  let virtual = await filteredVirtual(pk3InnerPath, pk3File, modname)
+  if(!pk3File) {
+    for(let i = 0; i < virtual.length; ++i) {
+      if(WEB_FORMATS.includes(path.extname(virtual[i].name))) {
+        directory.push(virtual[i])
+      }
+      if(modname.length > 1 && virtual[i].name.match(/\.pk3/i)) {
+        // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
+        // TODO: check repackedCache()
+        let isPk3dir = !!virtual[i].name.match(/\.pk3dir$/gi)
+        directory.push(Object.assign({}, virtual[i], {
+          name: (isPk3dir ? '(virtual) ' : '') 
+            + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3'),
+          exists: !isPk3dir
+        }))
+        directory.push(Object.assign({}, virtual[i], {
+          name: (!isPk3dir ? '(virtual) ' : '') 
+            + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3dir'),
+          exists: isPk3dir,
+          isDirectory: true,
+          link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
+            + (virtual[i].link.endsWith('/') ? '' : '/'),
+        }))
+      }
+    }
+  }
+
 
   // duck out early
   if (!directory || directory.length <= 1) {

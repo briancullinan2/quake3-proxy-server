@@ -31,6 +31,8 @@ function createApplication(features) {
     if (filename.match('/frontend.js')) {
       return res.sendFile(SCRIPTS)
     }
+
+
     if (filename.length <= 1 || filename.match('/index.html')) {
       if(isIndex && (features.includes('all') || features.includes('virtual'))) {
         return next()
