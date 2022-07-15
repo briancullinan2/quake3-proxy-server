@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 
 const { getMapInfo } = require('../mapServer/bsp.js')
-const { existingMaps } = require('../mapServer/serve-download.js')
+const { filteredMaps } = require('../mapServer/serve-download.js')
 const { parseExisting } = require('./list-palettes.js')
 const { renderIndex, renderList } = require('../utilities/render.js')
 const { paletteCmd } = require('../cmdServer/cmd-palette.js')
@@ -19,7 +19,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
 
   // TODO: filterMap
   if (filterMap) {
-    await existingMaps()
+    await filteredMaps()
     let mapInfo
     try {
       mapInfo = await getMapInfo(filterMap)

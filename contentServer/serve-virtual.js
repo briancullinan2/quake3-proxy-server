@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { PassThrough, Readable } = require('stream')
 
 const { streamFileKey } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
@@ -11,7 +12,10 @@ const { renderDirectory } = require('../contentServer/serve-live.js')
 const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
   MODS_NAMES, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/watch.js')
-
+const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
+const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
+const { listPk3s } = require('../assetServer/layered.js')
+const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 
 
 const VIRTUAL_EXPLAINATION = `
@@ -25,36 +29,52 @@ like starting the engine and rendering a map to collect a fullscreen levelshot.<
 `
 
 
+// TODO: rename to listVirtual()
 async function filteredVirtual(pk3InnerPath, newFile, modname) {
   let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let directory = []
   let localDirectory
-  console.log(arguments)
+  let includeBuild = true
 
   if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
-    localDirectory = layeredDir(path.join(modname, path.basename(newFile) + 'dir', pk3InnerPath), true)
+    localDirectory = layeredDir(path.join(modname, path.basename(newFile) + 'dir', pk3InnerPath), false)
   } else {
-    localDirectory = layeredDir(path.join(modname, pk3InnerPath), true)
+    localDirectory = layeredDir(path.join(modname, pk3InnerPath), includeBuild)
+  }
+
+  if(newFile 
+    && path.basename(newFile).localeCompare('pak0.pk3', 'en', {sensitivity: 'base'}) == 0) {
+    let gamedir = layeredDir(path.join(modname, pk3InnerPath), false)
+    localDirectory = (localDirectory || []).concat(gamedir || []).filter(file => !file.match(/\.pk3/i))
   }
 
   if (localDirectory) {
-    let supported = await Promise.all(localDirectory.map(async (file) =>
-      Object.assign({}, fs.statSync(file), {
+    let supported = await Promise.all(localDirectory.map(async (file) => {
+      let stat = fs.statSync(file)
+      return Object.assign({}, stat, {
         name: path.basename(file),
         absolute: path.basename(path.dirname(path.dirname(path.dirname(file))))
           + '/' + path.basename(path.dirname(path.dirname(file)))
           + '/' + path.basename(path.dirname(file)) + '/.',
         size: await Promise.any([calculateSize(file), zeroTimer]),
-        link: path.join('/', modname, path.basename(file)) + (file.isDirectory ? '/' : '')
-      })))
+        isDirectory: stat.isDirectory(),
+        link: path.join('/', modname, newFile ? path.basename(newFile)
+            .replace(path.extname(newFile), '.pk3dir') : '', pk3InnerPath, 
+            path.basename(file)) + (stat.isDirectory() ? '/' : '')
+      })
+    }))
+      
     for (let i = 0; i < supported.length; i++) {
       directory.push(supported[i])
     }
   }
 
+  // TODO: listPk3s, overlap all from base directory
+  // TODO: list pk3s from repackedCache() and downloadCache()
+
   let pk3File
-  if (newFile && (pk3File = findFile(modname + '/' + newFile))) {
+  if (false && newFile && (pk3File = findFile(newFile))) {
     let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
     for (let i = 0; i < pk3Dir.length; i++) {
       let file = pk3Dir[i]
@@ -64,7 +84,11 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
         || AUDIO_FORMATS.includes(path.extname(file.name)))) {
         continue
       }
-      directory.push(file)
+      directory.push(Object.assign(file, {
+        link: path.join('/', modname, path.basename(pk3File)
+          .replace(path.extname(pk3File), '.pk3dir'),
+        pk3InnerPath, file.name) + (file.isDirectory ? '/' : ''),    
+      }))
     }
   }
 
@@ -119,6 +143,74 @@ async function filteredGames() {
 }
 
 
+
+async function filteredMaps(modname) {
+  let pk3s = await listMaps(modname)
+  // always included for repack 
+  //   because this is how baseq3a is built
+  if(!pk3s.includes('pak0')) {
+    pk3s.unshift('pak0')
+  }
+
+  return pk3s.map(mapname => {
+    let realPath = findFile(modname + '/' + MAP_DICTIONARY[mapname])
+    if(!realPath) {
+      return {
+        name: '(virtual) ' + mapname + '.pk3dir',
+        absolute: '',
+        link: path.join('/', modname, mapname + '.pk3dir') + '/',
+        isDirectory: true,
+      }
+    }
+    return Object.assign({}, fs.statSync(realPath), {
+      name: mapname + '.pk3dir',
+      absolute: realPath,
+      link: path.join('/', modname, mapname + '.pk3dir') + '/',
+      isDirectory: true,
+    })
+  }).filter(file => file)
+}
+
+
+// TODO: fs.createReadStream for loading common downloads into memory
+async function streamImageKey(pk3File, pk3InnerPath, response) {
+  if(!IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
+    || path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
+    return false
+  }
+
+  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
+  // try to find file by any extension, then convert
+  if(typeof CONVERTED_IMAGES[strippedPath + '.jpg'] != 'undefined') {
+    response.setHeader('content-type', 'image/jpg')
+    response.send(CONVERTED_IMAGES[strippedPath + '.jpg'])
+    return true
+  } else
+  if(typeof CONVERTED_IMAGES[strippedPath + '.png'] != 'undefined') {
+    response.setHeader('content-type', 'image/png')
+    response.send(CONVERTED_IMAGES[strippedPath + '.png'])
+    return true
+  }
+  let isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
+  let newExt = isOpaque ? '.png' : '.jpg'
+  response.setHeader('content-type', 'image/' + newExt.substring(1))
+  const passThrough = new PassThrough()
+  const readable = Readable.from(passThrough)
+  // force async so other threads can answer page requests during conversion
+  Promise.resolve(new Promise(resolve => {
+    let chunks = []
+    readable.on('data', chunks.push.bind(chunks))
+    readable.on('end', resolve.bind(null, chunks))
+    passThrough.pipe(response)
+    convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt)
+  }).then(convertedFile => {
+    CONVERTED_IMAGES[path.join(pk3File, pk3InnerPath)] = 
+    CONVERTED_IMAGES[strippedPath + newExt] = Buffer.concat(convertedFile)
+  }))
+  return true
+}
+
+
 /*
 Theory: instead of trying to modify qcommon/files.c
  to get it to load different PK3s, I'll provide the 
@@ -140,26 +232,15 @@ async function serveVirtual(request, response, next) {
     filename = filename.substring(0, filename.length - 1)
   }
 
-  let pk3InnerPath = ''
-  let modname = filename.split('/')[0]
   let pk3File
   let pk3Name
-
+  let pk3InnerPath = ''
   if (filename.match(/\.pk3/i)) {
-    pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
-    pk3File = findFile(pk3Name)
-    if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
-      return
-    }
-  } else 
-  if(filename.length > 1) {
-    let regularFile = findFile(pk3InnerPath)
-    if(!fs.statSync(regularFile).isDirectory()) {
-      return response.sendFile(regularFile)
-    }
+    pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   }
 
+  let modname = filename.split('/')[0]
   let directory = []
   let modNames = []
   let games = await filteredGames()
@@ -175,6 +256,28 @@ async function serveVirtual(request, response, next) {
     modname = ''
   }
 
+  let regularFile = findFile(modname + '/' + pk3InnerPath)
+  if(regularFile && !fs.statSync(regularFile).isDirectory()) {
+    if(await streamImageKey(regularFile, pk3InnerPath, response)) {
+      return
+    } else {
+      return response.sendFile(regularFile)
+    }
+  }
+
+  if(pk3Name) {
+    pk3File = findFile(pk3Name)
+    // TODO: convert and redirect, then display the correct file in the index
+    // TODO: combine with serve-repacked, fs.createReadStream
+    if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
+      return
+    }
+    if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
+      return
+    }
+  }  
+  
+
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
   let virtualPath
@@ -182,15 +285,25 @@ async function serveVirtual(request, response, next) {
     //pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3dir'))
     virtualPath = path.join('/' + modname, pk3InnerPath)
   } else {
-    virtualPath = path.join('/' + modname, pk3Name + 'dir', pk3InnerPath)
+    virtualPath = path.join('/', pk3Name + 'dir', pk3InnerPath)
   }
 
+  if(modname.length > 1 && !pk3Name) {
+    return response.send(renderIndex(`
+    ${renderMenu(ASSET_MENU, 'asset-menu')}
+    <div class="info-layout">
+      ${await renderDirectory(virtualPath, await filteredMaps(modname), !isIndex)}
+    </div>`))
+  }
 
   let virtual = await filteredVirtual(pk3InnerPath, pk3Name, modname)
+
+  // TODO: rename entire block to filteredVirtual()
   for(let i = 0; i < virtual.length; ++i) {
     if(modname.length <= 1 
       && WEB_FORMATS.includes(path.extname(virtual[i].name))) {
       directory.push(virtual[i])
+      continue
     }
     if(!pk3Name && virtual[i].name.match(/\.pk3/i)) {
       if(virtual[i].name.includes('overridden')) {
@@ -213,6 +326,7 @@ async function serveVirtual(request, response, next) {
         link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
           + (virtual[i].link.endsWith('/') ? '' : '/'),
       }))
+      continue
     }
     if(pk3Name) {
       directory.push(virtual[i])
@@ -237,16 +351,17 @@ async function serveVirtual(request, response, next) {
   }
 
   // duck out early
-  if (!directory || directory.length <= 1) {
+  if (!directory || directory.length <= 0) {
     return next(new Error('Path not found: ' + filename))
   }
 
   //directory.sort()
+  //console.log(virtualPath)
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
-  <div class="info-layout">${filename.length <= 1 ? VIRTUAL_EXPLAINATION : ''}
-    ${await renderDirectory(filename.length <= 1 ? 'virtual' : virtualPath, directory, !isIndex)}
+  <div class="info-layout">${modname <= 1 ? VIRTUAL_EXPLAINATION : ''}
+    ${await renderDirectory(modname <= 1 ? 'virtual' : virtualPath, directory, !isIndex)}
   </div>`))
 }
 

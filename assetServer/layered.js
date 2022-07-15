@@ -92,15 +92,13 @@ function filterPk3(file, i, arr) {
 
 async function listPk3s(modname) {
   return (await layeredDir(modname, true))
-  .filter(filterPk3)
+  .filter(filterPk3) // unique / first - basename
   // build directories are include here in repacked because
   //   it is showing what will become, but in "Virtual" mode
   //   only what is currently built is listed with all of the
   //   alternative overrides.
-  .map(pk3 => path.basename(pk3).replace(path.extname(pk3), '.pk3'))
-  // always included for repack 
-  //   because this is how baseq3a is built
-  .concat(['pak0.pk3']).filter(filterPk3) // unique / first - basename
+  .map(pk3 => path.join(modname, 
+    path.basename(pk3).replace(path.extname(pk3), '.pk3')))
 }
 
 

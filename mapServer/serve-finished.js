@@ -13,7 +13,7 @@ async function serveFinished(request, response, next) {
     filename = filename.substr(1)
   }
 
-  await existingMaps()
+  await filteredMaps()
 
   let mapname = path.basename(filename).replace(path.extname(filename), '').toLocaleLowerCase()
   let newZip

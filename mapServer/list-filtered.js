@@ -81,11 +81,8 @@ async function filteredPk3Directory(pk3InnerPath, newFile, modname) {
       // TODO: repackedCache() absolute path
       mtime: await mtime,
       size: await size,
-      isDirectory: true,
       name: fileName,
       exists: exists,
-      link: path.join('/repacked', modname, path.basename(pk3Dir),
-        file.name) + (file.isDirectory ? '/' : ''),
       absolute: (typeof CONVERTED_IMAGES[path.join(newFile, pk3InnerPath, fileName)] != 'undefined'
         ? '(in memory) ' : '') + path.basename(path.dirname(path.dirname(localPath)))
         + '/' + path.basename(path.dirname(localPath)) + '/.',

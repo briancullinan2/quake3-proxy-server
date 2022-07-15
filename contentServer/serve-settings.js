@@ -88,7 +88,7 @@ function renderFilelist(node) {
       ? node.isDirectory() : node.isDirectory
   let result = `
   <li ${node.exists === false ? 'class="unused-path"' : ''}>
-  <div><a href="${node.link || ('/' + node.name)}${
+  <div><a ${!node.name.endsWith('/') && !isDir ? 'target="_self"' : ''} href="${node.link || ('/' + node.name)}${
     isDir && !(node.link || node.name).endsWith('/') ? '/' : ''}?${
     node.name.endsWith('/') || isDir ? 'index' : 'alt'}">${
     node.name ? node.name : path.basename(node.absolute)

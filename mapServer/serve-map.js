@@ -5,7 +5,7 @@ const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
-const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
+const { MAP_DICTIONARY, filteredMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
@@ -15,7 +15,7 @@ const { renderImages } = require('../mapServer/shaders.js')
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()
-  let mapsAvailable = await existingMaps()
+  let mapsAvailable = await filteredMaps()
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
   if (typeof MAP_DICTIONARY[mapname] == 'undefined') {

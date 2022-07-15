@@ -66,6 +66,9 @@ async function initEvents() {
       if(eventPath[i].tagName != 'A' || !eventPath[i].href) {
         continue
       }
+      if(eventPath[i].target) {
+        return false
+      }
       if(window.location.pathname == eventPath[i].pathname
         && window.location.search == eventPath[i].search) {
         if(window.location.hash != eventPath[i].hash) {

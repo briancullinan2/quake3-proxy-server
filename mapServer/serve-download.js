@@ -28,7 +28,7 @@ const fs = require('fs')
 const path = require('path')
 
 const { LVLWORLD_DB, downloadCache, getGame } = require('../utilities/env.js')
-const { MAP_DICTIONARY, existingMaps } = require('../assetServer/list-maps.js')
+const { MAP_DICTIONARY, filteredMaps } = require('../assetServer/list-maps.js')
 const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
 const { renderFilelist } = require('../contentServer/serve-settings.js')
 const { listPk3s, filterPk3 } = require('../assetServer/layered.js')
@@ -77,7 +77,7 @@ async function serveDownload(request, response, next) {
 
   // try to figure out pk3 name using indexing features, 
   //   because it doesn't always match map name
-  await existingMaps()
+  await filteredMaps()
 
   if (typeof MAP_DICTIONARY[mapname] == 'undefined') {
     return next(new Error('File not found: ' + filename))
@@ -117,7 +117,7 @@ async function serveMapsRange(request, response, next) {
 
 
 async function serveMapsReal(start, end, isJson, response) {
-  let mapsAvailable = await existingMaps()
+  let mapsAvailable = await filteredMaps()
   let maps = mapsAvailable.slice(start, end)
   if (isJson) {
     return response.json(maps)

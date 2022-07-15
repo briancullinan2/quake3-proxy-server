@@ -113,21 +113,29 @@ async function serveLive(request, response, next) {
 }
 
 
-function formatDirname(filename) {
-  return (path.dirname(filename).includes('/') 
-    || path.dirname(filename) == '/' ?
-    `<a href="${path.dirname(filename) != '/' 
-      && path.dirname(path.dirname(filename)) != '/' ? '/' : ''}${
-      path.dirname(filename) != '/' && path.dirname(path.dirname(filename)) != '/'
-        ? path.dirname(path.dirname(filename)) : ''}/?index">..</a>
-  / ` : '')
-    + (filename.includes('/') && path.dirname(filename) != '/' ?
-      `<a href="${path.dirname(filename) != '/' 
-      && path.dirname(path.dirname(filename)) != '/' ? '/' : ''}${
-        path.dirname(filename)}/?index">${
-        path.basename(path.dirname(filename))}</a>
-  / ` : '')
-    + path.basename(filename)
+function formatDirname(filename, breadcrumbs = 3) {
+  let result = ''
+  let segments = filename.split('/')
+  if(breadcrumbs > segments.length) {
+    breadcrumbs = segments.length
+  }
+  for(let i = 0; i < breadcrumbs; i++) {
+    if(i > 0) {
+      result += ' / '
+    }
+    if(i < breadcrumbs - 1) {
+      result += `<a href="${segments.slice(0, segments.length - ((breadcrumbs - 1) - i)).join('/')}/?index">`
+    }
+    if(i == 0 && breadcrumbs > 1) {
+      result += '..'
+    } else {
+      result += segments[segments.length - (breadcrumbs - i)]
+    }
+    if(i < breadcrumbs - 1) {
+      result += '</a>'
+    }
+  }
+  return result
 }
 
 

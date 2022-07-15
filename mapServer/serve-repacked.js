@@ -43,7 +43,11 @@ async function filterRepacked(pk3InnerPath, newFile, modname) {
     //  || SUPPORTED_FORMATS.includes(path.extname(file.name))
     || IMAGE_FORMATS.includes(path.extname(file.name))
     || AUDIO_FORMATS.includes(path.extname(file.name))
-  )
+  ).map(file => Object.assign(file, {
+    link: path.join('/repacked', modname, path.basename(newFile).replace(path.extname(newFile), '.pk3dir'),
+    pk3InnerPath, file.name) + (file.isDirectory ? '/' : ''),
+    isDirectory: true,
+  }))
   supported.push(await redirectToVirtual(supported.length < directory, pk3InnerPath, newFile, modname))
   return supported
 }
@@ -182,6 +186,11 @@ async function serveRepacked(request, response, next) {
   let directory = []
   if (newFile) {
     directory = await filterRepacked(pk3InnerPath, newFile, modname)
+  }
+
+  // duck out early
+  if (!directory || directory.length <= 1) {
+    return next(new Error('Path not found: ' + filename))
   }
 
 
