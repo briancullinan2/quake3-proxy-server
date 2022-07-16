@@ -83,6 +83,16 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
         absolute: path.basename(path.dirname(file.file)) + '/' + path.basename(file.file) + '/.'
       })})
     }
+  } else 
+  if (pk3File) {
+    let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
+    directory = (directory || []).concat(pk3Dir || []).filter(file => {
+      return file.isDirectory || filterExtname(file.name)
+    }).map(file => { return Object.assign(file, {
+      link: path.join('/', modname, path.basename(file.file) + 'dir', 
+        pk3InnerPath, path.basename(file.name)) + (file.isDirectory ? '/' : ''),
+      absolute: path.basename(path.dirname(file.file)) + '/' + path.basename(file.file) + '/.'
+    })})
   }
 
   if (localDirectory) {
@@ -255,6 +265,7 @@ async function serveVirtual(request, response, next) {
   let pk3InnerPath = ''
   if (filename.match(/\.pk3/i)) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
+    pk3File = findFile(pk3Name)
     pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   }
 
@@ -285,32 +296,42 @@ async function serveVirtual(request, response, next) {
     }
   }
 
+
+  let mapname
   if(pk3Name) {
-    pk3File = findFile(pk3Name)
-    // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
-    if(pk3Name.localeCompare('pak0.pk3', 'en', {sensitivity: 'base'})) {
-      let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
-      for(let i = 0; i < pk3s.length; i++) {
-        let key = await fileKey(pk3s[i], pk3InnerPath)
-        if(!key) {
-          continue
-        }
-        if(await streamImageKey(pk3s[i], pk3InnerPath, response)) {
-          return
-        }
-        if(await streamFileKey(pk3s[i], pk3InnerPath, response)) {
-          return
-        }
+    // TODO: check mapname and convert to pk3Name
+    mapname = path.basename(pk3Name).replace(path.extname(pk3Name), '').toLocaleLowerCase()
+    let pk3s = await listMaps(modname)
+    if(pk3s.includes(mapname)) {
+      pk3Name = modname + '/' + MAP_DICTIONARY[mapname]
+      pk3File = findFile(pk3Name)
+      console.log(pk3File)
+    }
+  }
+
+  // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
+  if(pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', {sensitivity: 'base'})) {
+    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
+    for(let i = 0; i < pk3s.length; i++) {
+      let key = await fileKey(pk3s[i], pk3InnerPath)
+      if(!key) {
+        continue
+      }
+      if(await streamImageKey(pk3s[i], pk3InnerPath, response)) {
+        return
+      }
+      if(await streamFileKey(pk3s[i], pk3InnerPath, response)) {
+        return
       }
     }
-    if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
-      return
-    }
-    if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
-      return
-    }
-  }  
-  
+  }
+  if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
+    return
+  }
+  if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
+    return
+  }
+
 
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?

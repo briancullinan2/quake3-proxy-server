@@ -12,6 +12,12 @@ For testing purposes, this server provides a good interface for testing each of
 these components individually, or using the master server to mock connections and
 launch the newly built client for automated integration testing.
 
+WARNING: This is admittedly, terrible code. I don't really know what I'm doing here
+until after it's been done. This being the 3rd time I've written this proxy server,
+I still don't know what I'm doing. The file formats and layered directories make 
+everything more complicate, I think. At least the existing code demonstrates the
+layered file-system and live-reloading game engine.
+
 
 ## Components
 
