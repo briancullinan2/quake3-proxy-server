@@ -29,24 +29,58 @@ like starting the engine and rendering a map to collect a fullscreen levelshot.<
 `
 
 
+function filterExtname(ext) {
+  //if(typeof ext == 'object') {
+  //  ext = path.extname(ext.name)
+  //}
+  if(ext[0] != '.') {
+    ext = path.extname(ext)
+  }
+  if(ext[0] != '.') {
+    return false
+  }
+  return SUPPORTED_FORMATS.includes(ext)
+      || WEB_FORMATS.includes(ext)
+      || IMAGE_FORMATS.includes(ext)
+      || AUDIO_FORMATS.includes(ext)
+}
+
+
+
 // TODO: rename to listVirtual()
 async function filteredVirtual(pk3InnerPath, newFile, modname) {
   let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let directory = []
   let localDirectory
+  let pk3File
   let includeBuild = true
 
   if (newFile) {
     // TODO: need full paths here so we can show/hide layers in virtual mode
+    pk3File = findFile(newFile)
     localDirectory = layeredDir(path.join(modname, path.basename(newFile) + 'dir', pk3InnerPath), false)
   } else {
     localDirectory = layeredDir(path.join(modname, pk3InnerPath), includeBuild)
   }
 
+
   if(newFile 
     && path.basename(newFile).localeCompare('pak0.pk3', 'en', {sensitivity: 'base'}) == 0) {
     let gamedir = layeredDir(path.join(modname, pk3InnerPath), false)
-    localDirectory = (localDirectory || []).concat(gamedir || []).filter(file => !file.match(/\.pk3/i))
+    localDirectory = (localDirectory || []).concat(gamedir || []).filter(filterExtname)
+
+    // TODO: listPk3s, overlap all from base directory
+    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
+    for(let i = 0; i < pk3s.length; i++) {
+      let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3s[i], modname)
+      directory = (directory || []).concat(pk3Dir || []).filter(file => {
+        return file.isDirectory || filterExtname(file.name)
+      }).map(file => { return Object.assign(file, {
+        link: path.join('/', modname, 'pak0.pk3dir', pk3InnerPath, path.basename(file.name))
+          + (file.isDirectory ? '/' : ''),
+        absolute: path.basename(path.dirname(file.file)) + '/' + path.basename(file.file) + '/.'
+      })})
+    }
   }
 
   if (localDirectory) {
@@ -70,27 +104,9 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
     }
   }
 
-  // TODO: listPk3s, overlap all from base directory
+
   // TODO: list pk3s from repackedCache() and downloadCache()
 
-  let pk3File
-  if (false && newFile && (pk3File = findFile(newFile))) {
-    let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
-    for (let i = 0; i < pk3Dir.length; i++) {
-      let file = pk3Dir[i]
-      if (!(file.isDirectory
-        || SUPPORTED_FORMATS.includes(path.extname(file.name))
-        || IMAGE_FORMATS.includes(path.extname(file.name))
-        || AUDIO_FORMATS.includes(path.extname(file.name)))) {
-        continue
-      }
-      directory.push(Object.assign(file, {
-        link: path.join('/', modname, path.basename(pk3File)
-          .replace(path.extname(pk3File), '.pk3dir'),
-        pk3InnerPath, file.name) + (file.isDirectory ? '/' : ''),    
-      }))
-    }
-  }
 
   directory.sort((a, b) => 
     /* (a.name.includes('overridden') ? 0 : 2) - (b.name.includes('overridden') ? 0 : 2)
@@ -267,6 +283,7 @@ async function serveVirtual(request, response, next) {
 
   if(pk3Name) {
     pk3File = findFile(pk3Name)
+    // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
     // TODO: convert and redirect, then display the correct file in the index
     // TODO: combine with serve-repacked, fs.createReadStream
     if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
