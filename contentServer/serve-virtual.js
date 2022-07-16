@@ -76,7 +76,9 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
       directory = (directory || []).concat(pk3Dir || []).filter(file => {
         return file.isDirectory || filterExtname(file.name)
       }).map(file => { return Object.assign(file, {
-        link: path.join('/', modname, 'pak0.pk3dir', pk3InnerPath, path.basename(file.name))
+        link: path.join('/', modname, 
+          file.isDirectory ? 'pak0.pk3dir' : path.basename(file.file) + 'dir', 
+          pk3InnerPath, path.basename(file.name))
           + (file.isDirectory ? '/' : ''),
         absolute: path.basename(path.dirname(file.file)) + '/' + path.basename(file.file) + '/.'
       })})
