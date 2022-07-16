@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { PassThrough, Readable } = require('stream')
 
-const { streamFileKey } = require('../utilities/zip.js')
+const { fileKey, streamFileKey } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
@@ -272,6 +272,8 @@ async function serveVirtual(request, response, next) {
     modname = ''
   }
 
+  // TODO: convert and redirect, then display the correct file in the index
+  // TODO: combine with serve-repacked, fs.createReadStream
   let regularFile = findFile(modname + '/' + pk3InnerPath)
   if(regularFile && !fs.statSync(regularFile).isDirectory()) {
     if(await streamImageKey(regularFile, pk3InnerPath, response)) {
@@ -284,8 +286,21 @@ async function serveVirtual(request, response, next) {
   if(pk3Name) {
     pk3File = findFile(pk3Name)
     // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
-    // TODO: convert and redirect, then display the correct file in the index
-    // TODO: combine with serve-repacked, fs.createReadStream
+    if(pk3Name.localeCompare('pak0.pk3', 'en', {sensitivity: 'base'})) {
+      let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
+      for(let i = 0; i < pk3s.length; i++) {
+        let key = await fileKey(pk3s[i], pk3InnerPath)
+        if(!key) {
+          continue
+        }
+        if(await streamImageKey(pk3s[i], pk3InnerPath, response)) {
+          return
+        }
+        if(await streamFileKey(pk3s[i], pk3InnerPath, response)) {
+          return
+        }
+      }
+    }
     if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
       return
     }
