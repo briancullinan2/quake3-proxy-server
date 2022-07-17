@@ -39,6 +39,7 @@ async function filteredMaps() {
       have: true,
     }
   })
+  let mapsNames = maps.map(m => m.bsp)
   let uniqueMaps = maps.filter((m, i) => mapsNames.indexOf(m.bsp) == i)
   uniqueMaps.sort()
   return uniqueMaps

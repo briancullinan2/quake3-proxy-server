@@ -26,6 +26,8 @@ similar to Quake 3's virtual file-system.
 
 ![content](./screenshot.png?raw=true)
 
+![content](./screenshot2.png?raw=true)
+
 - gameServer - list games like XQF / Gamedig. Simple process launcher for admins 
 to host games at specific times.
 

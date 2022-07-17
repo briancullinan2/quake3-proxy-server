@@ -46,9 +46,15 @@ function filterExtname(ext) {
 }
 
 
+async function listVirtualMap(pk3InnerPath, newFile, modname) {
+  // TODO: basically the same thing, but only show files required by 
+  //   loading the map, not included in basepack
+  return listVirtual(pk3InnerPath, newFile, modname)
+}
+
 
 // TODO: rename to listVirtual()
-async function filteredVirtual(pk3InnerPath, newFile, modname) {
+async function listVirtual(pk3InnerPath, newFile, modname) {
   let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let directory = []
   let localDirectory
@@ -85,6 +91,7 @@ async function filteredVirtual(pk3InnerPath, newFile, modname) {
     }
   } else 
   if (pk3File) {
+    // TODO: filter files by size/compressedSize and also show which files are in pk3
     let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3File, modname)
     directory = (directory || []).concat(pk3Dir || []).filter(file => {
       return file.isDirectory || filterExtname(file.name)
@@ -207,7 +214,7 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
     return false
   }
 
-  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
+  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath), '')
   // try to find file by any extension, then convert
   if(typeof CONVERTED_IMAGES[strippedPath + '.jpg'] != 'undefined') {
     response.setHeader('content-type', 'image/jpg')
@@ -219,8 +226,29 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
     response.send(CONVERTED_IMAGES[strippedPath + '.png'])
     return true
   }
-  let isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
-  let newExt = isOpaque ? '.png' : '.jpg'
+
+  let isOpaque
+  try {
+    if(pk3File.match(/\.pk3$/i)) {
+      if(!(await fileKey(pk3File, pk3InnerPath))) {
+        for(let i = 0; i < IMAGE_FORMATS.length; i++) {
+          let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
+          if(await fileKey(pk3File, altPath)) {
+            pk3InnerPath = altPath
+          }
+        }
+      }
+    }
+    isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
+  } catch (e) {
+    if(e.message.includes('File not found')) {
+      return false
+    } else {
+      throw e
+    }
+  }
+
+  let newExt = isOpaque ? '.jpg' : '.png'
   response.setHeader('content-type', 'image/' + newExt.substring(1))
   const passThrough = new PassThrough()
   const readable = Readable.from(passThrough)
@@ -239,6 +267,62 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
 }
 
 
+async function filteredVirtual(virtual) {
+
+  // TODO: rename entire block to filteredVirtual()
+  if(modname.length <= 1 
+    && WEB_FORMATS.includes(path.extname(virtual.name))) {
+    directory.push(virtual)
+    return false
+  }
+  if(!pk3Name && virtual.name.match(/\.pk3/i)) {
+    if(virtual.name.includes('overridden')) {
+      directory.push(virtual)
+      return false
+    }
+    // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
+    // TODO: check repackedCache()
+    let isPk3dir = !!virtual.name.match(/\.pk3dir$/gi)
+    directory.push(Object.assign({}, virtual, {
+      name: (isPk3dir ? '(virtual) ' : '') 
+        + virtual.name.replace(path.extname(virtual.name), '.pk3'),
+      exists: !virtual.overridden && !isPk3dir
+    }))
+    directory.push(Object.assign({}, virtual, {
+      name: (!isPk3dir ? '(virtual) ' : '') 
+        + virtual.name.replace(path.extname(virtual.name), '.pk3dir'),
+      exists: !virtual.overridden && isPk3dir,
+      isDirectory: true,
+      link: virtual.link.replace(path.extname(virtual.name), '.pk3dir')
+        + (virtual.link.endsWith('/') ? '' : '/'),
+    }))
+    return false
+  }
+  if(pk3Name) {
+    directory.push(virtual)
+  }
+
+  if(modname.length > 1 && !pk3Name) {
+    directory.unshift({
+      name: 'pak0.pk3dir',
+      exists: true,
+      isDirectory: true,
+      link: path.join('/', modname, 'pak0.pk3dir') + '/',
+      absolute: '(virtual)/.',
+    })
+    directory.unshift({
+      name: 'pak0.pk3',
+      exists: true,
+      isDirectory: false,
+      link: path.join('/', modname, 'pak0.pk3'),
+      absolute: '(virtual)/.',
+    })
+  }
+
+}
+
+
+
 /*
 Theory: instead of trying to modify qcommon/files.c
  to get it to load different PK3s, I'll provide the 
@@ -250,6 +334,7 @@ Server admin control over pk3 content is a long
  outstanding issue.
 */
 async function serveVirtual(request, response, next) {
+  let isAlt = request.originalUrl.match(/\?alt/)
   let isIndex = request.originalUrl.match(/\?index/)
   let isJson = request.originalUrl.match(/\?json/)
   let filename = request.originalUrl.replace(/\?.*$/, '')
@@ -287,9 +372,15 @@ async function serveVirtual(request, response, next) {
 
   // TODO: convert and redirect, then display the correct file in the index
   // TODO: combine with serve-repacked, fs.createReadStream
-  let regularFile = findFile(modname + '/' + pk3InnerPath)
+  let regularFile
+  if(!filename.includes('.pk3')) {
+    regularFile = findFile(modname + '/' + filename)
+  }
+  if(!regularFile) {
+    regularFile = findFile(modname + '/' + pk3InnerPath)
+  }
   if(regularFile && !fs.statSync(regularFile).isDirectory()) {
-    if(await streamImageKey(regularFile, pk3InnerPath, response)) {
+    if(isAlt && await streamImageKey(regularFile, filename, response)) {
       return
     } else {
       return response.sendFile(regularFile)
@@ -305,7 +396,8 @@ async function serveVirtual(request, response, next) {
     if(pk3s.includes(mapname)) {
       pk3Name = modname + '/' + MAP_DICTIONARY[mapname]
       pk3File = findFile(pk3Name)
-      console.log(pk3File)
+    } else {
+      mapname = null
     }
   }
 
@@ -313,11 +405,7 @@ async function serveVirtual(request, response, next) {
   if(pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', {sensitivity: 'base'})) {
     let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
     for(let i = 0; i < pk3s.length; i++) {
-      let key = await fileKey(pk3s[i], pk3InnerPath)
-      if(!key) {
-        continue
-      }
-      if(await streamImageKey(pk3s[i], pk3InnerPath, response)) {
+      if(isAlt && await streamImageKey(pk3s[i], pk3InnerPath, response)) {
         return
       }
       if(await streamFileKey(pk3s[i], pk3InnerPath, response)) {
@@ -325,7 +413,8 @@ async function serveVirtual(request, response, next) {
       }
     }
   }
-  if(pk3File && await streamImageKey(pk3File, pk3InnerPath, response)) {
+  if(pk3File && isAlt
+    && await streamImageKey(pk3File, pk3InnerPath, response)) {
     return
   }
   if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
@@ -337,72 +426,29 @@ async function serveVirtual(request, response, next) {
   // TODO: move to layeredDir()?
   let virtualPath
   if(!pk3Name) {
-    //pk3File = findFile(filename.replace(/\.pk3.*/gi, '.pk3dir'))
-    virtualPath = path.join('/' + modname, pk3InnerPath)
+    virtualPath = path.join('/' + modname, filename)
   } else {
     virtualPath = path.join('/', pk3Name + 'dir', pk3InnerPath)
   }
 
-  if(modname.length > 1 && !pk3Name) {
+  if(modname.length > 1 && !pk3Name && filename.length <= 1) {
     return response.send(renderIndex(`
     ${renderMenu(ASSET_MENU, 'asset-menu')}
     <div class="info-layout">
       ${await renderDirectory(virtualPath, await filteredMaps(modname), !isIndex)}
     </div>`))
+  } else if (!pk3Name) {
+    pk3InnerPath = filename
   }
 
-  let virtual = await filteredVirtual(pk3InnerPath, pk3Name, modname)
-
-  // TODO: rename entire block to filteredVirtual()
-  for(let i = 0; i < virtual.length; ++i) {
-    if(modname.length <= 1 
-      && WEB_FORMATS.includes(path.extname(virtual[i].name))) {
-      directory.push(virtual[i])
-      continue
-    }
-    if(!pk3Name && virtual[i].name.match(/\.pk3/i)) {
-      if(virtual[i].name.includes('overridden')) {
-        directory.push(virtual[i])
-        continue
-      }
-      // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
-      // TODO: check repackedCache()
-      let isPk3dir = !!virtual[i].name.match(/\.pk3dir$/gi)
-      directory.push(Object.assign({}, virtual[i], {
-        name: (isPk3dir ? '(virtual) ' : '') 
-          + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3'),
-        exists: !virtual[i].overridden && !isPk3dir
-      }))
-      directory.push(Object.assign({}, virtual[i], {
-        name: (!isPk3dir ? '(virtual) ' : '') 
-          + virtual[i].name.replace(path.extname(virtual[i].name), '.pk3dir'),
-        exists: !virtual[i].overridden && isPk3dir,
-        isDirectory: true,
-        link: virtual[i].link.replace(path.extname(virtual[i].name), '.pk3dir')
-          + (virtual[i].link.endsWith('/') ? '' : '/'),
-      }))
-      continue
-    }
-    if(pk3Name) {
-      directory.push(virtual[i])
-    }
+  let virtual
+  if(mapname) {
+    virtual = await listVirtualMap(pk3InnerPath, pk3Name, modname)
+  } else {
+    virtual = await listVirtual(pk3InnerPath, pk3Name, modname)
   }
-
-  if(modname.length > 1 && !pk3Name) {
-    directory.unshift({
-      name: 'pak0.pk3dir',
-      exists: true,
-      isDirectory: true,
-      link: path.join('/', modname, 'pak0.pk3dir') + '/',
-      absolute: '(virtual)/.',
-    })
-    directory.unshift({
-      name: 'pak0.pk3',
-      exists: true,
-      isDirectory: false,
-      link: path.join('/', modname, 'pak0.pk3'),
-      absolute: '(virtual)/.',
-    })
+  for(let i = 0; i < virtual.length; i++) {
+    directory.push(virtual[i])
   }
 
   // duck out early

@@ -40,7 +40,7 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
   }
 
   // TODO: template?
-  return isOpaque.match(/true/ig)
+  return !!isOpaque.match(/true/ig)
 }
 
 module.exports = {
