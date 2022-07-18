@@ -1,3 +1,4 @@
+const { PassThrough, Readable } = require('stream')
 
 const { EXE_NAME, DED_NAME } = require('../utilities/env.js')
 const { findFile } = require('../assetServer/virtual.js')
@@ -22,13 +23,18 @@ async function dedicatedCmd(startArgs) {
     let cancelTimer = setTimeout(function () {
       reject(new Error('Start server timed out.', logs))
     }, SERVER_STARTTIME)
+    const passThrough = new PassThrough()
+    const readable = Readable.from(passThrough)
+    readable.on('data', function (data) {
+      console.log('ENGINE: ', Array.from(data).map(c => String.fromCharCode(c)).join(''))
+    })
     console.log('Starting ', dedicated)
     logs = await execCmd(dedicated, [
       '+set', 'fs_basepath', FS_BASEPATH,
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+set', 'r_headless', '1',
       '+set', 'bot_enable', '0',
-      '+set', 'developer', '0',
+      '+set', 'developer', '1',
       '+set', 'sv_master1', '"127.0.0.1:27950"',
 
       // TODO: turn this into some sort of temporary cfg script
@@ -48,6 +54,7 @@ async function dedicatedCmd(startArgs) {
 
     ].concat(startArgs), {
       detached: true,
+      write: passThrough,
     })
 
     RESOLVE_DEDICATED.push(function () {

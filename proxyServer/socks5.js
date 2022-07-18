@@ -1,6 +1,6 @@
 
 const { lookupDNS } = require('../utilities/dns.js')
-const { serveUDP } = require('../proxyServer/serve-udp.js')
+const { UDP_SERVERS, lookupClient, serveUDP } = require('../proxyServer/serve-udp.js')
 
 const WS_CONNECTIONS = []
 
@@ -171,7 +171,7 @@ async function parseSOCKS(sessionId, redirectApp, socket, message) {
 
             if (socket.bound
               && (message[1] == 0x00 || message[1] == CMD.CONNECT)
-              && message[3] > 0x00 && message[3] < 0x04) {
+                && message[3] > 0x00 && message[3] < 0x04) {
               return await sendMessage(socket, message.slice(3))
             }
   console.log(socket.bound, message)
@@ -191,13 +191,14 @@ async function sendMessage(socket, messageBuffer) {
   let { buffer, address } = await parseAddress(messageBuffer)
   let port = (buffer[0] << 8) + buffer[1]
   let message = buffer.slice(2)
-  let localPort = UDP_CLIENTS.indexOf(socket)
-  if (localPort > -1) {
-    UDP_SERVERS[localPort].send(message, 0, message.length, port, address)
+  // TODO: find the UDP reservation for this socket
+  let clientI = await lookupClient(socket)
+  //console.log('Sending: ', clientI, message, '->', port, address)
+  if(clientI) {
+    let udpSocket = UDP_SERVERS[clientI[0]]
+    udpSocket.send(message, 0, message.length, port, address)
   } else {
-    // TODO: boundless TCP connect?
-    //throw new Error('TODO: Unbound TCP')
-    socket.send(message, 0, message.length, port, address)
+    // TODO: queue?
   }
   return [0x05, 0x00]
 }

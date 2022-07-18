@@ -52,7 +52,7 @@ async function execCmd(cmd, args, options) {
       return resolve('')
     }
     let ps = spawn(cmd, args, {
-      timeout: 3600,
+      timeout: options && options.detached ? void 0 : 3600,
       cwd: (options ? options.cwd : null) || process.cwd(),
       shell: options ? options.shell : false || false,
       detached: options ? options.detached : false || false,
@@ -68,6 +68,7 @@ async function execCmd(cmd, args, options) {
     })
     if(options && typeof options.write == 'object') {
       //options.stdout.cork()
+      ps.stderr.pipe(options.write)
       ps.stdout.pipe(options.write)
     }
     ps.stdout.on('data', (data) => {

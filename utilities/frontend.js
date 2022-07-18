@@ -54,12 +54,15 @@ function pageBindings() {
       'nipplejs.js', 'sys_emgl.js', 'sys_fs.js', 'sys_idbfs.js', 'sys_in.js',
       'sys_net.js', 'sys_std.js', 'sys_web.js', 'sys_snd.js', 'sys_wasm.js'
     ]
+    var tag
     for(let i = 0; i < ENGINE_SCRIPTS.length; i++) {
-      var tag = document.createElement('script');
+      tag = document.createElement('script');
       tag.src = window.location.origin + '/' + ENGINE_SCRIPTS[i]
       document.getElementsByTagName('head')[0].appendChild(tag);
     }
-    initialize()
+    tag.addEventListener('load', setTimeout.bind(null, function () {
+      window.initialize()
+    }, 100), false)
   } else if (engineView) {
     initialize()
   }
@@ -408,6 +411,7 @@ function socketMessage(evt) {
 
 			sendLegacyEmscriptenConnection(evt.target, window.net_port)
 			evt.target.fresh = 3
+      // TODO: 
 			/*
       if(socket ==socket1) {
 				for(let i = 0, count =socket1Queue.length; i < count; i++) {
@@ -449,12 +453,8 @@ function socketMessage(evt) {
 			} else {
 				throw new Error('don\' know what to do mate')
 			}
-			//if(addr.includes('local.games')) {
-			//	debugger
-			//}
-      console.log([addr, remotePort, msg])
-			queue.push([addr, remotePort, msg])
-		break
+
+    break
   }
 }
 
