@@ -143,7 +143,7 @@ async function listVirtual(pk3InnerPath, newFile, modname) {
 
 
   // TODO: list pk3s from repackedCache() and downloadCache()
-
+  // TODO: (repacked) indication for files included in pk3 by refault?
 
   directory.sort((a, b) => 
     /* (a.name.includes('overridden') ? 0 : 2) - (b.name.includes('overridden') ? 0 : 2)

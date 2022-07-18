@@ -57,7 +57,14 @@ async function repackBasemap(mapname) {
 }
 
 
+async function repackBasepack() {
+
+}
+
+
+
 module.exports = {
+  repackBasepack,
   repackBasemap,
   repackPk3,
 }

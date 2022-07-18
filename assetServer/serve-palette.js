@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 
 const { getMapInfo } = require('../mapServer/bsp.js')
-const { filteredMaps } = require('../mapServer/serve-download.js')
+const { filteredMaps } = require('../assetServer/list-maps.js')
 const { parseExisting } = require('./list-palettes.js')
 const { renderIndex, renderList } = require('../utilities/render.js')
 const { paletteCmd } = require('../cmdServer/cmd-palette.js')

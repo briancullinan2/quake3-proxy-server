@@ -40,7 +40,6 @@ async function redirectToVirtual(hasExcluded, pk3InnerPath, pk3Dir, modname) {
 async function filterRepacked(pk3InnerPath, newFile, modname) {
   let directory = await filteredPk3Directory(pk3InnerPath, newFile, modname)
   let supported = directory.filter(file => file.isDirectory
-    //  || SUPPORTED_FORMATS.includes(path.extname(file.name))
     || IMAGE_FORMATS.includes(path.extname(file.name))
     || AUDIO_FORMATS.includes(path.extname(file.name))
   ).map(file => Object.assign(file, {

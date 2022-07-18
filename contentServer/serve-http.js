@@ -5,6 +5,7 @@ const { serveMapInfo } = require('../mapServer/serve-map.js')
 const { downloadAllMeta } = require('../quake3Utils/metadata.js')
 const { serveModInfo, serveMods, serveModsRange } = require('../gameServer/serve-mods.js')
 const { servePalette, servePaletteMap, servePaletteRange } = require('../assetServer/serve-palette.js')
+const { serveFinished } = require('../mapServer/serve-finished.js')
 const { getFeatureFilter } = require('../contentServer/features.js')
 const { renderIndex, renderFeature } = require('../utilities/render.js')
 const { serveAssets } = require('../assetServer/serve-assets.js')
@@ -109,7 +110,7 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('repack')) {
-    //app.use('/maps/repacked', serveFinished) // /maps/download/%1
+    app.use('/maps/repacked', serveFinished) // /maps/download/%1
     app.use('/repacked', serveRepacked) // /maps/download/%1
   }
 

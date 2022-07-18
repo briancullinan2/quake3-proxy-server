@@ -4,21 +4,25 @@
 //   serve-repacked are virtual files that would only exist after conversion
 const path = require('path')
 const fs = require('fs')
-const { sourcePk3Download } = require('../mapServer/download.js')
 
+const { getGame } = require('../utilities/env.js')
+const { sourcePk3Download } = require('../mapServer/download.js')
+const { repackBasepack } = require('../mapServer/repack.js')
+const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 
 async function serveFinished(request, response, next) {
   let filename = request.url.replace(/\?.*$/, '')
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
   }
-
-  await filteredMaps()
+  let modname = filename.split('/')[0]
+  
+  let pk3s = await listMaps(modname || getGame())
 
   let mapname = path.basename(filename).replace(path.extname(filename), '').toLocaleLowerCase()
   let newZip
-  if(path.basename(filename).match(/pak0\.pk3/i)) {
-    newZip = await buildBasepack()
+  if(path.basename(filename).match(/^pak0\.pk3$|^pak0$/i)) {
+    newZip = await repackBasepack()
   } else
   if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
     if(MAP_DICTIONARY[mapname].startsWith('pak')) {
@@ -27,7 +31,7 @@ async function serveFinished(request, response, next) {
       newZip = await repackMappak()
     }
   } else {
-    newZip = sourcePk3Download()
+    newZip = sourcePk3Download(filename)
     newZip = await repackPk3(newZip)
   }
 

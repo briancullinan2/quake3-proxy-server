@@ -2,7 +2,7 @@ const path = require('path')
 const fs = require('fs')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
-const { SUPPORTED_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, repackedCache, getGames } = require('../utilities/env.js')
+const { repackedCache, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/watch.js')
 const { EXISTING_ZIPS, indexedSize, filteredDirectory, indexedDate, fileKey } = require('../utilities/zip.js')
 const { CONVERTED_IMAGES } = require('../cmdServer/cmd-convert.js')

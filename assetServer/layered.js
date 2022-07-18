@@ -91,7 +91,7 @@ function filterPk3(file, i, arr) {
 
 
 async function listPk3s(modname) {
-  return (await layeredDir(modname, true))
+  return (await layeredDir(modname, true) || [])
   .filter(filterPk3) // unique / first - basename
   // build directories are include here in repacked because
   //   it is showing what will become, but in "Virtual" mode
