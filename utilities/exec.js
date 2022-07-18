@@ -52,7 +52,7 @@ async function execCmd(cmd, args, options) {
       return resolve('')
     }
     let ps = spawn(cmd, args, {
-      timeout: options && options.detached ? void 0 : 3600,
+      timeout: options && (options.detached || options.background) ? void 0 : 3600,
       cwd: (options ? options.cwd : null) || process.cwd(),
       shell: options ? options.shell : false || false,
       detached: options ? options.detached : false || false,
@@ -68,7 +68,8 @@ async function execCmd(cmd, args, options) {
     })
     if(options && typeof options.write == 'object') {
       //options.stdout.cork()
-      ps.stderr.pipe(options.write)
+      // TODO: somehow output this to console
+      //ps.stderr.pipe(options.write)
       ps.stdout.pipe(options.write)
     }
     ps.stdout.on('data', (data) => {
@@ -84,7 +85,7 @@ async function execCmd(cmd, args, options) {
       RUNNING--
       delete CHILD_PROCESS[pid]
       updatePageViewers('/process')
-      if(!options || !options.detached) {
+      if(!options || (!options.detached && !options.background)) {
         if(errCode > 0) {
           console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
           reject(new Error('Process failed: ' + errCode))
@@ -93,7 +94,7 @@ async function execCmd(cmd, args, options) {
         }
       }
     })
-    if(options && options.detached) {
+    if(options && (options.detached || options.background)) {
       // startup succeeded
       resolve(ps)
     }

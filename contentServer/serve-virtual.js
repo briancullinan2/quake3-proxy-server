@@ -14,6 +14,7 @@ const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
 const { calculateSize } = require('../utilities/watch.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
+const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 
@@ -93,7 +94,7 @@ async function listVirtual(pk3InnerPath, newFile, modname) {
     localDirectory = (localDirectory || []).concat(gamedir || []).filter(filterExtname)
 
     // TODO: listPk3s, overlap all from base directory
-    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
+    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
     for(let i = 0; i < pk3s.length; i++) {
       let pk3Dir = await filteredPk3Directory(pk3InnerPath, pk3s[i], modname)
       directory = (directory || []).concat(pk3Dir || []).filter(file => {
@@ -226,8 +227,7 @@ async function filteredMaps(modname) {
 
 // TODO: fs.createReadStream for loading common downloads into memory
 async function streamImageKey(pk3File, pk3InnerPath, response) {
-  if(!IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
-    || path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
+  if(!IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
     return false
   }
 
@@ -247,14 +247,19 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
   let isOpaque
   try {
     if(pk3File.match(/\.pk3$/i)) {
-      if(!(await fileKey(pk3File, pk3InnerPath))) {
+      let file = await fileKey(pk3File, pk3InnerPath)
+      if(!(file)) {
         for(let i = 0; i < IMAGE_FORMATS.length; i++) {
           let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
-          if(await fileKey(pk3File, altPath)) {
+          file = await fileKey(pk3File, altPath)
+          if(file) {
             pk3InnerPath = altPath
+            break
           }
         }
       }
+    } else {
+      // TODO: try alternate cached formats
     }
     isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
   } catch (e) {
@@ -284,58 +289,54 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
 }
 
 
-async function filteredVirtual(virtual) {
 
-  // TODO: rename entire block to filteredVirtual()
-  if(modname.length <= 1 
-    && WEB_FORMATS.includes(path.extname(virtual.name))) {
-    directory.push(virtual)
+// TODO:
+async function streamAudioKey(pk3File, pk3InnerPath, response) {
+  if(!AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
     return false
   }
-  if(!pk3Name && virtual.name.match(/\.pk3/i)) {
-    if(virtual.name.includes('overridden')) {
-      directory.push(virtual)
+
+  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
+  if(typeof CONVERTED_SOUNDS[strippedPath + '.ogg'] != 'undefined') {
+    response.setHeader('content-type', 'audio/ogg')
+    response.send(CONVERTED_SOUNDS[strippedPath + '.ogg'])
+    return true
+  }
+
+  if(pk3File.match(/\.pk3$/i)) {
+    let file = await fileKey(pk3File, pk3InnerPath)
+    if(!(file)) {
+      for(let i = 0; i < AUDIO_FORMATS.length; i++) {
+        let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), AUDIO_FORMATS[i])
+        file = await fileKey(pk3File, altPath)
+        if(file) {
+          pk3InnerPath = altPath
+          break
+        }
+      }
+    }
+    if(!file) {
       return false
     }
-    // TODO: add both pk3 and pk3dir as (virtual) outputs or precached
-    // TODO: check repackedCache()
-    let isPk3dir = !!virtual.name.match(/\.pk3dir$/gi)
-    directory.push(Object.assign({}, virtual, {
-      name: (isPk3dir ? '(virtual) ' : '') 
-        + virtual.name.replace(path.extname(virtual.name), '.pk3'),
-      exists: !virtual.overridden && !isPk3dir
-    }))
-    directory.push(Object.assign({}, virtual, {
-      name: (!isPk3dir ? '(virtual) ' : '') 
-        + virtual.name.replace(path.extname(virtual.name), '.pk3dir'),
-      exists: !virtual.overridden && isPk3dir,
-      isDirectory: true,
-      link: virtual.link.replace(path.extname(virtual.name), '.pk3dir')
-        + (virtual.link.endsWith('/') ? '' : '/'),
-    }))
-    return false
+  } else {
+    // TODO: try alternate cached formats
   }
-  if(pk3Name) {
-    directory.push(virtual)
-  }
-
-  if(modname.length > 1 && !pk3Name) {
-    directory.unshift({
-      name: 'pak0.pk3dir',
-      exists: true,
-      isDirectory: true,
-      link: path.join('/', modname, 'pak0.pk3dir') + '/',
-      absolute: '(virtual)/.',
-    })
-    directory.unshift({
-      name: 'pak0.pk3',
-      exists: true,
-      isDirectory: false,
-      link: path.join('/', modname, 'pak0.pk3'),
-      absolute: '(virtual)/.',
-    })
-  }
-
+  
+  response.setHeader('content-type', 'audio/ogg')
+  const passThrough = new PassThrough()
+  const readable = Readable.from(passThrough)
+  // force async so other threads can answer page requests during conversion
+  Promise.resolve(new Promise(resolve => {
+    let chunks = []
+    readable.on('data', chunks.push.bind(chunks))
+    readable.on('end', resolve.bind(null, chunks))
+    passThrough.pipe(response)
+    encodeCmd(pk3File, pk3InnerPath, void 0, passThrough)
+  }).then(convertedFile => {
+    CONVERTED_SOUNDS[path.join(pk3File, pk3InnerPath)] = 
+    CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)
+  }))
+  return true
 }
 
 
@@ -399,9 +400,11 @@ async function serveVirtual(request, response, next) {
   if(regularFile && !fs.statSync(regularFile).isDirectory()) {
     if(isAlt && await streamImageKey(regularFile, filename, response)) {
       return
-    } else {
-      return response.sendFile(regularFile)
     }
+    if(isAlt && await streamAudioKey(regularFile, filename, response)) {
+      return
+    }
+    return response.sendFile(regularFile)
   }
 
 
@@ -424,6 +427,9 @@ async function serveVirtual(request, response, next) {
     for(let i = 0; i < pk3s.length; i++) {
       if(isAlt && await streamImageKey(pk3s[i], pk3InnerPath, response)) {
         return
+      } 
+      if(isAlt && await streamAudioKey(pk3s[i], pk3InnerPath, response)) {
+        return
       }
       if(await streamFileKey(pk3s[i], pk3InnerPath, response)) {
         return
@@ -432,6 +438,10 @@ async function serveVirtual(request, response, next) {
   }
   if(pk3File && isAlt
     && await streamImageKey(pk3File, pk3InnerPath, response)) {
+    return
+  }
+  if(pk3File && isAlt
+    && await streamAudioKey(pk3File, pk3InnerPath, response)) {
     return
   }
   if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {

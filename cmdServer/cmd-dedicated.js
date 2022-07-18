@@ -53,7 +53,7 @@ async function dedicatedCmd(startArgs) {
 
 
     ].concat(startArgs), {
-      detached: true,
+      background: true,
       write: passThrough,
     })
 
