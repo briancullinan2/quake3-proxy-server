@@ -230,8 +230,7 @@ function main() {
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
-    createMasters(START_SERVICES.includes('all')
-      || START_SERVICES.includes('mirror'))
+    createMasters(START_SERVICES.includes('mirror'))
   }
 
   if (START_SERVICES.length > 0) {
@@ -240,7 +239,7 @@ function main() {
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('dedicated')) {
-    serveDedicated().catch(e => console.error(e))
+    serveDedicated()
   }
 
   if (START_SERVICES.includes('all')

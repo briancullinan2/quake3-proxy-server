@@ -68,8 +68,10 @@ async function resolveImages(logs, task) {
   }
   let images = imageList[0].split('\n').slice(1, -3)
     .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
-  fs.writeFileSync(path.join(repackedCache()[0], task.test), images)
-
+  if(START_SERVICES.includes('cache')) {
+    fs.writeFileSync(path.join(repackedCache()[0], task.test), images)
+  }
+  
 }
 
 
@@ -150,7 +152,9 @@ async function execLevelshot(mapname) {
     test: path.join('maps', mapname + '-images.txt')
   })
 
-  fs.mkdirSync(path.join(repackedCache()[0], '/maps/'), { recursive: true })
+  if(START_SERVICES.includes('cache')) {
+    fs.mkdirSync(path.join(repackedCache()[0], '/maps/'), { recursive: true })
+  }
 
   for(let i = 0; i < LVL_COMMANDS.length; i++) {
     for(let j = 0; j < caches.length; j++) {
@@ -205,6 +209,7 @@ async function execLevelshot(mapname) {
     '+exec', `".config/levelinfo_${mapname}.cfg"`,
     '+vstr', 'resetLvlshot',
     '+devmap', mapname,
+    '+heartbeat',
     '+vstr', 'lvlshotCommands',
     '+wait', '200', '+quit'
   ]

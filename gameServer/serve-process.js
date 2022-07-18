@@ -1,41 +1,26 @@
 
-const { DED_NAME, watcherPID } = require('../utilities/env.js')
-const { findFile } = require('../assetServer/virtual.js')
+const { watcherPID } = require('../utilities/env.js')
 const { renderIndex } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { EXECUTING_MAPS } = require('../mapServer/serve-lvlshot.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
+const { RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 
-const RESOLVE_DEDICATED = []
-
-
-async function serveDedicated(mapname) {
-  let dedicated = findFile(DED_NAME)
-  if (!dedicated) {
-    throw new Error(DED_NAME + ' not found, build first')
-  }
-  return await new Promise(function (resolve, reject) {
-    let cancelTimer = setTimeout(function () {
-      reject(new Error('Start server timed out.'))
-    }, 3000)
-    try {
-      if (RESOLVE_DEDICATED.length == 0) {
-        console.log('Starting ', dedicated)
-        dedicatedCmd(dedicated, mapname)
-      }
-      RESOLVE_DEDICATED.push(function () {
-        clearTimeout(cancelTimer)
-        console.log('Dedicated started.')
-        resolve()
-      })
-    } catch (e) {
-      console.log(e)
-      clearTimeout(cancelTimer)
-      return reject(e)
+async function serveDedicated() {
+  try {
+    if (RESOLVE_DEDICATED.length == 0) {
+      await dedicatedCmd([
+        '+set', 'dedicated', '2',
+        '+set', 'sv_master2', '"207.246.91.235:27950"',
+        '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
+        '+map', 'lsdm3_v1', 
+        '+wait', '+heartbeat'
+      ])
     }
-  })
+  } catch (e) {
+    console.error(e)
+  }
 }
-
 
 async function serveProcess(request, response, next) {
   // show basic process runner like Github Actions
@@ -108,7 +93,6 @@ function renderProcess(node) {
 }
 
 module.exports = {
-  RESOLVE_DEDICATED,
   serveDedicated,
   serveProcess,
 }

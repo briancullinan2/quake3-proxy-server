@@ -66,6 +66,7 @@ async function serveGamesReal(start, end, isJson, response, next) {
   if (isJson) {
     return response.json(games)
   }
+  console.log(GAME_SERVERS)
   let total = Object.values(GAME_SERVERS).length
   let index = renderIndex(renderList('/games/', games, total, 'game-list'))
   return response.send(index)

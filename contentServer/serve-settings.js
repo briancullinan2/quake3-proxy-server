@@ -95,7 +95,10 @@ function renderFilelist(node) {
   }</a></div>
   <div>${node.size ? formatSize(node.size) : '&nbsp;'}</div>
   <div>${typeof node.mtime != 'undefined'
-      ? `${node.mtime.getMonth() + 1}/${node.mtime.getDate()}/${(node.mtime.getFullYear() + '').substring(2)} 
+      ? `${
+      String(node.mtime.getMonth() + 1).padStart(2, '0')}/${
+      String(node.mtime.getDate()).padStart(2, '0')}/${
+      (node.mtime.getFullYear() + '').substring(2)} 
       ${node.mtime.getHours()}:${node.mtime.getMinutes()}`
       : '&nbsp;'}</div>
   <div>${node.absolute ? path.dirname(node.absolute) 

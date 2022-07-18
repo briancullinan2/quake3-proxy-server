@@ -46,10 +46,27 @@ function filterExtname(ext) {
 }
 
 
-async function listVirtualMap(pk3InnerPath, newFile, modname) {
+async function listVirtualMap(pk3InnerPath, newFile, modname, mapname) {
   // TODO: basically the same thing, but only show files required by 
   //   loading the map, not included in basepack
-  return listVirtual(pk3InnerPath, newFile, modname)
+  //let images = 
+  let directory = await listVirtual(pk3InnerPath, newFile, modname)
+  let sorted = []
+  for(let i = 0; i < directory.length; i++) {
+    let file = directory[i]
+    if(file.isDirectory) {
+      file.link = path.join('/', modname, mapname + '.pk3dir', pk3InnerPath, 
+          path.basename(file.link)) + (file.isDirectory ? '/' : ''),
+
+      sorted.push(file)
+      continue
+    }
+    // TODO: compare with output from map images list
+    if(file) {
+
+    }
+  }
+  return sorted
 }
 
 
@@ -425,6 +442,9 @@ async function serveVirtual(request, response, next) {
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
   let virtualPath
+  if(mapname) {
+    virtualPath = path.join('/', modname, mapname + '.pk3dir', pk3InnerPath)
+  } else
   if(!pk3Name) {
     virtualPath = path.join('/' + modname, filename)
   } else {
@@ -443,7 +463,7 @@ async function serveVirtual(request, response, next) {
 
   let virtual
   if(mapname) {
-    virtual = await listVirtualMap(pk3InnerPath, pk3Name, modname)
+    virtual = await listVirtualMap(pk3InnerPath, pk3Name, modname, mapname)
   } else {
     virtual = await listVirtual(pk3InnerPath, pk3Name, modname)
   }

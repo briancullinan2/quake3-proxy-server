@@ -1,4 +1,6 @@
 
+const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
+const { serveDedicated } = require('../gameServer/serve-process.js')
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
@@ -21,6 +23,7 @@ function sendOOB(socket, message, rinfo) {
 
 
 async function heartbeat(socket, message, rinfo) {
+  console.log('Heartbeat: ', rinfo)
   // wait for a successful infoResponse before confirming
   let info = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
@@ -111,11 +114,7 @@ async function getServers(socket, message, rinfo) {
   if (keys.length == 0
     && (RESOLVE_DEDICATED.length == 0
       || rinfo.address != '127.0.0.1')) {
-    try {
-      await serveDedicated()
-    } catch (e) {
-      console.error(e)
-    }
+    serveDedicated()
     keys = Object.keys(GAME_SERVERS)
   }
 
@@ -187,6 +186,6 @@ module.exports = {
   GAME_SERVERS,
   serveMaster,
   sendOOB,
-
+  serveDedicated,
 }
 

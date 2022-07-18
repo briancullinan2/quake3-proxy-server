@@ -374,6 +374,7 @@ ol.directory-list li {
   text-align: right;
   display: inline-block;
   padding: 0 10px;
+  text-align: left;
 }
 
 .directory-list li>*:nth-child(4) {

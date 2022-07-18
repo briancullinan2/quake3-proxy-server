@@ -55,6 +55,7 @@ async function execCmd(cmd, args, options) {
       timeout: 3600,
       cwd: (options ? options.cwd : null) || process.cwd(),
       shell: options ? options.shell : false || false,
+      detached: options ? options.detached : false || false,
     })
     RUNNING++
     let pid = LIMIT + ':' + ps.pid
@@ -82,13 +83,19 @@ async function execCmd(cmd, args, options) {
       RUNNING--
       delete CHILD_PROCESS[pid]
       updatePageViewers('/process')
-      if(errCode > 0) {
-        console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
-        reject(new Error('Process failed: ' + errCode))
-      } else {
-        resolve(stdout + stderr)
+      if(!options || !options.detached) {
+        if(errCode > 0) {
+          console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
+          reject(new Error('Process failed: ' + errCode))
+        } else {
+          resolve(stdout + stderr)
+        }
       }
     })
+    if(options && options.detached) {
+      // startup succeeded
+      resolve(ps)
+    }
   }))
 }
 
