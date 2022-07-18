@@ -1,3 +1,5 @@
+const path = require('path')
+const fs = require('fs')
 
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
@@ -62,11 +64,11 @@ async function serveGamesRange(request, response, next) {
 
 async function serveGamesReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
-  let games = await Promise.all(Object.values(GAME_SERVERS).slice(start, end).map(game => gameInfo(game)))
+  let games = await Promise.all(Object.values(GAME_SERVERS)
+      .slice(start, end).map(game => gameInfo(game)))
   if (isJson) {
     return response.json(games)
   }
-  console.log(GAME_SERVERS)
   let total = Object.values(GAME_SERVERS).length
   let index = renderIndex(renderList('/games/', games, total, 'game-list'))
   return response.send(index)
@@ -84,8 +86,40 @@ async function serveList(request, response, next) {
 }
 
 
+
+async function serveGameInfo(request, response, next) {
+  let filename = path.basename(request.originalUrl)
+  let isJson = request.originalUrl.match(/\?json/)
+  let modname = path.basename(filename).toLocaleLowerCase()
+
+  return response.send(renderIndex(
+    `<div id="game-info" class="info-layout">
+    <h2>${modname}</h2>
+    <h3>Screenshots</h3>
+    <h3>Links</h3>`
+    + renderList('/menu/', [
+      {
+        title: 'Connect',
+        link: 'index.html?connect%20' + filename,
+      },
+      {
+        title: 'Maps',
+        link: modname + '/?index',
+      },
+      {
+        title: 'Stats',
+        link: modname + '/?index',
+      },
+      {
+        title: 'Assets',
+        link: modname + '/?index',
+      },
+    ], 3)))
+}
+
 module.exports = {
   serveGames,
   serveGamesRange,
   serveList,
+  serveGameInfo,
 }

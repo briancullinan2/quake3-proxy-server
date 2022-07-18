@@ -1,4 +1,4 @@
-const { serveGames, serveGamesRange, serveList } = require('../gameServer/serve-games.js')
+const { serveGames, serveGamesRange, serveList, serveGameInfo } = require('../gameServer/serve-games.js')
 const { serveMaps, serveDownload, serveMapsRange, serveDownloadList } = require('../mapServer/serve-download.js')
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
@@ -36,6 +36,7 @@ function setupExtensions(features, app) {
     app.use(/\/games\/[0-9]+\/[0-9]+/i, serveGamesRange)
     app.use(/\/games\/?$/i, serveGames)
     app.use(/\/servers\/?$/i, serveList)
+    app.use(/\/games\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/i, serveGameInfo)
   }
 
 
@@ -119,10 +120,6 @@ function setupExtensions(features, app) {
 
   return
 
-  if (features.includes('all')
-    || features.includes('live')) {
-    app.use(serveLive) // version.json and /build
-  }
 
   if (features.includes('all')
     || features.includes('maps')) {

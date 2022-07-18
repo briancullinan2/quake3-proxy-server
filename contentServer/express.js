@@ -34,7 +34,7 @@ function createApplication(features) {
 
 
     if (filename.length <= 1 || filename.match('/index.html')) {
-      if(isIndex && (features.includes('all') || features.includes('virtual'))) {
+      if(features.includes('all') || features.includes('virtual')) {
         return next()
       }
       return serveFeatures(features, res)

@@ -70,11 +70,11 @@ async function serveModInfo(request, response, next) {
     + renderList('/menu/', [
       {
         title: 'Play',
-        link: 'quake3e.html?set%20fs_game%20' + modname,
+        link: 'index.html?set%20fs_game%20' + modname,
       },
       {
         title: 'Assets',
-        link: modname,
+        link: modname + '/?index',
       },
     ], 3)))
 }

@@ -146,7 +146,7 @@ async function listVirtual(pk3InnerPath, newFile, modname) {
 
   directory.sort((a, b) => 
     /* (a.name.includes('overridden') ? 0 : 2) - (b.name.includes('overridden') ? 0 : 2)
-    + */ path.basename(a.name).localeCompare(b.name, 'en', {sensitivity: 'base'}))
+    + */ path.basename(a.name).localeCompare(path.basename(b.name), 'en', {sensitivity: 'base'}))
 
   let allLowercase = directory.map(file => path.basename(file.name.toLocaleLowerCase()))
   let uniqueDir = directory.map((file, i) => {
@@ -475,9 +475,6 @@ async function serveVirtual(request, response, next) {
   if (!directory || directory.length <= 0) {
     return next(new Error('Path not found: ' + filename))
   }
-
-  //directory.sort()
-  //console.log(virtualPath)
 
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}

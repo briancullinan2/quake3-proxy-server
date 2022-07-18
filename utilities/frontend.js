@@ -47,6 +47,22 @@ function pageBindings() {
     }, false)
   }
 
+
+  let engineView = document.getElementById('viewport-frame')
+  if(engineView && typeof window.ENGINE == 'undefined') {
+    const ENGINE_SCRIPTS = [
+      'nipplejs.js', 'sys_emgl.js', 'sys_fs.js', 'sys_idbfs.js', 'sys_in.js',
+      'sys_net.js', 'sys_std.js', 'sys_web.js', 'sys_snd.js', 'sys_wasm.js'
+    ]
+    for(let i = 0; i < ENGINE_SCRIPTS.length; i++) {
+      var tag = document.createElement('script');
+      tag.src = window.location.origin + '/' + ENGINE_SCRIPTS[i]
+      document.getElementsByTagName('head')[0].appendChild(tag);
+    }
+    initialize()
+  } else if (engineView) {
+    initialize()
+  }
 }
 
 window.addEventListener('load', (event) => {
@@ -327,7 +343,9 @@ function socketMessage(evt) {
     for(let i = length - 1; i > 0; --i) { // don't remove menu
       document.body.children[i].remove()
     }
-    document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi).exec(evt.data)[1]
+    document.body.innerHTML += (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
+    //document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi)
+        .exec(evt.data)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/gi, '')
     pageBindings()
     return
   } else

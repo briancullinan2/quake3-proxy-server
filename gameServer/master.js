@@ -31,7 +31,7 @@ async function heartbeat(socket, message, rinfo) {
     }, 3000)
     let challenge = buildChallenge()
     let msg = 'getinfo ' + challenge
-    GAME_SERVERS[challenge] = rinfo
+    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
     RESOLVE_INFOS[challenge] = function (info) {
       clearTimeout(cancelTimer)
       resolve(info)
@@ -59,8 +59,9 @@ async function infoResponse(socket, message, rinfo) {
       return obj
     }, {})
 
-  if (typeof GAME_SERVERS[infos.challenge] != 'undefined') {
-    Object.assign(GAME_SERVERS[infos.challenge], infos)
+  // TODO: store by address and port instead of challenge to prevent duplicates
+  if (typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] != 'undefined') {
+    Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
   }
   if (typeof RESOLVE_INFOS[infos.challenge] != 'undefined') {
     RESOLVE_INFOS[infos.challenge](GAME_SERVERS[infos.challenge])
@@ -98,7 +99,7 @@ async function getserversResponse(socket, message, rinfo) {
     if (rinfo.address == '0.0.0.0') {
       rinfo.address = '127.0.0.1'
     }
-    GAME_SERVERS[challenge] = rinfo
+    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
 
     sendOOB(socket, msg, rinfo)
     buffer = buffer.slice(7)
@@ -122,9 +123,6 @@ async function getServers(socket, message, rinfo) {
   keys = []
 
   for (let i = 0; i < keys.length; i++) {
-    if (!GAME_SERVERS.hasOwnProperty(keys[i])) {
-      continue
-    }
     let octets = GAME_SERVERS[keys[i]].address
       .split('.').map(n => parseInt(n, 10))
     msg += '\\'

@@ -177,10 +177,6 @@ function addCommands(features) {
     terminal: false
   })
   process.stdout.write(': ')
-  //console.log = function (...args) {
-  //  REDIRECTED_LOGS.push(args)
-  //previousLog(...args)
-  //}
   console.error = errorConsole
   rl.on('line', function (line) {
     line = line.trim()
@@ -225,8 +221,6 @@ function main() {
   if (fs.existsSync(path.join(__dirname, 'settings.json'))) {
     parseAguments(require(path.join(__dirname, 'settings.json')))
   }
-
-  //console.log(START_SERVICES)
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
