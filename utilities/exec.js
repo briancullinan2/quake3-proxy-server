@@ -9,98 +9,104 @@ const PROCESS_LIMIT = 5
 const CHILD_PROCESS = {}
 
 async function execCmd(cmd, args, options) {
-  const {spawn} = require('child_process')
-  LIMIT++
-  if(RUNNING >= PROCESS_LIMIT) {
+  const { spawn } = require('child_process')
+
+  if (RUNNING >= PROCESS_LIMIT) {
     let waitCounter = 0
     let waitInterval
     try {
       waitInterval = await new Promise(
-      function (resolve, reject) {
-        setInterval(function () {
-          if(waitCounter > PROCESS_TIMEOUT / PROCESS_INTERVAL) {
-            reject(new Error('Too many running processes!'))
-          } else
-          if(RUNNING < PROCESS_LIMIT) {
-            clearInterval(waitInterval)
-            resolve()
-          } else {
-            waitCounter++
-          }
-        }, PROCESS_INTERVAL)
-      })
+        function (resolve, reject) {
+          setInterval(function () {
+            if (options && typeof options.wait == 'number'
+              && waitCounter > options.wait / PROCESS_INTERVAL) {
+              reject(new Error('Too many running processes!'))
+            } else
+              if ((!options || !options.wait) // don't wait indefinitely
+                && waitCounter > PROCESS_TIMEOUT / PROCESS_INTERVAL) {
+                reject(new Error('Too many running processes!'))
+              } else
+                if (RUNNING < PROCESS_LIMIT) {
+                  clearInterval(waitInterval)
+                  resolve()
+                } else {
+                  waitCounter++
+                }
+          }, PROCESS_INTERVAL)
+        })
     } catch (e) {
       console.error(e)
       return
     }
   }
 
+  LIMIT++
   console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   let transform = async function (key, result) {
     return await Promise.resolve(result)
   }
-  if(options && options.once) {
+  if (options && options.once) {
     transform = onceOrTimeout
   }
 
-  return await transform(options && options.once 
+  return await transform(options && options.once
     ? options.once : LIMIT + '', new Promise(
-    function (resolve, reject) {
-    // we expect this to exit unlike the dedicated server
-    if(options && options.later) {
-      CHILD_PROCESS[LIMIT + ':' + 0] = [cmd].concat(args).join(' ')
-      return resolve('')
-    }
-    let ps = spawn(cmd, args, {
-      timeout: options && (options.detached || options.background) ? void 0 : 3600,
-      cwd: (options ? options.cwd : null) || process.cwd(),
-      shell: options ? options.shell : false || false,
-      detached: options ? options.detached : false || false,
-    })
-    RUNNING++
-    let pid = LIMIT + ':' + ps.pid
-    CHILD_PROCESS[pid] = [cmd].concat(args).join(' ')
-    updatePageViewers('/process')
-    let stderr = ''
-    let stdout = ''
-    ps.stderr.on('data', (data) => {
-      stderr += data.toString('utf-8')
-    })
-    if(options && typeof options.write == 'object') {
-      //options.stdout.cork()
-      // TODO: somehow output this to console
-      //ps.stderr.pipe(options.write)
-      ps.stdout.pipe(options.write)
-    }
-    ps.stdout.on('data', (data) => {
-      stdout += data.toString('utf-8')
-    })
-    if(options && options.pipe) {
-      options.pipe.pipe(ps.stdin)
-    }
-    ps.on('close', function (errCode) {
-      if(options && typeof options.write == 'object') {
-        //options.stdout.uncork()
-      }
-      RUNNING--
-      delete CHILD_PROCESS[pid]
-      updatePageViewers('/process')
-      if(!options || (!options.detached && !options.background)) {
-        if(errCode > 0) {
-          console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
-          //console.log(stdout, stderr)
-          reject(new Error('Process failed: ' + errCode + ': ' 
-              + stderr + (!options || !options.write ? stdout : '')))
-        } else {
-          resolve(stdout + stderr)
+      function (resolve, reject) {
+        // we expect this to exit unlike the dedicated server
+        if (options && options.later) {
+          CHILD_PROCESS[LIMIT + ':' + 0] = [cmd].concat(args).join(' ')
+          return resolve('')
         }
-      }
-    })
-    if(options && (options.detached || options.background)) {
-      // startup succeeded
-      resolve(ps)
-    }
-  }))
+        let ps = spawn(cmd, args, {
+          timeout: options && (options.detached || options.background) ? void 0 : 3600,
+          cwd: (options ? options.cwd : null) || process.cwd(),
+          shell: options ? options.shell : false || false,
+          detached: options ? options.detached : false || false,
+        })
+        RUNNING++
+        let pid = LIMIT + ':' + ps.pid
+        CHILD_PROCESS[pid] = [cmd].concat(args).join(' ')
+        updatePageViewers('/process')
+        let stderr = ''
+        let stdout = ''
+        ps.stderr.on('data', (data) => {
+          stderr += data.toString('utf-8')
+        })
+        if (options && typeof options.write == 'object') {
+          //options.stdout.cork()
+          // TODO: somehow output this to console
+          //ps.stderr.pipe(options.write)
+          ps.stdout.pipe(options.write)
+        }
+        ps.stdout.on('data', (data) => {
+          stdout += data.toString('utf-8')
+        })
+        if (options && options.pipe) {
+          options.pipe.pipe(ps.stdin)
+        }
+        ps.on('close', function (errCode) {
+          if (options && typeof options.write == 'object') {
+            //options.stdout.uncork()
+          }
+          RUNNING--
+          delete CHILD_PROCESS[pid]
+          updatePageViewers('/process')
+          if (!options || (!options.detached && !options.background)) {
+            if (errCode > 0) {
+              console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
+              //console.log(stdout, stderr)
+              reject(new Error('Process failed: ' + errCode + ': '
+                + stderr + (!options || !options.write ? stdout : '')))
+            } else {
+              resolve(stdout + stderr)
+            }
+          }
+        })
+        if (options && (options.detached || options.background)) {
+          // startup succeeded
+          resolve(ps)
+        }
+      }))
 }
 
 const EXECUTING_ONCE = {}
@@ -127,14 +133,14 @@ async function onceOrTimeout(key, promise) {
   updatePageViewers('/process')
 
   return await Promise.resolve(promise)
-  .then(result => new Promise(resolve => {
-    resolve(result)
-    for(let i = 1; i < EXECUTING_ONCE[key].length; ++i) {
-      EXECUTING_ONCE[key][i](result)
-    }
-    EXECUTING_ONCE[key].splice(0)
-    updatePageViewers('/process')
-  }))
+    .then(result => new Promise(resolve => {
+      resolve(result)
+      for (let i = 1; i < EXECUTING_ONCE[key].length; ++i) {
+        EXECUTING_ONCE[key][i](result)
+      }
+      EXECUTING_ONCE[key].splice(0)
+      updatePageViewers('/process')
+    }))
 
 }
 

@@ -150,7 +150,7 @@ async function repackBasepack(modname) {
       }
       if (IMAGE_FORMATS.includes(ext)) {
         // TODO: palette file, combine with make-palette
-        paletteNeeded.push(newFile)
+        paletteNeeded.push(file)
 
         if (fs.existsSync(newFile.replace(ext, '.jpg'))) {
           newFile = newFile.replace(ext, '.jpg')
@@ -187,26 +187,38 @@ async function repackBasepack(modname) {
     }
   }
 
-  // TODO: write current pak palette file
-  //let newPalette = await makePalette(paletteNeeded, {})
-  //let paletteFile = path.join(outputDir, 'scripts/palette.shader')
-  //fs.writeFileSync(paletteFile, newPalette)
-  //includedDates[paletteFile] = maxMtime
   let newImages = await Promise.all(allPromises)
   newImages.forEach(newFile => {
     includedDates[newFile] = new Date(maxMtime)
   })
+  // TODO: write current pak palette file
+  //let newPalette = await makePalette(paletteNeeded, {})
+  let paletteFile = path.join(outputDir, 'scripts/palette.shader')
+  //fs.writeFileSync(paletteFile, newPalette)
+  includedDates[paletteFile] = maxMtime
 
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
+  let filesToRemove = []
+  let filesInIndex = {}
   if (fs.existsSync(newZip)) {
-    let existingIndex = getIndex(newZip)
+    let existingIndex = await getIndex(newZip)
     // TODO: remove already up to date items here not to slow down process server
     //   with redundant checks. stat everything as it's added and check if the time 
     //   and size is the exact same
     // TODO: diff / remove / update
-    return newZip
+    for(let i = 0; i < existingIndex.length; i++) {
+      let file = existingIndex[i]
+      let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
+      if(typeof includedDates[newFile] == 'undefined') {
+        filesToRemove.push(file)
+      } else {
+        filesInIndex[newFile] = file
+        delete includedDates[newFile]
+      }
+    }
+    //return newZip
   }
-  await repackPk3(Object.keys(newFile), newZip)
+  await repackPk3(Object.keys(includedDates), newZip)
   return newZip
 }
 

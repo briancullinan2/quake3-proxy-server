@@ -96,5 +96,9 @@ replaces those nasty missing transparent images with solid plain colors to match
 the average of the full (missing) image.
 
 
+## TODO
 
+* Fix engine page transitions using History API
+* Finish links and extra pages
+* 100,000+ world / map compatibility
 

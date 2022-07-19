@@ -8,11 +8,24 @@ const { listPk3s } = require('../assetServer/layered.js')
 
 async function makePalette(paletteNeeded, existingPalette) {
   let newPixels = await Promise.all(paletteNeeded.map(async function (absolute) {
-    let localPath = absolute.replace(/^.*?\.pk3.*?\//gi, '')
-    if(typeof existingPalette[localPath.replace(path.extname(localPath), '').toLocaleLowerCase()] != 'undefined') {
-      return `  palette "${localPath}" ${existingPalette[localPath.replace(path.extname(localPath), '').toLocaleLowerCase()]}`
+    let localPath
+    if(typeof absolute == 'object') {
+      localPath = absolute.name
+    } else {
+      localPath = absolute.replace(/^.*?\.pk3.*?\//gi, '')
     }
-    return `  palette "${localPath}" ${await paletteCmd(absolute)}`
+    let paletteKey = localPath.replace(path.extname(localPath), '').toLocaleLowerCase()
+    if(typeof existingPalette[paletteKey] != 'undefined') {
+      return `  palette "${localPath}" ${existingPalette[paletteKey]}`
+    }
+    let paletteResult
+    try {
+      paletteResult = await paletteCmd(absolute)
+    } catch (e) {
+      console.log(e)
+      return ''
+    }
+    return `  palette "${localPath}" ${paletteResult}`
   }))
   let newPalette = `palettes\/${getGame()}\n
   {\n
