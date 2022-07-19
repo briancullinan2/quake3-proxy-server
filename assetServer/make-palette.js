@@ -7,12 +7,12 @@ const { listPk3s } = require('../assetServer/layered.js')
 
 
 async function makePalette(paletteNeeded, existingPalette) {
-  let newPixels = await Promise.all(paletteNeeded.map(async function (absolute) {
+  let newPixels = await Promise.all(paletteNeeded.map(async function (file) {
     let localPath
-    if(typeof absolute == 'object') {
-      localPath = absolute.name
+    if(typeof file == 'object') {
+      localPath = file.name || file.title
     } else {
-      localPath = absolute.replace(/^.*?\.pk3.*?\//gi, '')
+      localPath = file.replace(/^.*?\.pk3.*?\//gi, '')
     }
     let paletteKey = localPath.replace(path.extname(localPath), '').toLocaleLowerCase()
     if(typeof existingPalette[paletteKey] != 'undefined') {
@@ -20,7 +20,7 @@ async function makePalette(paletteNeeded, existingPalette) {
     }
     let paletteResult
     try {
-      paletteResult = await paletteCmd(absolute)
+      paletteResult = await paletteCmd(file)
     } catch (e) {
       console.log(e)
       return ''
@@ -31,10 +31,6 @@ async function makePalette(paletteNeeded, existingPalette) {
   {\n
     ${newPixels.join('\n')}\n
   }\n`
-  //if(fs.existsSync(path.join(repackedCache(), 'scripts'))) {
-  //  let paletteFile = path.join(repackedCache(), '/scripts/palette.shader')
-  //  fs.writeFileSync(paletteFile, newPalette)
-  //}
   return newPalette
 }
 
@@ -49,7 +45,7 @@ async function rebuildPalette(pk3files) {
     // TODO: automatically add palette and built QVMs
   }
 
-  let paletteFile = path.join(repackedCache(), pk3sOnly[0] + 'dir', '/scripts/palette.shader')
+  let paletteFile = path.join(repackedCache(), 'pak0.pk3dir/scripts/palette.shader')
   fs.mkdirSync(path.dirname(paletteFile), { recursive: true })
   let {paletteNeeded, existingPalette} = await parseExisting(pk3sOnly)
   let newPalette = await makePalette(paletteNeeded, existingPalette)

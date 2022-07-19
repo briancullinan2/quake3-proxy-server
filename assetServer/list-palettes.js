@@ -4,7 +4,7 @@ const path = require('path')
 const { listPk3s } = require('../assetServer/layered.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
-const { IMAGE_FORMATS, getGame, repackedCache } = require('../utilities/env.js')
+const { TEMP_DIR, IMAGE_FORMATS, getGame, repackedCache } = require('../utilities/env.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig
 
@@ -49,38 +49,25 @@ async function parseExisting(pk3files) {
         continue
       }
       if(IMAGE_FORMATS.includes(path.extname(index[i].name))) {
-        let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
         paletteNeeded.push({
           size: index[i].compressedSize,
-          absolute: outFile,
+          absolute: path.join(newFile, index[i].name),
           title: index[i].name,
           levelshot: `${basegame}/pak0.pk3dir/${index[i].name}?alt`,
           link: `${basegame}/pak0.pk3dir/${index[i].name}?alt`,
           pakname:  path.basename(newFile),
         })
         virtualPaths.push(index[i].name.replace(path.extname(index[i].name), '').toLocaleLowerCase())
-        /*
-        if (unsupportedImage(index[i].name)) {
-          if(fs.existsSync(outFile.replace(path.extname(outFile), '.jpg'))) {
-            paletteNeeded.push(outFile.replace(path.extname(outFile), '.jpg'))
-            virtualPaths.push(index[i].name.replace(path.extname(outFile), '.jpg'))
-          } else
-          if(fs.existsSync(outFile.replace(path.extname(outFile), '.png'))) {
-            paletteNeeded.push(outFile.replace(path.extname(outFile), '.png'))
-            virtualPaths.push(index[i].name.replace(path.extname(outFile), '.png'))
-          }
-        }
-        */
       }
     }
 
-    let localShader = path.join(repackedCache(), 
+    let localShader = path.join(TEMP_DIR, basegame, 
         path.basename(newFile) + 'dir', '/scripts/palette.shader')
     if(fs.existsSync(localShader)) {
       existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
     }
   }
-  let localShader = path.join(repackedCache(), '/scripts/palette.shader')
+  let localShader = path.join(TEMP_DIR, basegame, 'pak0.pk3dir', '/scripts/palette.shader')
   if(fs.existsSync(localShader)) {
     existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
   }

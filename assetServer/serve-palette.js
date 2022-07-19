@@ -38,6 +38,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
   let existingNeeded = paletteNeeded.filter(shader => 
     typeof existingPalette[shader.title.replace(path
       .extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
+  console.log(palettes.concat(existingNeeded))
   CACHED_PALETTE = await makePalette(palettes.concat(existingNeeded), existingPalette)
 
 
@@ -93,8 +94,7 @@ async function formatPalette(shader, existingPalette) {
     existingPalette[paletteKey] = palette
   }
   let formattedPalette = palette.split(',')
-  formattedPalette[3] = Math.round(parseInt(formattedPalette[3])
-    / 255.0 * 10.0) / 10.0
+  formattedPalette[3] = Math.round(parseInt(formattedPalette[3]) / 255.0 * 10.0) / 10.0
   formattedPalette = formattedPalette.join(',')
   shader.palette = formattedPalette
 }

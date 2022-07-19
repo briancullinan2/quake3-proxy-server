@@ -99,6 +99,7 @@ the average of the full (missing) image.
 ## TODO
 
 * Fix engine page transitions using History API
+* Engine cmd server and discord integration
 * Finish links and extra pages
 * 100,000+ world / map compatibility
 
