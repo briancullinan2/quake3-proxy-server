@@ -12,6 +12,7 @@ let FS_BASEGAME = 'baseq3'
 let FS_BASEPATH = ''
 let STEAMPATH = ''
 
+const TEMP_DIR = os.tmpdir()
 const WEB_DIRECTORY = path.resolve(__dirname)
 const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
 const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
@@ -145,6 +146,7 @@ const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
 
 
 module.exports = {
+  TEMP_DIR,
   WEB_FORMATS,
   SUPPORTED_FORMATS,
   IMAGE_FORMATS,

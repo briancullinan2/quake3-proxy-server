@@ -6,7 +6,7 @@ const { execCmd } = require('../utilities/exec.js')
 async function zipCmd(fullPath, update, newZip) {
   let newDir = fullPath.replace(/\.pk3.*/gi, '.pk3dir')
   let pk3InnerPath = fullPath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
-  let startArgs = []
+  let startArgs = ['-q']
   if(update) {
     startArgs.push('-u')
   }
