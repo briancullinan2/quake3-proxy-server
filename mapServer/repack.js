@@ -10,6 +10,9 @@ const { listPk3s } = require('../assetServer/layered.js')
 const { streamFile, getIndex } = require('../utilities/zip.js')
 const { zipCmd } = require('../cmdServer/cmd-zip.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
+const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
+const { convertCmd } = require('../cmdServer/cmd-convert.js')
+
 
 
 async function repackPk3(directory, newZip) {
@@ -93,20 +96,45 @@ async function repackBasepack(modname) {
         continue
       }
 
-      if(file.compressedSize < 128 * 1024 || file.size < 256 * 1024) {
+      // big enough to include icons
+      if(file.compressedSize < 64 * 1024 
+          || file.size < 128 * 1024
+          || path.extname(file.name) == '.qvm') 
+      {
         if(!fs.existsSync(path.dirname(newFile))) {
           fs.mkdirSync(path.dirname(newFile), {recursive: true})
         }
+        if(IMAGE_FORMATS.includes(ext)) {
+          if(fs.existsSync(newFile.replace(ext, '.jpg'))) {
+            newFile = newFile.replace(ext, '.jpg')
+          } else
+          if(fs.existsSync(newFile.replace(ext, '.png'))) {
+            newFile = newFile.replace(ext, '.png')
+          }
+        }
         if(!fs.existsSync(newFile)) {
-          let writeStream = fs.createWriteStream(newFile)
-          await streamFile(file, writeStream)
-          writeStream.close()
+          if(IMAGE_FORMATS.includes(ext)) {
+            let isOpaque = await opaqueCmd(pk3s[i], file.name)
+            let newExt = isOpaque ? '.jpg' : '.png'
+            let writeStream = fs.createWriteStream(newFile.replace(ext, newExt))
+            await convertCmd(pk3s[i], file.name, void 0, writeStream, newExt)
+            writeStream.close()
+          } else {
+            let writeStream = fs.createWriteStream(newFile)
+            await streamFile(file, writeStream)
+            writeStream.close()
+          }
         }
         included.push(newFile.toLocaleLowerCase())
       } else {
         excluded.push(file.name.toLocaleLowerCase())
       }
+
+      if(IMAGE_FORMATS.includes(ext)) {
+        // TODO: palette file
+      }
     }
+
   }
 
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
