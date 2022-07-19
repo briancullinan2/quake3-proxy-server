@@ -5,24 +5,29 @@ const { PassThrough } = require('stream')
 
 const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
-const { streamFileKey } = require('../utilities/zip.js')
+const { streamFileKey, streamFile } = require('../utilities/zip.js')
 
 const CONVERTED_IMAGES = {}
 
 async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt) {
 
   let unsupportedExt = path.extname(unsupportedFormat)
-  if (imagePath.match(/\.pk3$/i)) {
-    console.log('Converting: ', imagePath, unsupportedFormat)
+  if (typeof imagePath == 'object' || imagePath.match(/\.pk3$/i)) {
+    console.log('Converting: ', unsupportedFormat)
     let passThrough = new PassThrough()
-    streamFileKey(imagePath, unsupportedFormat, passThrough)
+    if(typeof imagePath == 'object') {
+      streamFile(imagePath, passThrough)
+    } else {
+      streamFileKey(imagePath, unsupportedFormat, passThrough)
+    }
     return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
       quality ? quality : '20%', '-auto-orient',
       unsupportedExt.substring(1) + ':-', 
       typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
     ], {
-      once: path.join(imagePath, unsupportedFormat),
+      once: path.join(typeof imagePath == 'object' 
+        ? imagePath.file : imagePath, unsupportedFormat),
       write: typeof outFile == 'string' ? void 0 : outFile,
       pipe: passThrough,
       later: !START_SERVICES.includes('all')

@@ -6,8 +6,8 @@ const { paletteCmd } = require('../cmdServer/cmd-palette.js')
 const { listPk3s } = require('../assetServer/layered.js')
 
 
-async function makePalette(palettesNeeded, existingPalette) {
-  let newPixels = await Promise.all(palettesNeeded.map(async function ({absolute}) {
+async function makePalette(paletteNeeded, existingPalette) {
+  let newPixels = await Promise.all(paletteNeeded.map(async function (absolute) {
     let localPath = absolute.replace(/^.*?\.pk3.*?\//gi, '')
     if(typeof existingPalette[localPath.replace(path.extname(localPath), '').toLocaleLowerCase()] != 'undefined') {
       return `  palette "${localPath}" ${existingPalette[localPath.replace(path.extname(localPath), '').toLocaleLowerCase()]}`
@@ -18,10 +18,10 @@ async function makePalette(palettesNeeded, existingPalette) {
   {\n
     ${newPixels.join('\n')}\n
   }\n`
-  if(fs.existsSync(path.join(repackedCache(), 'scripts'))) {
-    let paletteFile = path.join(repackedCache(), '/scripts/palette.shader')
-    fs.writeFileSync(paletteFile, newPalette)
-  }
+  //if(fs.existsSync(path.join(repackedCache(), 'scripts'))) {
+  //  let paletteFile = path.join(repackedCache(), '/scripts/palette.shader')
+  //  fs.writeFileSync(paletteFile, newPalette)
+  //}
   return newPalette
 }
 
@@ -38,8 +38,8 @@ async function rebuildPalette(pk3files) {
 
   let paletteFile = path.join(repackedCache(), pk3sOnly[0] + 'dir', '/scripts/palette.shader')
   fs.mkdirSync(path.dirname(paletteFile), { recursive: true })
-  let {palettesNeeded, existingPalette} = await parseExisting(pk3sOnly)
-  let newPalette = await makePalette(palettesNeeded, existingPalette)
+  let {paletteNeeded, existingPalette} = await parseExisting(pk3sOnly)
+  let newPalette = await makePalette(paletteNeeded, existingPalette)
   fs.writeFileSync(paletteFile, newPalette)
   // TODO: get complete list of images no matter the size from index, ugh, again
 

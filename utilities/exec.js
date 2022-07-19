@@ -35,7 +35,7 @@ async function execCmd(cmd, args, options) {
     }
   }
 
-  //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+  console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   let transform = async function (key, result) {
     return await Promise.resolve(result)
   }
@@ -88,7 +88,9 @@ async function execCmd(cmd, args, options) {
       if(!options || (!options.detached && !options.background)) {
         if(errCode > 0) {
           console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
-          reject(new Error('Process failed: ' + errCode))
+          //console.log(stdout, stderr)
+          reject(new Error('Process failed: ' + errCode + ': ' 
+              + stderr + (!options || !options.write ? stdout : '')))
         } else {
           resolve(stdout + stderr)
         }

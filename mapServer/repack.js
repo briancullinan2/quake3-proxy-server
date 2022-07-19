@@ -12,19 +12,28 @@ const { zipCmd } = require('../cmdServer/cmd-zip.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { convertCmd } = require('../cmdServer/cmd-convert.js')
+const { encodeCmd } = require('../cmdServer/cmd-encode.js')
+const { makePalette } = require('../assetServer/make-palette.js')
 
 
 
 async function repackPk3(directory, newZip) {
   let first = true
   for (let i = 0; i < directory.length; i++) {
-    if(await unsupportedImage(directory[i])) {
+    if (await unsupportedImage(directory[i])) {
       continue
     }
-    if(await unsupportedAudio(directory[i])) {
+    if (await unsupportedAudio(directory[i])) {
       continue
     }
-    await zipCmd(directory[i], !first, newZip)
+    try {
+      console.log('Adding: ', directory[i])
+      await zipCmd(directory[i], !first, newZip)
+    } catch (e) {
+      if (!e.message.includes('up to date')) {
+        throw e
+      }
+    }
     first = false
   }
   return newZip
@@ -40,109 +49,164 @@ async function repackBasemap(mapname) {
   let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
 
   // extract the BSP because we might change it anyways
-  if(!fs.existsSync(bspFile)) {
+  if (!fs.existsSync(bspFile)) {
     fs.mkdirSync(path.dirname(bspFile), { recursive: true })
     const file = fs.createWriteStream(bspFile)
-    if(!(await streamFileKey(newFile, `maps/${mapname}.bsp`, file))) {
+    if (!(await streamFileKey(newFile, `maps/${mapname}.bsp`, file))) {
       throw new Error('File not found: ' + `${newFile}/maps/${mapname}.bsp`)
     }
     file.close()
   }
 
-  let mapInfo
-  try {
-    mapInfo = await getMapInfo(mapname)
-  } catch (e) {
-    console.error(e)
-  }
+  // TODO: get shader/sound/model information using RPC
 
-  let {palettesNeeded, existingPalette} = await parseExisting()
+
+  //let mapInfo
+  //try {
+  //  mapInfo = await getMapInfo(mapname)
+  //} catch (e) {
+  //  console.error(e)
+  //}
+
+  //let {paletteNeeded, existingPalette} = await parseExisting()
   console.log(mapInfo.images)
+  // TODO: include base files less than 512KB? and >= 128KB
+  // TODO: include startup sounds?
+  // TODO: include base models
 
-  return path.join(repackedCache(), mapname + '.pk3')
+  //return path.join(repackedCache(), mapname + '.pk3')
 }
 
 
+async function processImage(file, newFile) {
+  let ext = path.extname(file.name.toLowerCase())
+  if (IMAGE_FORMATS.includes(ext)) {
+    let isOpaque = await opaqueCmd(file, file.name)
+    let newExt = isOpaque ? '.jpg' : '.png'
+    newFile = newFile.replace(ext, newExt)
+    let writeStream = fs.createWriteStream(newFile.replace(ext, newExt))
+    await convertCmd(file, file.name, void 0, writeStream, newExt)
+    writeStream.close()
+  } else
+    if (AUDIO_FORMATS.includes(ext)) {
+      // TODO: if AUDIO_FORMATS
+      newFile = newFile.replace(ext, '.ogg')
+      let writeStream = fs.createWriteStream(newFile.replace(ext, '.ogg'))
+      await encodeCmd(file, file.name, void 0, writeStream)
+      writeStream.close()
+    } else {
+      let writeStream = fs.createWriteStream(newFile)
+      await streamFile(file, writeStream)
+      writeStream.close()
+    }
+  return newFile
+}
+
+
+// TODO: convert this function to work on any pack, basepack, basemap, or mappack
 async function repackBasepack(modname) {
-  if(!modname) {
+  if (!modname) {
     modname = getGame()
   }
   let outputDir = path.join(TEMP_DIR, modname, 'pak0.pk3dir')
-  if(!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, {recursive: true})
+  console.log('Using temporary: ' + outputDir)
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true })
   }
-  let excluded = []
-  let included = []
-  let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-  let indexes = await Promise.all(pk3s.map(getIndex))
-  for(let i = 0; i < indexes.length; i++) {
-    let index = indexes[i]
-    for(let j = 0; j < index.length; j++) {
-      let file = index[j]
-      let newFile = path.join(outputDir, file.name)
-      if(file.isDirectory) {
-        continue
-      }
-      if(excluded.includes(file.name.toLocaleLowerCase())
-        || included.includes(newFile.toLocaleLowerCase())
-      ) {
-        continue
-      }
 
+  let excludedSizes = {}
+  let includedDates = {}
+  let paletteNeeded = []
+  let allPromises = []
+  let maxMtime = 0
+
+  let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
+
+  for (let i = 0; i < pk3s.length; i++) {
+    let index = await getIndex(pk3s[i])
+    for (let j = 0; j < index.length; j++) {
+      let file = index[j]
+      let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
+
+      if (file.isDirectory) {
+        continue
+      }
+      if (typeof excludedSizes[file.name.toLocaleLowerCase()] != 'undefined') {
+        continue
+      }
       let ext = path.extname(file.name.toLowerCase())
-      if(!SUPPORTED_FORMATS.includes(ext)
+      if (!SUPPORTED_FORMATS.includes(ext)
         && !IMAGE_FORMATS.includes(ext)
         && !AUDIO_FORMATS.includes(ext)) {
         continue
       }
 
+      // TODO: move size check below image format conversion?
       // big enough to include icons
-      if(file.compressedSize < 64 * 1024 
-          || file.size < 128 * 1024
-          || path.extname(file.name) == '.qvm') 
-      {
-        if(!fs.existsSync(path.dirname(newFile))) {
-          fs.mkdirSync(path.dirname(newFile), {recursive: true})
-        }
-        if(IMAGE_FORMATS.includes(ext)) {
-          if(fs.existsSync(newFile.replace(ext, '.jpg'))) {
-            newFile = newFile.replace(ext, '.jpg')
-          } else
-          if(fs.existsSync(newFile.replace(ext, '.png'))) {
+      // still do conversions for images and audio because we will need it
+      //   the deployment.
+      if (!fs.existsSync(path.dirname(newFile))) {
+        fs.mkdirSync(path.dirname(newFile), { recursive: true })
+      }
+      if (IMAGE_FORMATS.includes(ext)) {
+        // TODO: palette file, combine with make-palette
+        paletteNeeded.push(newFile)
+
+        if (fs.existsSync(newFile.replace(ext, '.jpg'))) {
+          newFile = newFile.replace(ext, '.jpg')
+        } else
+          if (fs.existsSync(newFile.replace(ext, '.png'))) {
             newFile = newFile.replace(ext, '.png')
           }
+      }
+      // TODO: if AUDIO_FORMATS
+      if (AUDIO_FORMATS.includes(ext)) {
+        if (fs.existsSync(newFile.replace(ext, '.ogg'))) {
+          newFile = newFile.replace(ext, '.ogg')
         }
-        if(!fs.existsSync(newFile)) {
-          if(IMAGE_FORMATS.includes(ext)) {
-            let isOpaque = await opaqueCmd(pk3s[i], file.name)
-            let newExt = isOpaque ? '.jpg' : '.png'
-            let writeStream = fs.createWriteStream(newFile.replace(ext, newExt))
-            await convertCmd(pk3s[i], file.name, void 0, writeStream, newExt)
-            writeStream.close()
-          } else {
-            let writeStream = fs.createWriteStream(newFile)
-            await streamFile(file, writeStream)
-            writeStream.close()
-          }
-        }
-        included.push(newFile.toLocaleLowerCase())
-      } else {
-        excluded.push(file.name.toLocaleLowerCase())
       }
 
-      if(IMAGE_FORMATS.includes(ext)) {
-        // TODO: palette file
+      if (!fs.existsSync(newFile)) {
+        allPromises.push(Promise.resolve(processImage(file, newFile)))
+      } else {
+        // TODO: statSync() for update checking
+      }
+      if(file.time > maxMtime) {
+        maxMtime = file.time
+      }
+
+      if (file.compressedSize < 64 * 1024
+        || file.size < 128 * 1024
+        || path.extname(file.name) == '.qvm') {
+        if (typeof includedDates[newFile] == 'undefined') {
+          includedDates[newFile] = file.time
+        }
+      } else {
+        excludedSizes[file.name.toLocaleLowerCase()] = file.size
       }
     }
-
   }
 
+  // TODO: write current pak palette file
+  //let newPalette = await makePalette(paletteNeeded, {})
+  //let paletteFile = path.join(outputDir, 'scripts/palette.shader')
+  //fs.writeFileSync(paletteFile, newPalette)
+  //includedDates[paletteFile] = maxMtime
+  let newImages = await Promise.all(allPromises)
+  newImages.forEach(newFile => {
+    includedDates[newFile] = new Date(maxMtime)
+  })
+
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
-  if(fs.existsSync(newZip) ) {
+  if (fs.existsSync(newZip)) {
+    let existingIndex = getIndex(newZip)
+    // TODO: remove already up to date items here not to slow down process server
+    //   with redundant checks. stat everything as it's added and check if the time 
+    //   and size is the exact same
     // TODO: diff / remove / update
     return newZip
   }
-  await repackPk3(included, newZip)
+  await repackPk3(Object.keys(newFile), newZip)
   return newZip
 }
 

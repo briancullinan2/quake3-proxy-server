@@ -33,7 +33,7 @@ async function parseExisting(pk3files) {
     // TODO: automatically add palette and built QVMs
   }
   let existingPalette = {}
-  let palettesNeeded = []
+  let paletteNeeded = []
   let virtualPaths = []
   for(let j = 0; j < pk3files.length; j++) {
     let newFile = findFile(path.join(getGame(), path.basename(pk3files[j])))
@@ -50,7 +50,7 @@ async function parseExisting(pk3files) {
       }
       if(IMAGE_FORMATS.includes(path.extname(index[i].name))) {
         let outFile = path.join(repackedCache(), path.basename(newFile) + 'dir', index[i].name)
-        palettesNeeded.push({
+        paletteNeeded.push({
           size: index[i].compressedSize,
           absolute: outFile,
           title: index[i].name,
@@ -62,11 +62,11 @@ async function parseExisting(pk3files) {
         /*
         if (unsupportedImage(index[i].name)) {
           if(fs.existsSync(outFile.replace(path.extname(outFile), '.jpg'))) {
-            palettesNeeded.push(outFile.replace(path.extname(outFile), '.jpg'))
+            paletteNeeded.push(outFile.replace(path.extname(outFile), '.jpg'))
             virtualPaths.push(index[i].name.replace(path.extname(outFile), '.jpg'))
           } else
           if(fs.existsSync(outFile.replace(path.extname(outFile), '.png'))) {
-            palettesNeeded.push(outFile.replace(path.extname(outFile), '.png'))
+            paletteNeeded.push(outFile.replace(path.extname(outFile), '.png'))
             virtualPaths.push(index[i].name.replace(path.extname(outFile), '.png'))
           }
         }
@@ -85,7 +85,7 @@ async function parseExisting(pk3files) {
     existingPalette = Object.assign({}, await parsePalette(localShader), existingPalette)
   }
   return {
-    palettesNeeded,
+    paletteNeeded,
     existingPalette
   }
 }

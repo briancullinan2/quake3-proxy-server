@@ -11,8 +11,9 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
   let isOpaque
 
   let unsupportedExt = path.extname(unsupportedFormat)
-  if (imagePath.match(/\.pk3$/i)) {
-    let file = await fileKey(imagePath, unsupportedFormat)
+  if (typeof imagePath == 'object' || imagePath.match(/\.pk3$/i)) {
+    let file = typeof imagePath == 'object' 
+        ? imagePath : await fileKey(imagePath, unsupportedFormat)
     if (file) {
       let passThrough = new PassThrough()
       isOpaque = (await Promise.all([
@@ -20,7 +21,7 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
         execCmd('identify', ['-format', '\'%[opaque]\'',
           unsupportedExt.substring(1) + ':-'], { 
             pipe: passThrough,
-            once: path.join(imagePath, unsupportedFormat),
+            once: path.join(file.file, unsupportedFormat),
           })
       ]))[1]
     } else {

@@ -12,7 +12,7 @@ const { parsePalette } = require('../assetServer/list-palettes.js')
 let CACHED_PALETTE = ''
 
 async function servePaletteReal(start, end, filterMap, isJson, response) {
-  let { palettesNeeded, existingPalette } = await parseExisting()
+  let { paletteNeeded, existingPalette } = await parseExisting()
   if(CACHED_PALETTE) {
     existingPalette = Object.assign({}, await parsePalette(CACHED_PALETTE), existingPalette)
   }
@@ -27,15 +27,15 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
       console.error(e)
     }
     console.log(mapInfo.images)
-    palettesNeeded = palettesNeeded.filter()
+    paletteNeeded = paletteNeeded.filter()
   }
-  let palettes = palettesNeeded.slice(start, end)
+  let palettes = paletteNeeded.slice(start, end)
   await Promise.all(palettes.map(shader =>
     formatPalette(shader, existingPalette)))
 
 
   // only palettize the current range, not to do too much work per request
-  let existingNeeded = palettesNeeded.filter(shader => 
+  let existingNeeded = paletteNeeded.filter(shader => 
     typeof existingPalette[shader.title.replace(path
       .extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
   CACHED_PALETTE = await makePalette(palettes.concat(existingNeeded), existingPalette)
@@ -45,7 +45,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
     return response.json(palettes)
   }
 
-  let total = palettesNeeded.length
+  let total = paletteNeeded.length
   let index = renderIndex(renderList('/palette/', palettes, total))
   return response.send(index)
 }

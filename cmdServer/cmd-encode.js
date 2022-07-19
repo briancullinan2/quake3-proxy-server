@@ -14,8 +14,9 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
   let file
   let passThrough
   let startArgs = []
-  if(audioPath.match(/\.pk3$/i)) {
-    file = await fileKey(audioPath, unsupportedFormat)
+  if(typeof audioPath == 'object' || audioPath.match(/\.pk3$/i)) {
+    file = typeof audioPath == 'object' 
+        ? file : await fileKey(audioPath, unsupportedFormat)
     if(file) {
       passThrough = new PassThrough()
     } else {
@@ -56,6 +57,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
     logs = (await Promise.all([
       streamFile(file, passThrough),
       execCmd(cmd, startArgs, {
+        once: path.join(file.file, unsupportedFormat),
         write: typeof newPath == 'string' ? void 0 : newPath,
         pipe: passThrough
       })
