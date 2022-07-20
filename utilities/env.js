@@ -8,6 +8,7 @@ const process = require('process')
 const EXE_NAME = 'quake3e' + (os.platform() == 'win32' ? '.exe' : '')
 const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
+//let FS_BASEGAME = 'demoq3'
 let FS_BASEGAME = 'baseq3'
 let FS_BASEPATH = ''
 let STEAMPATH = ''

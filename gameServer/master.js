@@ -5,13 +5,14 @@ const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
 const { GAME_SERVERS } = require('../gameServer/processes.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 const UDP_SOCKETS = []
 const MASTER_PORTS = [27950]
 const INFO_TIMEOUT = 5000
 const MASTER_SERVICE = [
   'getserversResponse', 'getservers ', 'heartbeat ', 'infoResponse\n',
-  'subscribe', 'statusResponse\n'
+  'subscribe', 'statusResponse\n', 'print',
 ]
 const RESOLVE_INFOS = {}
 const RESOLVE_STATUS = {}
@@ -35,8 +36,13 @@ async function heartbeat(socket, message, rinfo) {
     let cancelTimer = setTimeout(function () {
       reject(new Error('Heartbeat getinfo timed out.'))
     }, INFO_TIMEOUT)
-    let challenge = buildChallenge()
-    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
+      GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    }
+    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
+      GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
+    }
+    let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
     RESOLVE_INFOS[challenge] = function (info) {
       clearTimeout(cancelTimer)
       resolve(info)
@@ -63,7 +69,7 @@ async function statusResponse(socket, message, rinfo) {
   }
   let playerStrings = Array.from(message)
     .map(c => String.fromCharCode(c)).join('').split('\n').slice(1)
-  for(let i = 0; i < playerStrings.length; i++) {
+  for (let i = 0; i < playerStrings.length; i++) {
     // TODO: parsePlayer()
   }
   console.log(infos, playerStrings)
@@ -113,7 +119,13 @@ async function getserversResponse(socket, message, rinfo) {
       && buffer[2] == 'O'.charCodeAt(0)
       && buffer[3] == 'T'.charCodeAt(0))) {
     // validate server info
-    let challenge = buildChallenge()
+    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
+      GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    }
+    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
+      GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
+    }
+    let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
     let msg = 'getinfo ' + challenge
     let rinfo = {
       address: buffer[1] + '.' + buffer[2] + '.' + buffer[3] + '.' + buffer[4],
@@ -125,7 +137,6 @@ async function getserversResponse(socket, message, rinfo) {
     if (rinfo.address == '0.0.0.0') {
       rinfo.address = '127.0.0.1'
     }
-    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
 
     sendOOB(socket, msg, rinfo)
     buffer = buffer.slice(7)
@@ -156,6 +167,24 @@ async function getServers(socket, message, rinfo) {
   msg += '\\EOT'
   sendOOB(socket, msg, rinfo)
 }
+
+
+async function print(socket, message, rinfo) {
+  let server = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
+  if(!server) {
+    // ignore?
+    return
+  }
+  let lines = Array.from(message)
+    .map(c => String.fromCharCode(c)).join('')
+  if(typeof server.logs == 'undefined') {
+    server.logs = ''
+  }
+  server.logs += lines + '\n'
+  console.log('ENGINE: print ', lines)
+  updatePageViewers('/rcon')
+}
+
 
 async function serveMaster(socket, message, rinfo) {
   let buffer
@@ -194,7 +223,10 @@ async function serveMaster(socket, message, rinfo) {
             } else
               if (i == 5) {
                 await statusResponse(socket, buffer, rinfo)
-              } // else
+              } else
+                if (i == 6) {
+                  await print(socket, buffer, rinfo)
+                } // else
     return
   }
 

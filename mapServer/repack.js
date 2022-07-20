@@ -14,6 +14,7 @@ const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { convertCmd } = require('../cmdServer/cmd-convert.js')
 const { encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { makePalette } = require('../assetServer/make-palette.js')
+const { parsePalette } = require('../assetServer/list-palettes.js')
 
 
 
@@ -81,18 +82,18 @@ async function repackBasemap(mapname) {
 async function processImage(file, newFile) {
   let ext = path.extname(file.name.toLowerCase())
   if (IMAGE_FORMATS.includes(ext)) {
-    let isOpaque = await opaqueCmd(file, file.name)
+    let isOpaque = await opaqueCmd(file, file.name, true)
     let newExt = isOpaque ? '.jpg' : '.png'
     newFile = newFile.replace(ext, newExt)
     let writeStream = fs.createWriteStream(newFile.replace(ext, newExt))
-    await convertCmd(file, file.name, void 0, writeStream, newExt)
+    await convertCmd(file, file.name, void 0, writeStream, newExt, true)
     writeStream.close()
   } else
     if (AUDIO_FORMATS.includes(ext)) {
       // TODO: if AUDIO_FORMATS
       newFile = newFile.replace(ext, '.ogg')
       let writeStream = fs.createWriteStream(newFile.replace(ext, '.ogg'))
-      await encodeCmd(file, file.name, void 0, writeStream)
+      await encodeCmd(file, file.name, void 0, writeStream, true)
       writeStream.close()
     } else {
       let writeStream = fs.createWriteStream(newFile)
@@ -101,6 +102,7 @@ async function processImage(file, newFile) {
     }
   return newFile
 }
+
 
 
 // TODO: convert this function to work on any pack, basepack, basemap, or mappack
@@ -112,6 +114,12 @@ async function repackBasepack(modname) {
   console.log('Using temporary: ' + outputDir)
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true })
+  }
+
+  let paletteFile = path.join(outputDir, 'scripts/palette.shader')
+  let existingPalette = {}
+  if(fs.existsSync(paletteFile)) {
+    existingPalette = parsePalette(paletteFile)
   }
 
   let excludedSizes = {}
@@ -189,12 +197,12 @@ async function repackBasepack(modname) {
 
   let newImages = await Promise.all(allPromises)
   newImages.forEach(newFile => {
-    includedDates[newFile] = new Date(maxMtime)
+    includedDates[newFile] = maxMtime
   })
   // TODO: write current pak palette file
-  //let newPalette = await makePalette(paletteNeeded, {})
-  let paletteFile = path.join(outputDir, 'scripts/palette.shader')
-  //fs.writeFileSync(paletteFile, newPalette)
+  // TODO: need to reload current palette to not duplicate work
+  let newPalette = await makePalette(paletteNeeded, existingPalette)
+  fs.writeFileSync(paletteFile, newPalette)
   includedDates[paletteFile] = maxMtime
 
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
@@ -211,6 +219,9 @@ async function repackBasepack(modname) {
       let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
       if(typeof includedDates[newFile] == 'undefined') {
         filesToRemove.push(file)
+      } else if(fs.statSync(newFile).mtime.getTime() > file.mtime) {
+        filesInIndex[newFile] = file
+        // update the zip file
       } else {
         filesInIndex[newFile] = file
         delete includedDates[newFile]

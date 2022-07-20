@@ -331,7 +331,7 @@ async function streamAudioKey(pk3File, pk3InnerPath, response) {
     readable.on('data', chunks.push.bind(chunks))
     readable.on('end', resolve.bind(null, chunks))
     passThrough.pipe(response)
-    encodeCmd(pk3File, pk3InnerPath, void 0, passThrough)
+    encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, false)
   }).then(convertedFile => {
     CONVERTED_SOUNDS[path.join(pk3File, pk3InnerPath)] = 
     CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)

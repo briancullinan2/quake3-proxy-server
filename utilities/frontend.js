@@ -110,7 +110,7 @@ async function initEvents() {
 
   document.addEventListener('keypress', async function (evt) {
     if(evt.target.id == 'rcon-command'
-      && evt.code == 'Enter'
+      && evt.keyCode == 13
       && evt.target.value.endsWith('\n')) {
       evt.preventDefault()
       let response = await fetch(window.location.origin + window.location.pathname, {

@@ -151,7 +151,7 @@ async function serveRepacked(request, response, next) {
       readable.on('data', chunks.push.bind(chunks))
       readable.on('end', resolve.bind(null, chunks))
       passThrough.pipe(response)
-      encodeCmd(newFile, pk3InnerPath, void 0, passThrough)
+      encodeCmd(newFile, pk3InnerPath, void 0, passThrough, false)
     }).then(convertedFile => {
       CONVERTED_SOUNDS[path.join(newFile, pk3InnerPath)] = 
       CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)

@@ -6,7 +6,7 @@ const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
 const { EXECUTING_MAPS, RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { GAME_SERVERS, SERVER_LOGS } = require('../gameServer/processes.js')
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 async function serveDedicated() {
@@ -19,17 +19,24 @@ async function serveDedicated() {
         '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
         '+sets', 'qps_serverId', challenge,
         '+set', 'rconPassword2', 'password1',
+        '+set', 'sv_dlURL', '//maps/repacked/%1',
         '+map', 'lsdm3_v1', 
         '+wait', '300', '+heartbeat',
       ], function (lines) {
-        SERVER_LOGS[challenge] += lines + '\n'
-        updatePageViewers('/rcon')
+        let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
+        if(!server) {
+          console.log(lines)
+        } else {
+          if(typeof server.logs == 'undefined') {
+            server.logs = ''
+          }
+          server.logs += lines + '\n'
+          updatePageViewers('/rcon')
+        }
       })
       ps.on('close', function () {
-        delete SERVER_LOGS[challenge]
         delete EXECUTING_MAPS[challenge]
       })
-      SERVER_LOGS[challenge] = ''
       EXECUTING_MAPS[challenge] = {
         challenge: challenge,
         pid: ps.pid,
@@ -73,7 +80,7 @@ async function serveProcess(request, response, next) {
     return {
       name: server.mapname,
       assignments: pid,
-      link: path.join('/games/', serverInfo.address + ':' + serverInfo.port)
+      link: path.join('/rcon/', serverInfo.address + ':' + serverInfo.port)
     }
   })
   .filter(zip => zip)

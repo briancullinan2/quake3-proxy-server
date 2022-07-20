@@ -9,14 +9,17 @@ const { fileKey, streamFile } = require('../utilities/zip.js')
 
 const CONVERTED_SOUNDS = {}
 
-async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
+async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
   let cmd
   let file
   let passThrough
   let startArgs = []
   if(typeof audioPath == 'object' || audioPath.match(/\.pk3$/i)) {
-    file = typeof audioPath == 'object' 
-        ? file : await fileKey(audioPath, unsupportedFormat)
+    if(typeof audioPath == 'object') {
+      file = audioPath
+    } else {
+      file = await fileKey(audioPath, unsupportedFormat)
+    }
     if(file) {
       passThrough = new PassThrough()
     } else {
@@ -24,7 +27,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
     }
   }
 
-  if(path.extname(audioPath).match(/\.mp3/gi)) {
+  if(path.extname(typeof audioPath == 'object' ? audioPath.name : audioPath).match(/\.mp3/gi)) {
     cmd = 'ffmpeg'
     startArgs = ['-i', file]
     if(passThrough) {
@@ -59,7 +62,8 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath) {
       execCmd(cmd, startArgs, {
         once: path.join(file.file, unsupportedFormat),
         write: typeof newPath == 'string' ? void 0 : newPath,
-        pipe: passThrough
+        pipe: passThrough,
+        wait: wait,
       })
     ]))[1]
   } else {

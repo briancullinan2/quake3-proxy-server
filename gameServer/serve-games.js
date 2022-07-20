@@ -9,7 +9,7 @@ const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT,
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { GAME_SERVERS, SERVER_LOGS } = require('../gameServer/processes.js')
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 
@@ -120,10 +120,19 @@ async function serveRcon(request, response, next) {
     levelshot = 'unknownmap.jpg'
   }
 
-  let logs = '(no logs to show)'
-  if(serverInfo.qps_serverId) {
-    logs = SERVER_LOGS[serverInfo.qps_serverId]
+  let updateTime = 0
+  if(serverInfo.sv_maxRate) {
+    updateTime = parseInt(serverInfo.sv_maxRate)
   }
+  if(updateTime < GAMEINFO_TIMEOUT) {
+    updateTime = GAMEINFO_TIMEOUT
+  }
+
+  if(!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime) {
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat ; status', serverInfo)
+  }
+
+  let logs = serverInfo.logs || '(no logs to show)'
 
   return response.send(renderIndex(`
     ${renderGamesMenu(filename)}

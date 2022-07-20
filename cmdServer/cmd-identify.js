@@ -7,7 +7,7 @@ const { execCmd } = require('../utilities/exec.js')
 const { fileKey, streamFile } = require('../utilities/zip.js')
 
 
-async function opaqueCmd(imagePath, unsupportedFormat) {
+async function opaqueCmd(imagePath, unsupportedFormat, wait) {
   let isOpaque
 
   let unsupportedExt = path.extname(unsupportedFormat)
@@ -20,6 +20,7 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
         streamFile(file, passThrough),
         execCmd('identify', ['-format', '\'%[opaque]\'',
           unsupportedExt.substring(1) + ':-'], { 
+            wait: wait,
             pipe: passThrough,
             once: path.join(file.file, unsupportedFormat),
           })
@@ -29,6 +30,7 @@ async function opaqueCmd(imagePath, unsupportedFormat) {
     }
   } else {
     isOpaque = await execCmd('identify', ['-format', '\'%[opaque]\'', imagePath], {
+      wait: wait,
       once: imagePath,
     })
   }
