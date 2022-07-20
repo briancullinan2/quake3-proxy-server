@@ -4,6 +4,7 @@ let mapList
 let gameList
 let mapInfo
 let waveForm
+let remoteConsole
 
 
 function pageBindings() {
@@ -104,6 +105,24 @@ async function initEvents() {
         eventPath[i].href)
       evt.preventDefault()
       return false
+    }
+  })
+
+  document.addEventListener('keypress', async function (evt) {
+    if(evt.target.id == 'rcon-command'
+      && evt.code == 'Enter'
+      && evt.target.value.endsWith('\n')) {
+      evt.preventDefault()
+      let response = await fetch(window.location.origin + window.location.pathname, {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({command: evt.target.value}),
+      })
+      evt.target.value = ''
+      json = await response.json()
     }
   })
 

@@ -6,8 +6,8 @@ const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
 const { EXECUTING_MAPS, RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { GAME_SERVERS } = require('../gameServer/processes.js')
-
+const { GAME_SERVERS, SERVER_LOGS } = require('../gameServer/processes.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 async function serveDedicated() {
   try {
@@ -18,16 +18,23 @@ async function serveDedicated() {
         '+set', 'sv_master2', '"207.246.91.235:27950"',
         '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
         '+sets', 'qps_serverId', challenge,
+        '+set', 'rconPassword2', 'password1',
         '+map', 'lsdm3_v1', 
         '+wait', '300', '+heartbeat',
-      ])
-      ps.on('close', function () {
-        EXECUTING_MAPS['lsdm3_v1'].slice(0)
+      ], function (lines) {
+        SERVER_LOGS[challenge] += lines + '\n'
+        updatePageViewers('/rcon')
       })
-      if(typeof EXECUTING_MAPS['lsdm3_v1'] == 'undefined') {
-        EXECUTING_MAPS['lsdm3_v1'] = []
+      ps.on('close', function () {
+        delete SERVER_LOGS[challenge]
+        delete EXECUTING_MAPS[challenge]
+      })
+      SERVER_LOGS[challenge] = ''
+      EXECUTING_MAPS[challenge] = {
+        challenge: challenge,
+        pid: ps.pid,
+        mapname: 'lsdm3_v1',
       }
-      EXECUTING_MAPS['lsdm3_v1'].push(challenge + ':' + ps.pid)
     }
   } catch (e) {
     console.error(e)
@@ -55,10 +62,9 @@ async function serveProcess(request, response, next) {
     }
   })
   let engines = Object.keys(EXECUTING_MAPS)
-  .filter(zip => EXECUTING_MAPS[zip].length > 0)
   .map(zip => {
-    let challenge = EXECUTING_MAPS[zip][0].split(':')[0]
-    let pid = EXECUTING_MAPS[zip][0].split(':')[1]
+    let challenge = EXECUTING_MAPS[zip].challenge
+    let pid = EXECUTING_MAPS[zip].pid
     let serverInfo = Object.values(GAME_SERVERS)
         .filter(server => server.qps_serverId == challenge)[0]
     if(!serverInfo) {

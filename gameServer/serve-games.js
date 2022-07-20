@@ -9,7 +9,9 @@ const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT,
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { GAME_SERVERS } = require('../gameServer/processes.js')
+const { GAME_SERVERS, SERVER_LOGS } = require('../gameServer/processes.js')
+
+const GAMEINFO_TIMEOUT = 60 * 1000
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -86,6 +88,75 @@ async function serveList(request, response, next) {
   return response.json(Object.values(GAME_SERVERS))
 
   // TODO: add list HTML display, same for processes, for many details
+
+}
+
+
+async function serveRcon(request, response, next) {
+  let filename = path.basename(request.originalUrl)
+  let modname = path.basename(filename).toLocaleLowerCase()
+  let serverInfo = GAME_SERVERS[filename]
+  if(!serverInfo) { // try to lookup by domain name
+    let address = await lookupDNS(filename.split(':')[0])
+    serverInfo = GAME_SERVERS[address + ':' + filename.split(':')[1]]
+  }
+  if(!serverInfo) {
+    return next(new Error('Game not found.'))
+  }
+
+  if(request.method == 'POST') {
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command, serverInfo)
+    return response.json({})
+  }
+
+
+  let basegame = getGame()
+  let mapname
+  let levelshot
+  if(serverInfo.mapname) {
+    mapname = serverInfo.mapname.toLocaleLowerCase()
+    levelshot = path.join(basegame, 'pak0.pk3dir/levelshots/', mapname + '.jpg')
+  } else {
+    levelshot = 'unknownmap.jpg'
+  }
+
+  let logs = '(no logs to show)'
+  if(serverInfo.qps_serverId) {
+    logs = SERVER_LOGS[serverInfo.qps_serverId]
+  }
+
+  return response.send(renderIndex(`
+    ${renderGamesMenu(filename)}
+    <div class="loading-blur"><img src="/${levelshot}" /></div>
+    <div id="rcon-info" class="info-layout">
+    <h2>RCon: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
+    <textarea id="rcon-output" readonly="readonly">${logs}</textarea>
+    <textarea id="rcon-command" placeholder="Command (newline to send)"></textarea>
+    </div>
+    `))
+
+}
+
+function renderGamesMenu(filename) {
+  return renderMenu([{
+    title: 'Games',
+    link: 'games'
+  }, {
+    title: 'Game Info',
+    link: 'games/' + filename
+  }, {
+    title: 'Connect',
+    link: 'index.html?connect%20' + filename
+  }, {
+    title: 'RCon',
+    link: 'rcon/' + filename
+  }, {
+    title: 'Links',
+    link: 'games/' + filename + '#links'
+  }, {
+    title: 'Screenshots',
+    link: 'games/' + filename + '#screenshots'
+  }], 'asset-menu')
 }
 
 
@@ -116,8 +187,8 @@ async function serveGameInfo(request, response, next) {
   if(serverInfo.sv_maxRate) {
     updateTime = parseInt(serverInfo.sv_maxRate)
   }
-  if(updateTime < 3600) {
-    updateTime = 3600
+  if(updateTime < GAMEINFO_TIMEOUT) {
+    updateTime = GAMEINFO_TIMEOUT
   }
 
   if(MASTER_PORTS.length > 0
@@ -138,20 +209,7 @@ async function serveGameInfo(request, response, next) {
 
 
   return response.send(renderIndex(`
-    ${renderMenu([{
-      title: 'Games',
-      link: 'games'
-    }, {
-      title: 'Connect',
-      link: 'index.html?connect%20' + filename
-    }, {
-      title: 'Links',
-      link: 'games/' + filename + '#links'
-    }, {
-      title: 'Screenshots',
-      link: 'games/' + filename + '#screenshots'
-    }], 'asset-menu')}
-
+    ${renderGamesMenu(filename)}
     <div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">
     <h2>Games: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
@@ -185,6 +243,7 @@ async function serveGameInfo(request, response, next) {
       <a href="/${basegame}/screenshots/${mapname}_screenshot0002.jpg">
       Top-down Full color</a></li>
     </ol>
+    </div>
     `))
 }
 
@@ -193,4 +252,5 @@ module.exports = {
   serveGamesRange,
   serveList,
   serveGameInfo,
+  serveRcon,
 }

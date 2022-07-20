@@ -1,4 +1,5 @@
-const { serveGames, serveGamesRange, serveList, serveGameInfo } = require('../gameServer/serve-games.js')
+const { serveGames, serveGamesRange, serveList, serveGameInfo, 
+    serveRcon } = require('../gameServer/serve-games.js')
 const { serveMaps, serveDownload, serveMapsRange, serveDownloadList } = require('../mapServer/serve-download.js')
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
@@ -36,6 +37,8 @@ function setupExtensions(features, app) {
     || features.includes('games')) {
     app.use(/\/games\/[0-9]+\/[0-9]+/i, serveGamesRange)
     app.use(/\/servers\/?$/i, serveList)
+    app.post(/\/rcon\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/i, serveRcon)
+    app.use(/\/rcon\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/i, serveRcon)
     app.use(/\/games\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/i, serveGameInfo)
     app.use('\/games', serveGames)
   }

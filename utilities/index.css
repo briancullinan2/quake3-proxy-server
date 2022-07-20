@@ -47,6 +47,38 @@ body>img {
   padding: 0;
 }
 
+#rcon-info {
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.75);
+  padding:0;
+}
+
+#rcon-info > * {
+  width: 100%;
+  font-size: 16px;
+  min-height: 2em;
+  background: transparent;
+  color: white;
+  padding: 10px;
+  font-family:'Consolas', 'source-code-pro', 'Courier New', Courier, monospace;
+}
+
+#rcon-info h2 {
+  margin: 0;
+}
+
+#rcon-info textarea:first-of-type {
+  flex-basis: 100%;
+  flex-shrink: 1;
+  border: none;
+}
+
+#rcon-info textarea:last-of-type {
+  margin-top:10px;
+  border: 1px solid black;
+}
+
 .album-view li {
   margin: 0;
   list-style: none;

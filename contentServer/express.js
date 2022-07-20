@@ -18,6 +18,8 @@ function createApplication(features) {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
+	
+  app.use(express.json());
 
   app.use(function serveIndex(req, res, next) {
     let isIndex = req.url.match(/\?index/)

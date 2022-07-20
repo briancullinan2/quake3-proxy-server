@@ -10,7 +10,7 @@ const EXECUTING_MAPS = {}
 const RESOLVE_DEDICATED = []
 const SERVER_STARTTIME = 5000
 
-async function dedicatedCmd(startArgs) {
+async function dedicatedCmd(startArgs, callback) {
 
   let dedicated = findFile(EXE_NAME)
   if (!dedicated) {
@@ -28,7 +28,11 @@ async function dedicatedCmd(startArgs) {
     const passThrough = new PassThrough()
     const readable = Readable.from(passThrough)
     readable.on('data', function (data) {
-      console.log('ENGINE: ', Array.from(data).map(c => String.fromCharCode(c)).join(''))
+      let lines = Array.from(data).map(c => String.fromCharCode(c)).join('').trim()
+      console.log('ENGINE: ', lines)
+      if(callback) {
+        callback(lines)
+      }
     })
     console.log('Starting ', dedicated)
     ps = await execCmd(dedicated, [

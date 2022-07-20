@@ -1,6 +1,7 @@
 const GAME_SERVERS = {}
-
+const SERVER_LOGS = {}
 
 module.exports = {
-  GAME_SERVERS
+  SERVER_LOGS,
+  GAME_SERVERS,
 }

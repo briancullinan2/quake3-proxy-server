@@ -66,7 +66,7 @@ async function statusResponse(socket, message, rinfo) {
   for(let i = 0; i < playerStrings.length; i++) {
     // TODO: parsePlayer()
   }
-  //console.log(infos, playerStrings)
+  console.log(infos, playerStrings)
   return infos
 }
 
