@@ -8,8 +8,6 @@ const { repackedCache } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { CHILD_PROCESS, onceOrTimeout } = require('../utilities/exec.js')
 
-const EXECUTING_MAPS = {}
-
 // TODO: this is pretty lame, tried to make a screenshot, and a
 //   bunch of stuff failed, now I have some arbitrary wait time
 //   and it works okay, but a real solution would be "REAL-TIME"!
@@ -32,7 +30,6 @@ async function lvlshotCmd(mapname, startArgs, callback) {
   //   but the last resolve function would be here after the resolve(stderr)
   //   instead of after, in the encapsulating function call.
   return await onceOrTimeout(mapname, new Promise(function (resolve, reject) {
-    EXECUTING_MAPS[mapname].push('placeholder')
     let ps
     ps = execFile(client, startArgs,
       function (errCode, stdout, stderr) {
@@ -117,7 +114,6 @@ async function serveLevelshot(request, response, next) {
 
 
 module.exports = {
-  EXECUTING_MAPS,
   lvlshotCmd,
   serveLevelshot,
 }

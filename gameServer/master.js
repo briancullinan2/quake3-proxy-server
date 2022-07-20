@@ -4,6 +4,7 @@ const { serveDedicated } = require('../gameServer/serve-process.js')
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 
 const UDP_SOCKETS = []
 const MASTER_PORTS = [27950]
@@ -12,7 +13,6 @@ const MASTER_SERVICE = [
   'getserversResponse', 'getservers ', 'heartbeat ', 'infoResponse\n',
   'subscribe', 'statusResponse\n'
 ]
-const GAME_SERVERS = {}
 const RESOLVE_INFOS = {}
 const RESOLVE_STATUS = {}
 
@@ -36,13 +36,13 @@ async function heartbeat(socket, message, rinfo) {
       reject(new Error('Heartbeat getinfo timed out.'))
     }, INFO_TIMEOUT)
     let challenge = buildChallenge()
-    let msg = 'getinfo ' + challenge
     GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
     RESOLVE_INFOS[challenge] = function (info) {
       clearTimeout(cancelTimer)
       resolve(info)
     }
-    sendOOB(socket, msg, rinfo)
+    sendOOB(socket, 'getinfo ' + challenge, rinfo)
+    sendOOB(socket, 'getstatus ' + challenge, rinfo)
   })
 
   // resolve awaiting `getServers` command for new local dedicated
@@ -57,8 +57,6 @@ async function heartbeat(socket, message, rinfo) {
 async function statusResponse(socket, message, rinfo) {
   // TODO: decode status, part info, part player list
   let infos = await infoResponse(socket, message, rinfo)
-  //console.log(infos)
-  //console.log(RESOLVE_STATUS)
   if (typeof RESOLVE_STATUS[infos.challenge] != 'undefined') {
     RESOLVE_STATUS[infos.challenge](infos)
     delete RESOLVE_STATUS[infos.challenge]
@@ -68,7 +66,7 @@ async function statusResponse(socket, message, rinfo) {
   for(let i = 0; i < playerStrings.length; i++) {
     // TODO: parsePlayer()
   }
-  console.log(playerStrings)
+  //console.log(infos, playerStrings)
   return infos
 }
 

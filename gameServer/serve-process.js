@@ -1,21 +1,33 @@
+const path = require('path')
 
 const { watcherPID } = require('../utilities/env.js')
 const { renderIndex } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
-const { EXECUTING_MAPS } = require('../mapServer/serve-lvlshot.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
-const { RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
+const { EXECUTING_MAPS, RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
+const buildChallenge = require('../quake3Utils/generate-challenge.js')
+const { GAME_SERVERS } = require('../gameServer/processes.js')
+
 
 async function serveDedicated() {
   try {
     if (RESOLVE_DEDICATED.length == 0) {
-      await dedicatedCmd([
+      let challenge = buildChallenge()
+      let ps = await dedicatedCmd([
         '+set', 'dedicated', '2',
         '+set', 'sv_master2', '"207.246.91.235:27950"',
         '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
+        '+sets', 'qps_serverId', challenge,
         '+map', 'lsdm3_v1', 
-        '+wait', '300', '+heartbeat'
+        '+wait', '300', '+heartbeat',
       ])
+      ps.on('close', function () {
+        EXECUTING_MAPS['lsdm3_v1'].slice(0)
+      })
+      if(typeof EXECUTING_MAPS['lsdm3_v1'] == 'undefined') {
+        EXECUTING_MAPS['lsdm3_v1'] = []
+      }
+      EXECUTING_MAPS['lsdm3_v1'].push(challenge + ':' + ps.pid)
     }
   } catch (e) {
     console.error(e)
@@ -45,11 +57,20 @@ async function serveProcess(request, response, next) {
   let engines = Object.keys(EXECUTING_MAPS)
   .filter(zip => EXECUTING_MAPS[zip].length > 0)
   .map(zip => {
+    let challenge = EXECUTING_MAPS[zip][0].split(':')[0]
+    let pid = EXECUTING_MAPS[zip][0].split(':')[1]
+    let serverInfo = Object.values(GAME_SERVERS)
+        .filter(server => server.qps_serverId == challenge)[0]
+    if(!serverInfo) {
+      return
+    }
     return {
       name: zip,
-      assignments: process.pid,
+      assignments: pid,
+      link: path.join('/games/', serverInfo.address + ':' + serverInfo.port)
     }
   })
+  .filter(zip => zip)
 
   return response.send(renderIndex(
     //renderMenu(PROXY_MENU, 'downloads-menu')
@@ -74,14 +95,10 @@ async function serveProcess(request, response, next) {
 
 function renderProcess(node) {
   let result = '<li>'
-  if (node.name.endsWith('/') || typeof node.size == 'undefined') {
-    result += `<a href="${node.link}?index">${node.name}</a>`
-    result += `<span>&nbsp;</span>`
-  } else {
-    result += `<a href="${node.link}?alt">${node.name}</a>`
-    result += `<span>${formatSize(node.size)}</span>`
-  }
-  if (typeof node.mtime != 'undefined') {
+  result += `<a href="${node.link}">${node.name}</a>`
+  result += `<span>${typeof node.size == 'undefined' 
+    ? '&nbsp;' : formatSize(node.size)}</span>`
+if (typeof node.mtime != 'undefined') {
     result += `<span>${node.mtime.getMonth() + 1}/${node.mtime.getDate()} `
     result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</span>`
   } else {

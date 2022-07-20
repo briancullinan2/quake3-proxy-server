@@ -5,10 +5,11 @@ const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
 const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
-const { UDP_SOCKETS, MASTER_PORTS, GAME_SERVERS, INFO_TIMEOUT, 
+const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT, 
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -122,7 +123,6 @@ async function serveGameInfo(request, response, next) {
   if(MASTER_PORTS.length > 0
     && serverInfo.challenge
     && (!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime)) {
-    let msg = 'getstatus ' + serverInfo.challenge
     Promise.resolve(new Promise((resolve, reject) => {
       let cancelTimer = setTimeout(function () {
         reject(new Error('Game status timed out.'))
@@ -132,7 +132,7 @@ async function serveGameInfo(request, response, next) {
         updatePageViewers('/games')
         resolve(info)
       }
-      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], msg, serverInfo)
+      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serverInfo.challenge, serverInfo)
     }))
   }
 

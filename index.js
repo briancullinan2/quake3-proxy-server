@@ -111,7 +111,7 @@ function parseAguments(startArgs) {
   }
 }
 
-const { GAME_SERVERS } = require('./gameServer/master.js')
+const { GAME_SERVERS } = require('./gameServer/processes.js')
 const { log: previousLog, error: previousError } = require('console')
 
 const REDIRECTED_LOGS = []

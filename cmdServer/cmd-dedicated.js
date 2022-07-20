@@ -5,6 +5,8 @@ const { findFile } = require('../assetServer/virtual.js')
 const { execCmd } = require('../utilities/exec.js')
 const { FS_GAMEHOME, FS_BASEPATH } = require('../utilities/env.js')
 
+
+const EXECUTING_MAPS = {}
 const RESOLVE_DEDICATED = []
 const SERVER_STARTTIME = 5000
 
@@ -29,7 +31,7 @@ async function dedicatedCmd(startArgs) {
       console.log('ENGINE: ', Array.from(data).map(c => String.fromCharCode(c)).join(''))
     })
     console.log('Starting ', dedicated)
-    logs = await execCmd(dedicated, [
+    ps = await execCmd(dedicated, [
       '+set', 'fs_basepath', FS_BASEPATH,
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+set', 'r_headless', '1',
@@ -63,13 +65,14 @@ async function dedicatedCmd(startArgs) {
     RESOLVE_DEDICATED.push(function () {
       clearTimeout(cancelTimer)
       console.log('Dedicated started.')
-      resolve(logs)
+      resolve(ps)
     })
   })
 }
 
 
 module.exports = {
+  EXECUTING_MAPS,
   RESOLVE_DEDICATED,
   dedicatedCmd
 }

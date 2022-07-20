@@ -1,9 +1,10 @@
 const { lookupDNS } = require('../utilities/dns.js')
-const { GAME_SERVERS, UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
+const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
 const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 
 
 const MASTER_SERVERS = [
