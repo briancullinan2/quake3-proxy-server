@@ -29,7 +29,7 @@ async function dedicatedCmd(startArgs, callback) {
     const readable = Readable.from(passThrough)
     readable.on('data', function (data) {
       let lines = Array.from(data).map(c => String.fromCharCode(c)).join('').trim()
-      console.log('ENGINE: ', lines)
+      //console.log('ENGINE: ', lines)
       if(callback) {
         callback(lines)
       }

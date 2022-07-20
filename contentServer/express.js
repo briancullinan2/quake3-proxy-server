@@ -1,4 +1,4 @@
-const { INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
+const { SYSNET, INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')
@@ -18,7 +18,7 @@ function createApplication(features) {
   const app = express()
   app.enable('etag')
   app.set('etag', 'strong')
-	
+
   app.use(express.json());
 
   app.use(function serveIndex(req, res, next) {
@@ -36,7 +36,7 @@ function createApplication(features) {
 
 
     if (filename.length <= 1 || filename.match('/index.html')) {
-      if(features.includes('all') || features.includes('virtual')) {
+      if (features.includes('all') || features.includes('virtual')) {
         return next()
       }
       return serveFeatures(features, res)
@@ -65,7 +65,7 @@ function createApplication(features) {
 
 
 function unhandledResponse(err, req, res, next) {
-  if(err) {
+  if (err) {
     console.error(err)
   }
   if (req.headers['accept']
@@ -110,15 +110,15 @@ function socketConnect(socket, request) {
   let cookies = parseCookies(request.headers['cookie'])
   let sessionId = cookies['__planet_quake_sess']
   function updateSession(newUrl) {
-    if(Object.values(UDP_CLIENTS).filter(multicast => {
+    if (Object.values(UDP_CLIENTS).filter(multicast => {
       return multicast.indexOf(socket) == 0
     }).length > 0) {
-      if(!SESSION_URLS[sessionId]) {
+      if (!SESSION_URLS[sessionId]) {
         updatePageViewers((new URL(newUrl)).pathname) // make sure a fresh copy of the page is sent
       }
       SESSION_URLS[sessionId] = newUrl
     }
-    if(!newUrl.match(/proxy/i)) {
+    if (!newUrl.match(/proxy/i)) {
       updatePageViewers('/proxy')
     }
   }
@@ -136,12 +136,12 @@ function socketConnect(socket, request) {
     let ports = Object.keys(UDP_CLIENTS)
     for (let i = 0; i < ports.length; i++) {
       let index = UDP_CLIENTS[ports[i]].indexOf(socket)
-      if(index > -1) {
+      if (index > -1) {
         UDP_CLIENTS[ports[i]].splice(index, 1)
       }
     }
   })
-  updateSession(request.url.includes('://') ? request.url 
+  updateSession(request.url.includes('://') ? request.url
     : ('http://localhost:' + HTTP_PORTS[0] + request.url))
   createSOCKS(socket, redirectApp, sessionId)
   updatePageViewers('/proxy')
@@ -151,7 +151,7 @@ function socketConnect(socket, request) {
     //console.log(sessionId, SESSION_URLS[sessionId], UDP_CLIENTS[SESSION_IDS[sessionId]])
     if (typeof SESSION_URLS[sessionId] == 'undefined'
       && UDP_CLIENTS[SESSION_IDS[sessionId]]) {
-      for(let i = 0; i < UDP_CLIENTS[SESSION_IDS[sessionId]].length; i++) {
+      for (let i = 0; i < UDP_CLIENTS[SESSION_IDS[sessionId]].length; i++) {
         UDP_CLIENTS[SESSION_IDS[sessionId]][i].send('URL: ', { binary: false })
       }
     }
@@ -163,7 +163,7 @@ function socketConnect(socket, request) {
 function createWebServers(services) {
   const { createServer } = require('http')
   const virtualApp = createApplication(services)
-  if(!redirectApp) {
+  if (!redirectApp) {
     redirectApp = createRedirect(redirectAddress())
   }
 

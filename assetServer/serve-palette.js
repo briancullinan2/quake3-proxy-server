@@ -13,7 +13,7 @@ let CACHED_PALETTE = ''
 
 async function servePaletteReal(start, end, filterMap, isJson, response) {
   let { paletteNeeded, existingPalette } = await parseExisting()
-  if(CACHED_PALETTE) {
+  if (CACHED_PALETTE) {
     existingPalette = Object.assign({}, await parsePalette(CACHED_PALETTE), existingPalette)
   }
 
@@ -35,7 +35,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
 
 
   // only palettize the current range, not to do too much work per request
-  let existingNeeded = paletteNeeded.filter(shader => 
+  let existingNeeded = paletteNeeded.filter(shader =>
     typeof existingPalette[shader.title.replace(path
       .extname(shader.title), '').toLocaleLowerCase()] != 'undefined')
   console.log(palettes.concat(existingNeeded))
@@ -48,6 +48,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
 
   let total = paletteNeeded.length
   let index = renderIndex(renderList('/palette/', palettes, total))
+  response.setHeader('content-type', 'text/html')
   return response.send(index)
 }
 

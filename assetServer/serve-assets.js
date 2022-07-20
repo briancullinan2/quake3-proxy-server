@@ -32,6 +32,7 @@ async function serveAssets(request, response, next) {
     levelshot: '/build/downloads.svg'
   }]
 
+  response.setHeader('content-type', 'text/html')
   return response.send(renderIndex(`
   ${renderMenu(ASSET_MENU, 'asset-menu')}
   <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>

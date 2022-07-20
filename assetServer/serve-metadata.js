@@ -21,6 +21,8 @@ async function serveMetadata(request, response, next) {
     link: 'metadata/#games',
     subtitle: 'Master Servers / Mods'
   }]
+
+  response.setHeader('content-type', 'text/html')
   return response.send(renderIndex(`
   ${renderMenu(METADATA_FEATURES, 'metadata-menu')}
   <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
@@ -33,7 +35,7 @@ async function serveMetadata(request, response, next) {
   architecture.</p>
 
   <ol id="metadatas-list" class="stream-list">${METADATA_FEATURES
-    .map(renderFeature).join('')}</ol>
+      .map(renderFeature).join('')}</ol>
 
   <h2><a name="skins">Skins</a></h2>
   <p>Most popular player skins and character classes.</p>

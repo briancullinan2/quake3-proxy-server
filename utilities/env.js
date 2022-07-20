@@ -26,15 +26,23 @@ const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
 const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
 const LVLSHOTS = fs.readFileSync(path.resolve(__dirname + '/../utilities/levelinfo.cfg')).toString('utf-8')
-
-let REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
-let DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
+const SYSNET = fs.readFileSync(path.resolve(ASSETS_DIRECTORY + '/sys_net.js')).toString('utf-8')
+.replace(/^.*?socketMessage.*?{.*?$/gmi, `
+function socketMessage(evt) {
+  if(typeof evt.data == 'string') {
+    return socketProxyControl(evt)
+  }`)
+const GAME_INDEX = fs.readFileSync(path.resolve(ASSETS_DIRECTORY + '/index.html')).toString('utf-8')
+const REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
+const DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
 
 function setRepack(directory) {
-  REPACK_CACHE = [directory]
+  REPACK_CACHE.splice(0)
+  REPACK_CACHE.push(directory)
 }
 function setDownload(directory) {
-  DOWNLOAD_CACHE = [directory]
+  DOWNLOAD_CACHE.splice(0)
+  DOWNLOAD_CACHE.push(directory)
 }
 
 function addDownload(directory) {
@@ -166,7 +174,9 @@ module.exports = {
   STYLES,
   SCRIPTS,
   UNKNOWN,
+  GAME_INDEX,
   INDEX,
+  SYSNET,
   LVLSHOTS,
   MODS,
   MODS_NAMES,

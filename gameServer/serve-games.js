@@ -160,6 +160,12 @@ function renderGamesMenu(filename) {
     title: 'RCon',
     link: 'rcon/' + filename
   }, {
+    title: 'Player Info',
+    link: 'games/' + filename + '#players'
+  }, {
+    title: 'Server Info',
+    link: 'games/' + filename + '#info'
+  }, {
     title: 'Links',
     link: 'games/' + filename + '#links'
   }, {
@@ -222,6 +228,11 @@ async function serveGameInfo(request, response, next) {
     <div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">
     <h2>Games: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
+
+    <h3><a name="players">Player Info</a></h3>
+
+    <h3><a name="info">Server Info</a></h3>
+
     <h3><a name="links">Links</a></h3>
     ${renderList('/menu/', [
       {

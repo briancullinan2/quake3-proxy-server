@@ -426,7 +426,7 @@ ol.directory-list li {
   flex-wrap: wrap;
   display: flex;
   position: relative;
-  z-index: 1;
+  z-index: 900;
 }
 
 .close-files {
@@ -776,7 +776,7 @@ ol li.unused-path a,
   background-repeat: no-repeat;
   background-position: center;
   background-size: 24em;
-  z-index: 1;
+  /* z-index: 6; */
   display: flex;
   /* padding-top:22px; */
   flex-direction: row;
@@ -790,4 +790,8 @@ ol li.unused-path a,
   flex-shrink: 1;
   flex-basis: auto;
   display: inline-block;
+}
+
+#viewport-frame ~ .loading-blur {
+  display:none;
 }

@@ -25,7 +25,7 @@ async function serveDedicated() {
       ], function (lines) {
         let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
         if(!server) {
-          console.log(lines)
+          //console.log(lines)
         } else {
           if(typeof server.logs == 'undefined') {
             server.logs = ''

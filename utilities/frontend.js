@@ -50,10 +50,12 @@ function pageBindings() {
 
 
   let engineView = document.getElementById('viewport-frame')
-  if(engineView && typeof window.ENGINE == 'undefined') {
+  if(engineView && typeof DB_STORE_NAME == 'undefined') {
     const ENGINE_SCRIPTS = [
       'nipplejs.js', 'sys_emgl.js', 'sys_fs.js', 'sys_idbfs.js', 'sys_in.js',
-      'sys_net.js', 'sys_std.js', 'sys_web.js', 'sys_snd.js', 'sys_wasm.js'
+      // TODO: override sys_net with changes for frontend, then override engine index to add frontend
+      //   and new ENGINE_MENU
+      /* 'sys_net.js', */ 'sys_std.js', 'sys_web.js', 'sys_snd.js', 'sys_wasm.js'
     ]
     var tag
     for(let i = 0; i < ENGINE_SCRIPTS.length; i++) {
@@ -65,15 +67,17 @@ function pageBindings() {
       window.initialize()
     }, 100), false)
   } else if (engineView) {
-    initialize()
+    //initialize()
   }
 }
 
 window.addEventListener('load', (event) => {
 
-  pageBindings()
+  setTimeout(pageBindings, 300)
 
-  startLive()
+  if(typeof NET_OpenIP != 'undefind') {
+    NET_OpenIP()
+  }
 
   initEvents()
 })
@@ -98,7 +102,7 @@ async function initEvents() {
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
-      socket1.send(eventPath[i].href, { binary: false })
+      NET.socket1.send(eventPath[i].href, { binary: false })
       history.pushState(
         {location: window.location.pathname}, 
         header ? 'Quake III Arena: ' + header : document.title, 
@@ -127,7 +131,7 @@ async function initEvents() {
   })
 
   window.addEventListener('popstate', function () {
-    socket1.send(window.location, { binary: false })
+    NET.socket1.send(window.location, { binary: false })
   }, false)
 }
 
@@ -299,85 +303,59 @@ async function loadNextPage(page, halfwareMark) {
   previousLine = -1
 }
 
-let reconnect = false
-let queue
-let socket1
-let socket2
-let heartbeat
-
-function sendHeartbeat(sock) {
-  if(sock.readyState == WebSocket.OPEN) {
-		sock.fresh = 5
-    sock.send(Uint8Array.from([0x05, 0x01, 0x00, 0x00]),
-      { binary: true })
-  } else if(sock.readyState == WebSocket.CLOSED) {
-    reconnect = true
-    if(sock == socket1) {
-     socket1 = null
-    } else {
-      socket2 = null
-    }
-    startLive()
-  }
-}
-
-
-function sendLegacyEmscriptenConnection(socket, port) {
-  socket.send(Uint8Array.from([
-    0xFF, 0xFF, 0xFF, 0xFF,
-    'p'.charCodeAt(0), 'o'.charCodeAt(0), 'r'.charCodeAt(0), 't'.charCodeAt(0),
-    (port & 0xFF00) >> 8, (port & 0xFF)
-  ]))
-
-}
-
-
-function socketOpen(evt) {
-	evt.target.fresh = 1
-	evt.target.send(Uint8Array.from([
-    0x05, 0x01, 0x00, // no password caps?
-  ]))
-	if(!heartbeat) {
-		heartbeat = setInterval(function () {
-      if(socket1) {
-        sendHeartbeat(socket1)
-      } else {
-        setTimeout(startLive, 100)
-      }
-      heartbeatTimeout = setTimeout(function () {
-        if(socket2) {
-          sendHeartbeat(socket2)
-        }
-      }, 7000)
-		}, 9000)
-	}
-  if(!reconnect) return
-	sendLegacyEmscriptenConnection(evt.target, window.net_port)
-}
 
 let previousUrl = ''
 let debounceTimer
 
-function socketMessage(evt) {
-  if(typeof evt.data == 'string'
-    && evt.data.includes('<html')) {
+function socketProxyControl(evt) {
+  if(typeof evt.data != 'string') {
+    return
+  }
+  if(evt.data.includes('<html')) {
     let length = document.body.children.length
+    let hasViewport = false
     for(let i = length - 1; i > 0; --i) { // don't remove menu
+      if(document.body.children[i].id == 'viewport-frame') {
+        hasViewport = true
+        continue
+      }
+      if(evt.data.includes('viewport-frame') // since we won't be adding
+        && document.body.children[i].className == 'games-menu') {
+        // preserve games menu
+        continue
+      }
       document.body.children[i].remove()
     }
-    document.body.innerHTML += (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
-    //document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi)
+    // don't add engine twice, because it hangs around
+    if(evt.data.includes('viewport-frame')
+      && hasViewport) {
+      return
+    }
+    let loaderDiv = document.createElement('div')
+    loaderDiv.style.display = 'none'
+    let innerContent = (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
         .exec(evt.data)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
+    loaderDiv.innerHTML = innerContent
+    document.body.appendChild(loaderDiv)
+    let previous = null
+    for(let i = loaderDiv.children.length - 1; i >= 0; --i) {
+      let current = loaderDiv.children[i]
+      if(previous) {
+        document.body.insertBefore(loaderDiv.children[i], previous)
+      } else {
+        document.body.appendChild(loaderDiv.children[i])
+      }
+      previous = current
+    }
+    loaderDiv.remove()
     pageBindings()
     return
   } else
-  if(typeof evt.data == 'string'
-    && evt.data.startsWith('URL: ')) {
+  if(evt.data.startsWith('URL: ')) {
     window.location = window.location
     return
   } else
-  if(typeof evt.data == 'string'
-    && evt.data.startsWith('UPDATE: ')) {
+  if(evt.data.startsWith('UPDATE: ')) {
     if((window.location + '').match(evt.data.substring(8))) {
       if(previousUrl.localeCompare(evt.data.substring(8), 'en', {sensitivity: 'base'}) != 0) {
         previousUrl = evt.data.substring(8)
@@ -387,137 +365,15 @@ function socketMessage(evt) {
       if(!debounceTimer) {
         debounceTimer = setTimeout(function () {
           debounceTimer = null
-          socket1.send(window.location + '', { binary: false })
+          NET.socket1.send(window.location + '', { binary: false })
         }, 100)
       }
     }
-
     return
   }
 
-
-  let message = new Uint8Array(evt.data)
-  switch(evt.target.fresh) {
-    case 1:
-      if(message.length != 2) {
-        throw new Error('wtf? this socket no worky')
-      } else
-
-      if(message[1] != 0) {
-        debugger
-        throw new Error('this socket requires a password, dude')
-      }
-
-      // send the UDP associate request
-      evt.target.send(Uint8Array.from([
-				0x05, 0x03, 0x00, 0x01, 
-				0x00, 0x00, 0x00, 0x00, // ip address
-				(window.net_port & 0xFF00) >> 8, (window.net_port & 0xFF)
-			]))
-      evt.target.fresh = 2
-    break
-		case 2:
-      if(message.length == 2) {
-        evt.target.fresh = 3
-        break
-      } else
-			if(message.length < 5) {
-				throw new Error('denied, can\'t have ports')
-			} else
-			if(message[3] != 1) {
-				throw new Error('relay address is not IPV4')
-			}
-
-			sendLegacyEmscriptenConnection(evt.target, window.net_port)
-			evt.target.fresh = 3
-      // TODO: 
-			/*
-      if(socket ==socket1) {
-				for(let i = 0, count =socket1Queue.length; i < count; i++) {
-					socket.send(socket1Queue.shift())
-				}
-			} else {
-				for(let i = 0, count =socket1Queue.length; i < count; i++) {
-					socket.send(socket2Queue.shift())
-				}
-			}
-      */
-
-		break
-		case 3:
-			if(message.length == 10) {
-				evt.target.fresh = 4
-				break
-			}
-
-		case 4:
-		case 5:
-				// add messages to queue for processing
-			if(message.length == 2 || message.length == 10) {
-				evt.target.fresh = 4
-				return
-			}
-
-			let addr, remotePort, msg
-			if(message[3] == 1) {
-				addr = message.slice(4, 8)
-				remotePort = message.slice(8, 10)
-				msg = Array.from(message.slice(10))
-			} else if (message[3] == 3) {
-				addr = Array.from(message.slice(5, 5 + message[4])).map(function (c) {
-					return String.fromCharCode(c)
-				}).join('')
-				remotePort = message.slice(5 + message[4], 5 + message[4] + 2)
-				msg = Array.from(message.slice(5 + addr.length + 2))
-			} else {
-				throw new Error('don\' know what to do mate')
-			}
-
-    break
-  }
 }
 
-function socketError(evt) {
-  reconnect = true
-  if(evt.target ==socket1) {
-   socket1 = null
-  }
-  if(evt.target == socket2) {
-    socket2 = null
-  }
-}
-
-
-
-function startLive() {
-  if(!queue) {
-    queue = []
-  }
-  if(window.location.protocol != 'http:' 
-    && window.location.protocol != 'https:') {
-    return
-  }
-  let fullAddress = 'ws' 
-    + (window.location.protocol.length > 5 ? 's' : '')
-    + '://' + window.location.hostname + ':' + window.location.port 
-    + window.location.pathname
-  if(!socket1) {
-   socket1 = new WebSocket(fullAddress /* , {headers: cookie: '__planet_quake_sess='} */)
-   socket1.binaryType = 'arraybuffer';
-   socket1.addEventListener('open', socketOpen, false)
-   socket1.addEventListener('close', socketError, false)
-   socket1.addEventListener('message', socketMessage, false)
-   socket1.addEventListener('error', socketError, false)
-  }
-  if(!socket2) {
-    socket2 = new WebSocket(fullAddress)
-    socket2.binaryType = 'arraybuffer';
-    socket2.addEventListener('open', socketOpen, false)
-    socket2.addEventListener('close', socketError, false)
-    socket2.addEventListener('message', socketMessage, false)
-    socket2.addEventListener('error', socketError, false)
-  }
-}
-
+    
 
 

@@ -1,5 +1,5 @@
-const { serveGames, serveGamesRange, serveList, serveGameInfo, 
-    serveRcon } = require('../gameServer/serve-games.js')
+const { serveGames, serveGamesRange, serveList, serveGameInfo,
+  serveRcon } = require('../gameServer/serve-games.js')
 const { serveMaps, serveDownload, serveMapsRange, serveDownloadList } = require('../mapServer/serve-download.js')
 const { serveLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { serveMapInfo } = require('../mapServer/serve-map.js')
@@ -29,6 +29,7 @@ function serveFeatures(features, response) {
     <ol id="feature-list" class="stream-list">${featureList
       .map(renderFeature).join('')}</ol>
     </div>`)
+  response.setHeader('content-type', 'text/html')
   return response.send(index)
 }
 
@@ -121,8 +122,8 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('upgrade')) {
-      app.use(/\/upgrade\/?$/i, serveUpgrade)
-    }
+    app.use(/\/upgrade\/?$/i, serveUpgrade)
+  }
 
   if (features.includes('all')
     || features.includes('virtual')) {
