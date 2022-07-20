@@ -34,9 +34,11 @@ async function dedicatedCmd(startArgs) {
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+set', 'r_headless', '1',
       '+set', 'bot_enable', '0',
+      // TODO: fix and remove this
+      '+set', 'sv_pure', '0', 
       '+set', 'developer', '1',
       '+set', 'sv_master1', '"127.0.0.1:27950"',
-
+      '+set', 'fs_excludeReference', 'baseq3/pak8a.pk3',
       // TODO: turn this into some sort of temporary cfg script
 
 
@@ -55,6 +57,7 @@ async function dedicatedCmd(startArgs) {
     ].concat(startArgs), {
       background: true,
       write: passThrough,
+      error: passThrough,
     })
 
     RESOLVE_DEDICATED.push(function () {

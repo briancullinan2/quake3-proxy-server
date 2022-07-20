@@ -3,10 +3,12 @@ const fs = require('fs')
 
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
-const { GAME_SERVERS } = require('./master.js')
 const { getGame } = require('../utilities/env.js')
-const { renderList } = require('../utilities/render.js')
-const { renderIndex } = require('../utilities/render.js')
+const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
+const { UDP_SOCKETS, MASTER_PORTS, GAME_SERVERS, INFO_TIMEOUT, 
+  RESOLVE_STATUS, sendOOB } = require('./master.js')
+const { lookupDNS } = require('../utilities/dns.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -91,13 +93,70 @@ async function serveGameInfo(request, response, next) {
   let filename = path.basename(request.originalUrl)
   let isJson = request.originalUrl.match(/\?json/)
   let modname = path.basename(filename).toLocaleLowerCase()
+  let serverInfo = GAME_SERVERS[filename]
+  if(!serverInfo) { // try to lookup by domain name
+    let address = await lookupDNS(filename.split(':')[0])
+    serverInfo = GAME_SERVERS[address + ':' + filename.split(':')[1]]
+  }
+  if(!serverInfo) {
+    return next(new Error('Game not found.'))
+  }
+  let basegame = getGame()
+  let mapname
+  let levelshot
+  if(serverInfo.mapname) {
+    mapname = serverInfo.mapname.toLocaleLowerCase()
+    levelshot = path.join(basegame, 'pak0.pk3dir/levelshots/', mapname + '.jpg')
+  } else {
+    levelshot = 'unknownmap.jpg'
+  }
 
-  return response.send(renderIndex(
-    `<div id="game-info" class="info-layout">
-    <h2>${modname}</h2>
-    <h3>Screenshots</h3>
-    <h3>Links</h3>`
-    + renderList('/menu/', [
+  let updateTime = 0
+  if(serverInfo.sv_maxRate) {
+    updateTime = parseInt(serverInfo.sv_maxRate)
+  }
+  if(updateTime < 3600) {
+    updateTime = 3600
+  }
+
+  if(MASTER_PORTS.length > 0
+    && serverInfo.challenge
+    && (!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime)) {
+    let msg = 'getstatus ' + serverInfo.challenge
+    Promise.resolve(new Promise((resolve, reject) => {
+      let cancelTimer = setTimeout(function () {
+        reject(new Error('Game status timed out.'))
+      }, INFO_TIMEOUT)
+      RESOLVE_STATUS[serverInfo.challenge] = function (info) {
+        clearTimeout(cancelTimer)
+        updatePageViewers('/games')
+        resolve(info)
+      }
+      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], msg, serverInfo)
+    }))
+  }
+
+
+  return response.send(renderIndex(`
+    ${renderMenu([{
+      title: 'Games',
+      link: 'games'
+    }, {
+      title: 'Connect',
+      link: 'index.html?connect%20' + filename
+    }, {
+      title: 'Links',
+      link: 'games/' + filename + '#links'
+    }, {
+      title: 'Screenshots',
+      link: 'games/' + filename + '#screenshots'
+    }], 'asset-menu')}
+
+    <div class="loading-blur"><img src="/${levelshot}" /></div>
+    <div id="game-info" class="info-layout">
+    <h2>Games: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
+    <h3><a name="links">Links</a></h3>
+    ${renderList('/menu/', [
       {
         title: 'Connect',
         link: 'index.html?connect%20' + filename,
@@ -114,7 +173,19 @@ async function serveGameInfo(request, response, next) {
         title: 'Assets',
         link: modname + '/?index',
       },
-    ], 3)))
+    ], 3)}
+    <h3><a name="screenshots">Screenshots</a></h3>
+    <ol class="screenshots">
+      <li class="title"><span>Levelshot</span></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0001.jpg" />
+      <a href="/${basegame}/screenshots/${mapname}_screenshot0001.jpg">
+      Full resolution levelshot</a></li>
+      <li class="title"><span>Birds-eye</span></li>
+      <li><img src="/${basegame}/screenshots/${mapname}_screenshot0002.jpg" />
+      <a href="/${basegame}/screenshots/${mapname}_screenshot0002.jpg">
+      Top-down Full color</a></li>
+    </ol>
+    `))
 }
 
 module.exports = {

@@ -74,9 +74,11 @@ async function execCmd(cmd, args, options) {
         })
         if (options && typeof options.write == 'object') {
           //options.stdout.cork()
-          // TODO: somehow output this to console
-          //ps.stderr.pipe(options.write)
           ps.stdout.pipe(options.write)
+        }
+        // TODO: somehow output this to console
+        if (options && typeof options.error == 'object') {
+          ps.stderr.pipe(options.error)
         }
         ps.stdout.on('data', (data) => {
           stdout += data.toString('utf-8')

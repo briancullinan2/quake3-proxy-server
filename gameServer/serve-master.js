@@ -1,22 +1,28 @@
 const { lookupDNS } = require('../utilities/dns.js')
-const { serveMaster, sendOOB } = require('./master.js')
+const { GAME_SERVERS, UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
+const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
+const { serveDedicated } = require('../gameServer/serve-process.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
-const MASTER_PORTS = [27950]
-const UDP_SOCKETS = []
+
 const MASTER_SERVERS = [
   'ws://master.quakejs.com:27950',
   '207.246.91.235:27950',
   'master.quake3arena.com',
 ]
 
-function createMasters(mirror) {
+async function createMasters(mirror) {
   const { createServer } = require('http')
   const { createSocket } = require('dgram')
+  if(!MASTER_PORTS || !MASTER_PORTS.length) {
+    return
+  }
   let redirectApp
   if (HTTP_PORTS.length > 0) {
     redirectApp = createRedirect()
   }
+
   for (let i = 0; i < MASTER_PORTS.length; i++) {
     // udp
     UDP_SOCKETS[MASTER_PORTS[i]] = createSocket('udp4')
@@ -29,12 +35,33 @@ function createMasters(mirror) {
           console.log(e)
         }
       })
+    await new Promise(resolve => UDP_SOCKETS[MASTER_PORTS[i]].once('listening', resolve))
+
     // since we have an http server to redirect to, if someone visits a service
     //   port redirect them to a web interface, for their convenience
     if (HTTP_PORTS.length > 0) {
       // http
       HTTP_LISTENERS[MASTER_PORTS[i]] = createServer(redirectApp).listen(MASTER_PORTS[i])
     }
+  }
+
+  setTimeout(function () {
+    // don't hold up own local server on loading itself
+    if (Object.keys(GAME_SERVERS).length == 0
+      && (RESOLVE_DEDICATED.length == 0
+      || address != '127.0.0.1')) {
+      serveDedicated()
+      RESOLVE_DEDICATED.push(function () {
+        updatePageViewers('/games')
+      })
+    }
+  }, 3000)
+
+  for (let i = 0; i < 10; i++) {
+    //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
+    //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');
+    //UDP_SOCKETS[MASTER_PORTS[0]].addMembership('255.255.255.255', '127.0.0.1');
+    Promise.resolve(queryMaster('127.0.0.1:' + (27960 + i)))
   }
 
   // I think it would be very fullfuling for our species
@@ -72,6 +99,5 @@ async function queryMaster(master) {
 }
 
 module.exports = {
-  MASTER_PORTS,
   createMasters,
 }

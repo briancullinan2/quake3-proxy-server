@@ -35,9 +35,9 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('games')) {
     app.use(/\/games\/[0-9]+\/[0-9]+/i, serveGamesRange)
-    app.use(/\/games\/?$/i, serveGames)
     app.use(/\/servers\/?$/i, serveList)
     app.use(/\/games\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/i, serveGameInfo)
+    app.use('\/games', serveGames)
   }
 
 

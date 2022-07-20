@@ -348,7 +348,7 @@ function socketMessage(evt) {
     }
     document.body.innerHTML += (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
     //document.body.innerHTML += (/<body[\s\S]*?main-menu[\s\S]*?<\/ol>([\s\S]*?)<\/body>/gi)
-        .exec(evt.data)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/gi, '')
+        .exec(evt.data)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
     pageBindings()
     return
   } else

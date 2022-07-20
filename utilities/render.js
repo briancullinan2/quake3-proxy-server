@@ -7,7 +7,7 @@ function renderFeature(map) {
     return ''
   }
   let result = ''
-  result += `<li style="background-image: url('${map.levelshot}')">`
+  result += `<li style="background-image: url('${map.levelshot || '/unknownmap.jpg'}')">`
   result += `<h3 ${map.palette 
     ? `style="background-color: rgba(${map.palette})"` : ''}>`
   result += `<a href="/${map.link}">`
@@ -17,7 +17,7 @@ function renderFeature(map) {
     ? `<small>${map.subtitle || map.bsp}</small>`
     : '<small>&nbsp;</small>'
   result += `</a></h3>`
-  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot}" />`
+  result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot || '/unknownmap.jpg'}" />`
   if(map.download || map.pakname) {
     result += `<a href="/maps/download/${map.bsp}">${map.pakname}</a>`
   }

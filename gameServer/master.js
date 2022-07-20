@@ -4,12 +4,18 @@ const { serveDedicated } = require('../gameServer/serve-process.js')
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
+
+const UDP_SOCKETS = []
+const MASTER_PORTS = [27950]
+const INFO_TIMEOUT = 5000
 const MASTER_SERVICE = [
   'getserversResponse', 'getservers ', 'heartbeat ', 'infoResponse\n',
-  'subscribe'
+  'subscribe', 'statusResponse\n'
 ]
 const GAME_SERVERS = {}
 const RESOLVE_INFOS = {}
+const RESOLVE_STATUS = {}
+
 
 function sendOOB(socket, message, rinfo) {
   let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(
@@ -28,7 +34,7 @@ async function heartbeat(socket, message, rinfo) {
   let info = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
       reject(new Error('Heartbeat getinfo timed out.'))
-    }, 3000)
+    }, INFO_TIMEOUT)
     let challenge = buildChallenge()
     let msg = 'getinfo ' + challenge
     GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
@@ -48,13 +54,33 @@ async function heartbeat(socket, message, rinfo) {
   }
 }
 
+async function statusResponse(socket, message, rinfo) {
+  // TODO: decode status, part info, part player list
+  let infos = await infoResponse(socket, message, rinfo)
+  //console.log(infos)
+  //console.log(RESOLVE_STATUS)
+  if (typeof RESOLVE_STATUS[infos.challenge] != 'undefined') {
+    RESOLVE_STATUS[infos.challenge](infos)
+    delete RESOLVE_STATUS[infos.challenge]
+  }
+  let playerStrings = Array.from(message)
+    .map(c => String.fromCharCode(c)).join('').split('\n').slice(1)
+  for(let i = 0; i < playerStrings.length; i++) {
+    // TODO: parsePlayer()
+  }
+  console.log(playerStrings)
+  return infos
+}
+
+
 async function infoResponse(socket, message, rinfo) {
   let messageString = Array.from(message)
-    .map(c => String.fromCharCode(c)).join('')
+    .map(c => String.fromCharCode(c)).join('').split('\n')[0]
+
   let infos = messageString.split(/\\/gi)
     .reduce(function (obj, item, i, arr) {
       if (i > 0 && i % 2 == 1) {
-        obj[item] = arr[i + 1]
+        obj[item] = (arr[i + 1] + '').trim()
       }
       return obj
     }, {})
@@ -62,11 +88,13 @@ async function infoResponse(socket, message, rinfo) {
   // TODO: store by address and port instead of challenge to prevent duplicates
   if (typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] != 'undefined') {
     Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
+    GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
   }
   if (typeof RESOLVE_INFOS[infos.challenge] != 'undefined') {
-    RESOLVE_INFOS[infos.challenge](GAME_SERVERS[infos.challenge])
+    RESOLVE_INFOS[infos.challenge](GAME_SERVERS[rinfo.address + ':' + rinfo.port])
     delete RESOLVE_INFOS[infos.challenge]
   }
+  return infos
 }
 
 
@@ -111,16 +139,9 @@ async function getserversResponse(socket, message, rinfo) {
 async function getServers(socket, message, rinfo) {
   let msg = 'getserversResponse'
   let keys = Object.keys(GAME_SERVERS)
-  // don't hold up own local server on loading itself
-  if (keys.length == 0
-    && (RESOLVE_DEDICATED.length == 0
-      || rinfo.address != '127.0.0.1')) {
-    serveDedicated()
-    keys = Object.keys(GAME_SERVERS)
-  }
 
   // TODO:
-  keys = []
+  //keys = []
 
   for (let i = 0; i < keys.length; i++) {
     let octets = GAME_SERVERS[keys[i]].address
@@ -150,6 +171,7 @@ async function serveMaster(socket, message, rinfo) {
     }
     let request = Array.from(buffer.slice(0, MASTER_SERVICE[i].length))
       .map(c => String.fromCharCode(c)).join('')
+
     if (MASTER_SERVICE[i].localeCompare(
       request, 'en', { sensitivity: 'base' }) != 0
     ) {
@@ -161,7 +183,7 @@ async function serveMaster(socket, message, rinfo) {
       await getserversResponse(socket, buffer, rinfo)
     } else
       if (i == 1) {
-        await getServers(socket, buffer, rinfo) 
+        await getServers(socket, buffer, rinfo)
       } else
         if (i == 2) {
           await heartbeat(socket, buffer, rinfo)
@@ -171,7 +193,10 @@ async function serveMaster(socket, message, rinfo) {
           } else
             if (i == 4) {
               await subscribe(socket, buffer, rinfo)
-            } // else
+            } else
+              if (i == 5) {
+                await statusResponse(socket, buffer, rinfo)
+              } // else
     return
   }
 
@@ -181,6 +206,11 @@ async function serveMaster(socket, message, rinfo) {
 }
 
 module.exports = {
+  UDP_SOCKETS,
+  MASTER_PORTS,
+  INFO_TIMEOUT,
+  RESOLVE_STATUS,
+  RESOLVE_INFOS,
   GAME_SERVERS,
   serveMaster,
   sendOOB,

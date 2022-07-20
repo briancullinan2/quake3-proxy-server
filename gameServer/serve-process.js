@@ -14,7 +14,7 @@ async function serveDedicated() {
         '+set', 'sv_master2', '"207.246.91.235:27950"',
         '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
         '+map', 'lsdm3_v1', 
-        '+wait', '+heartbeat'
+        '+wait', '300', '+heartbeat'
       ])
     }
   } catch (e) {
