@@ -225,6 +225,12 @@ async function serveSettings(request, response, next) {
   <h3>Unused Paths</h3>
   <ol id="unused-paths" class="directory-list">${nonExisting.map(renderFilelist).join('\n')}
   </ol>
+  <h3>Automatic Upgrade</h3>
+  ${renderMenu([{
+    title: 'Git Pull',
+    link: 'upgrade'
+  }], 'upgrade-menu')}
+
   </div>
   `))
 }

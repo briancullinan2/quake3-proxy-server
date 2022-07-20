@@ -156,7 +156,7 @@ function renderGamesMenu(filename) {
   }, {
     title: 'Screenshots',
     link: 'games/' + filename + '#screenshots'
-  }], 'asset-menu')
+  }], 'games-menu')
 }
 
 

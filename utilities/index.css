@@ -473,6 +473,10 @@ ol.directory-list li {
   background-color: rgb(21, 169, 130);
 }
 
+#games-menu li {
+  background-color: #107f2f;
+}
+
 .main-menu li a {
   color: white;
   text-decoration: none;

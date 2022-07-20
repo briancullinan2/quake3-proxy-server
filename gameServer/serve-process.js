@@ -62,16 +62,16 @@ async function serveProcess(request, response, next) {
     }
   })
   let engines = Object.keys(EXECUTING_MAPS)
-  .map(zip => {
-    let challenge = EXECUTING_MAPS[zip].challenge
-    let pid = EXECUTING_MAPS[zip].pid
+  .map(challenge => {
+    let server = EXECUTING_MAPS[challenge]
+    let pid = server.pid
     let serverInfo = Object.values(GAME_SERVERS)
         .filter(server => server.qps_serverId == challenge)[0]
     if(!serverInfo) {
       return
     }
     return {
-      name: zip,
+      name: server.mapname,
       assignments: pid,
       link: path.join('/games/', serverInfo.address + ':' + serverInfo.port)
     }
