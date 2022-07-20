@@ -31,6 +31,8 @@ similar to Quake 3's virtual file-system.
 - gameServer - list games like XQF / Gamedig. Simple process launcher for admins 
 to host games at specific times.
 
+![content](./screenshot3.png?raw=true)
+
 - mapServer - map and model uploader, drag and drop files or folders. Lists maps
 available for the masses to download. CDN-sourcing support?
 
