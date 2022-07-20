@@ -6,11 +6,11 @@ const { fileKey, streamFileKey } = require('../utilities/zip.js')
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
-const { renderIndex, renderFeature, renderMenu, renderFeatureMenu } = require('../utilities/render.js')
+const { renderIndex, renderEngine, renderMenu } = require('../utilities/render.js')
 const { ASSET_MENU } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
 const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
-  MODS_NAMES, GAME_INDEX, SYSNET, getGames } = require('../utilities/env.js')
+  MODS_NAMES, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/watch.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
@@ -393,10 +393,8 @@ async function serveVirtual(request, response, next) {
   let regularFile
   if(filename.match('index.html')) {
     response.setHeader('content-type', 'text/html')
-    const bodyTag = GAME_INDEX.match(/<body[\n\r.^>]*?>/i)
-    const offset = bodyTag.index + bodyTag[0].length
-    let index = GAME_INDEX.substring(0, offset) 
-      + renderFeatureMenu()
+    return response.send(renderIndex(
+      renderEngine()
       + renderMenu([{
         title: 'Fullscreen',
         link: '#fullscreen',
@@ -406,14 +404,7 @@ async function serveVirtual(request, response, next) {
       }, {
         title: 'Create Game',
         link: 'games/new'
-      }], 'games-menu')
-       + GAME_INDEX.substring(offset, GAME_INDEX.length).replace('sys_wasm.js', 
-      'sys_wasm.js"></script><script async defer type="text/javascript" src="frontend.js')
-    return response.send(index)
-  }
-  if (filename.match('sys_net.js')) {
-    response.setHeader('content-type', 'text/javascript')
-    return response.send(SYSNET)
+      }], 'games-menu')))
   }
 
   if(!filename.includes('.pk3')) {
@@ -487,6 +478,7 @@ async function serveVirtual(request, response, next) {
   }
 
   if(modname.length > 1 && !pk3Name && filename.length <= 1) {
+    response.setHeader('content-type', 'text/html')
     return response.send(renderIndex(`
     ${renderMenu(ASSET_MENU, 'asset-menu')}
     <div class="info-layout">

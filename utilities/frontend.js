@@ -69,6 +69,17 @@ function pageBindings() {
   } else if (engineView) {
     //initialize()
   }
+
+	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
+	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname)
+	if(connectAddr && typeof Cbuf_AddText != 'undefined') {
+    let reconnect = addressToString(Cvar_VariableString('cl_reconnectArgs'))
+    if(!reconnect.includes(connectAddr[0])) {
+      Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
+    }
+  }
+
+
 }
 
 window.addEventListener('load', (event) => {
@@ -314,22 +325,19 @@ function socketProxyControl(evt) {
   if(evt.data.includes('<html')) {
     let length = document.body.children.length
     let hasViewport = false
+    let hasGamesmenu = false
     for(let i = length - 1; i > 0; --i) { // don't remove menu
       if(document.body.children[i].id == 'viewport-frame') {
         hasViewport = true
         continue
       }
       if(evt.data.includes('viewport-frame') // since we won't be adding
-        && document.body.children[i].className == 'games-menu') {
+        && document.body.children[i].id == 'games-menu') {
         // preserve games menu
+        hasGamesmenu = true
         continue
       }
       document.body.children[i].remove()
-    }
-    // don't add engine twice, because it hangs around
-    if(evt.data.includes('viewport-frame')
-      && hasViewport) {
-      return
     }
     let loaderDiv = document.createElement('div')
     loaderDiv.style.display = 'none'
@@ -340,6 +348,14 @@ function socketProxyControl(evt) {
     let previous = null
     for(let i = loaderDiv.children.length - 1; i >= 0; --i) {
       let current = loaderDiv.children[i]
+      // don't add engine twice, because it hangs around
+      if(hasViewport && current.id == 'viewport-frame') {
+        continue
+      }
+      if(hasGamesmenu && current.id == 'games-menu') {
+        continue
+      }
+
       if(previous) {
         document.body.insertBefore(loaderDiv.children[i], previous)
       } else {

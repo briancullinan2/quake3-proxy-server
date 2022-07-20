@@ -4,7 +4,7 @@ const fs = require('fs')
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
-const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
+const { renderIndex, renderList, renderMenu, renderEngine } = require('../utilities/render.js')
 const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT, 
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
@@ -225,6 +225,7 @@ async function serveGameInfo(request, response, next) {
 
   return response.send(renderIndex(`
     ${renderGamesMenu(filename)}
+    ${renderEngine()}
     <div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">
     <h2>Games: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>

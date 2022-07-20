@@ -1,4 +1,4 @@
-const { SYSNET, INDEX, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
+const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')

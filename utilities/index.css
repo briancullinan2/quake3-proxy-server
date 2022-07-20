@@ -795,3 +795,8 @@ ol li.unused-path a,
 #viewport-frame ~ .loading-blur {
   display:none;
 }
+
+body.captured .main-menu {
+  display:none;
+}
+

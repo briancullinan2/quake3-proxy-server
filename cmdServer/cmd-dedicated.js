@@ -44,7 +44,7 @@ async function dedicatedCmd(startArgs, callback) {
       '+set', 'sv_pure', '0', 
       '+set', 'developer', '1',
       '+set', 'sv_master1', '"127.0.0.1:27950"',
-      '+set', 'fs_excludeReference', 'baseq3/pak8a.pk3',
+      '+set', 'fs_excludeReference', 'baseq3/pak8a demoq3/pak8a',
       // TODO: turn this into some sort of temporary cfg script
 
 

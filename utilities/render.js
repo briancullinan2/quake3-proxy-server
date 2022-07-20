@@ -60,11 +60,30 @@ function renderIndex(body, bodyClass) {
 }
 
 
+
+function renderEngine() {
+  return `
+  <div id="viewport-frame">
+		<div id="dialog"><h4 class="title"></h4><p class="description"></p></div>
+		<div id="flipper">
+			<div class="front">
+				<!-- front content -->
+			</div>
+			<div class="back">
+				<!-- back content -->
+			</div>
+		</div>
+		<div id="left-joystick"></div><div id="right-joystick"></div>
+		<canvas></canvas>
+	</div>`
+}
+
+
 module.exports = {
   renderFeatureMenu,
   renderFeature,
   renderList,
   renderMenu,
   renderIndex,
-
+  renderEngine,
 }
