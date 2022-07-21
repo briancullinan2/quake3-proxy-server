@@ -292,7 +292,6 @@ h2 a:hover {
   right: 0;
   height: 100%;
   width: 100%;
-  z-index: 0;
   opacity: 0.5;
   text-align: center;
   display: flex;
@@ -776,7 +775,6 @@ ol li.unused-path a,
   background-repeat: no-repeat;
   background-position: center;
   background-size: 24em;
-  /* z-index: 6; */
   display: flex;
   /* padding-top:22px; */
   flex-direction: row;
@@ -793,7 +791,7 @@ ol li.unused-path a,
 }
 
 #viewport-frame ~ .loading-blur {
-  display:none;
+  opacity: 0.2;
 }
 
 body.captured .main-menu {

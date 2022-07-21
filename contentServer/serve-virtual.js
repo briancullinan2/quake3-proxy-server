@@ -395,6 +395,7 @@ async function serveVirtual(request, response, next) {
     response.setHeader('content-type', 'text/html')
     return response.send(renderIndex(
       renderEngine()
+      + '<div class="loading-blur" style="display:none;"></div>'
       + renderMenu([{
         title: 'Fullscreen',
         link: '#fullscreen',

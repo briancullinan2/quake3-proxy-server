@@ -57,28 +57,33 @@ function pageBindings() {
       //   and new ENGINE_MENU
       /* 'sys_net.js', */ 'sys_std.js', 'sys_web.js', 'sys_snd.js', 'sys_wasm.js'
     ]
-    var tag
+    const promises = []
     for(let i = 0; i < ENGINE_SCRIPTS.length; i++) {
-      tag = document.createElement('script');
+      let tag = document.createElement('script');
       tag.src = window.location.origin + '/' + ENGINE_SCRIPTS[i]
+      promises.push(new Promise(resolve => tag.addEventListener('load', resolve, false)))
       document.getElementsByTagName('head')[0].appendChild(tag);
     }
-    tag.addEventListener('load', setTimeout.bind(null, function () {
-      window.initialize()
-    }, 100), false)
+    Promise.all(promises).then(() => window.initialize())
   } else if (engineView) {
     //initialize()
   }
 
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
-	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname)
+	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
 	if(connectAddr && typeof Cbuf_AddText != 'undefined') {
     let reconnect = addressToString(Cvar_VariableString('cl_reconnectArgs'))
     if(!reconnect.includes(connectAddr[0])) {
       Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
     }
   }
-
+  let MATCH_MAPNAME = /maps\/([^\/]+)$/gi
+	let mapname = MATCH_MAPNAME.exec(window.location.pathname + '')
+	if(mapname && typeof Cbuf_AddText != 'undefined') {
+    if(mapname != addressToString(Cvar_VariableString('mapname'))) {
+      Cbuf_AddText(stringToAddress('map ' + mapname[1] + ' ;\n'))
+    }
+  }
 
 }
 
@@ -104,7 +109,7 @@ async function initEvents() {
       if(eventPath[i].target) {
         return false
       }
-      if(window.location.pathname == eventPath[i].pathname
+      if(window.location.pathname + '' == eventPath[i].pathname
         && window.location.search == eventPath[i].search) {
         if(window.location.hash != eventPath[i].hash) {
           return false
@@ -113,9 +118,13 @@ async function initEvents() {
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
-      NET.socket1.send(eventPath[i].href, { binary: false })
+      let sock = NET.socket1
+      if(!sock) {
+        sock = NET.socket2
+      }
+      sock.send(eventPath[i].href, { binary: false })
       history.pushState(
-        {location: window.location.pathname}, 
+        {location: window.location.pathname + ''}, 
         header ? 'Quake III Arena: ' + header : document.title, 
         eventPath[i].href)
       evt.preventDefault()
@@ -142,7 +151,11 @@ async function initEvents() {
   })
 
   window.addEventListener('popstate', function () {
-    NET.socket1.send(window.location, { binary: false })
+    let sock = NET.socket1
+    if(!sock) {
+      sock = NET.socket2
+    }
+    sock.send(window.location, { binary: false })
   }, false)
 }
 
@@ -381,8 +394,12 @@ function socketProxyControl(evt) {
       if(!debounceTimer) {
         debounceTimer = setTimeout(function () {
           debounceTimer = null
-          NET.socket1.send(window.location + '', { binary: false })
-        }, 100)
+          let sock = NET.socket1
+          if(!sock) {
+            sock = NET.socket2
+          }
+          sock.send(window.location + '', { binary: false })
+        }, 1000)
       }
     }
     return
