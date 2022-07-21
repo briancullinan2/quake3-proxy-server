@@ -9,9 +9,92 @@ const { repackedCache } = require('../utilities/env.js')
 const { lvlshotCmd } = require('../mapServer/serve-lvlshot.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
+const { EXECUTING_MAPS } = require('../gameServer/processes.js')
 
+const RENDERER_TIMEOUT = 10000
+const MAX_RENDERERS = 4
 const EXECUTING_LVLSHOTS = {}
+const RENDERER_PROCESS = {}
+let lvlshotTimer
 
+async function serveQueue() {
+  // TODO: keep track of levelshot servers separately, sort / priorize by 
+  //   Object.keys(EXECUTING_LVLSHOTS) == mapname, then prioritize by list
+  //   i.e. if there are 2 maps with 2 tasks, there should be 4 servers running
+  //   in parallel with 2 redundant maps loaded.
+  if (!lvlshotTimer) {
+    lvlshotTimer = setInterval(serveQueue, 1000 / 60)
+  }
+  
+  let mapNames = Object.keys(EXECUTING_LVLSHOTS)
+  // sort by if the existing stack has less than <MAX_RENDERERS> commands
+  //   and if the time is less than <RENDERER_TIMEOUT> from the request
+  let mapNamesFiltered = mapNames.sort(function (a, b) {
+    // sort by the average minimum * number of tasks
+    let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
+    let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
+    return Math.sum(...aTasks.map(task => task.time)) / aTasks.length
+      - Math.sum(...bTasks.map(task => task.time)) / aTasks.length
+  }).slice(0, MAX_RENDERERS)
+  for(let i = 0; i < mapNamesFiltered.length; ++i) {
+    // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
+    //   of the <MAX_RENDERERS> servers to perform simultaneously.
+    let task = EXECUTING_LVLSHOTS[mapNamesFiltered[i]].shift()
+    
+    // TODO: use RCON interface to control servers and get information
+    //if(Object.keys(RENDERER_PROCESS).length < 4) {
+    //  serveLvlshot(mapname)
+    //}
+  }
+
+  // return promise wait on filtered tasks
+}
+
+
+// TODO: turn this into some sort of temporary cfg script
+async function serveLvlshot(mapname) {
+  if(Object.keys(RENDERER_PROCESS).length >= 4) {
+    return
+  }
+  try {
+    let challenge = buildChallenge()
+    let ps = await dedicatedCmd([
+      '+set', 'dedicated', '2',
+      '+set', 'sv_master2', '""',
+      '+set', 'sv_master3', '""',
+      '+sets', 'qps_serverId', challenge,
+      '+set', 'rconPassword2', 'password1',
+      '+set', 'sv_dlURL', '//maps/repacked/%1',
+      '+map', mapname, 
+      '+wait', '300', '+heartbeat',
+    ], function (lines) {
+      let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
+      if(!server) {
+        //console.log(lines)
+      } else {
+        if(typeof server.logs == 'undefined') {
+          server.logs = ''
+        }
+        server.logs += lines + '\n'
+        updatePageViewers('/rcon')
+      }
+    })
+    ps.on('close', function () {
+      delete EXECUTING_MAPS[challenge]
+      delete EXECUTING_LVLSHOTS[ps.pid]
+    })
+    EXECUTING_MAPS[challenge] = {
+      challenge: challenge,
+      pid: ps.pid,
+      mapname: mapname,
+    }
+    EXECUTING_LVLSHOTS[ps.pid] = ps
+  } catch (e) {
+    console.error('DEDICATED:', e)
+  }
+
+}
 
 // TODO: treat each task as a separate unit of work, 
 //   but only wait on the one that is requested, even if 

@@ -4,45 +4,67 @@ const { watcherPID } = require('../utilities/env.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
-const { EXECUTING_MAPS, RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
+const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { STATUS_MENU, GAME_SERVERS } = require('../gameServer/processes.js')
+const { EXECUTING_MAPS, RESOLVE_DEDICATED, STATUS_MENU, 
+    GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 
+const SERVER_STARTTIME = 5000
+
+
 async function serveDedicated() {
+  if (Object.keys(RESOLVE_DEDICATED).length > 0) {
+    return
+  }
   try {
-    if (RESOLVE_DEDICATED.length == 0) {
-      let challenge = buildChallenge()
-      let ps = await dedicatedCmd([
-        '+set', 'dedicated', '2',
-        '+set', 'sv_master2', '"207.246.91.235:27950"',
-        '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
-        '+sets', 'qps_serverId', challenge,
-        '+set', 'rconPassword2', 'password1',
-        '+set', 'sv_dlURL', '//maps/repacked/%1',
-        '+map', 'lsdm3_v1', 
-        '+wait', '300', '+heartbeat',
-      ], function (lines) {
-        let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
-        if(!server) {
-          //console.log(lines)
-        } else {
-          if(typeof server.logs == 'undefined') {
-            server.logs = ''
-          }
-          server.logs += lines + '\n'
-          updatePageViewers('/rcon')
+    let challenge = buildChallenge()
+
+    if(typeof RESOLVE_DEDICATED[challenge] == 'undefined') {
+      RESOLVE_DEDICATED[challenge] = []
+    } // else
+    //if(RESOLVE_DEDICATED[challenge].length > 0) {
+      // TODO: wait for existing server to start
+    //  return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
+    //}
+    let cancelTimer = setTimeout(function () {
+      throw new Error('Start server timed out.')
+    }, SERVER_STARTTIME)
+    RESOLVE_DEDICATED[challenge].push(function () {
+      clearTimeout(cancelTimer)
+      console.log('Dedicated started.')
+      updatePageViewers('/games')
+    })
+
+    let ps = await dedicatedCmd([
+      '+set', 'dedicated', '2',
+      '+set', 'sv_master2', '"207.246.91.235:27950"',
+      '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
+      '+sets', 'qps_serverId', challenge,
+      '+set', 'rconPassword2', 'password1',
+      '+set', 'sv_dlURL', '//maps/repacked/%1',
+      '+map', 'lsdm3_v1', 
+      '+wait', '300', '+heartbeat',
+    ], function (lines) {
+      let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
+      if(!server) {
+        //console.log(lines)
+      } else {
+        if(typeof server.logs == 'undefined') {
+          server.logs = ''
         }
-      })
-      ps.on('close', function () {
-        delete EXECUTING_MAPS[challenge]
-      })
-      EXECUTING_MAPS[challenge] = {
-        challenge: challenge,
-        pid: ps.pid,
-        mapname: 'lsdm3_v1',
+        server.logs += lines + '\n'
+        updatePageViewers('/rcon')
       }
+    })
+    ps.on('close', function () {
+      delete EXECUTING_MAPS[challenge]
+    })
+    EXECUTING_MAPS[challenge] = {
+      challenge: challenge,
+      pid: ps.pid,
+      mapname: 'lsdm3_v1',
     }
   } catch (e) {
     console.error('DEDICATED:', e)

@@ -1,10 +1,9 @@
 const { lookupDNS } = require('../utilities/dns.js')
 const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
-const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { GAME_SERVERS } = require('../gameServer/processes.js')
+const { RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
 
 
 const MASTER_SERVERS = [
@@ -49,18 +48,14 @@ async function createMasters(mirror) {
     }
   }
 
+  // look for existing servers we might have left laying around from last session to commandeer
   setTimeout(function () {
     // don't hold up own local server on loading itself
     if (Object.keys(GAME_SERVERS).length == 0
-      && (RESOLVE_DEDICATED.length == 0
-      || address != '127.0.0.1')) {
+      && Object.keys(RESOLVE_DEDICATED).length == 0) {
       serveDedicated()
-      RESOLVE_DEDICATED.push(function () {
-        updatePageViewers('/games')
-      })
     }
   }, 3000)
-
   for (let i = 0; i < 10; i++) {
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');

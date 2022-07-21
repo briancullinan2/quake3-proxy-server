@@ -41,7 +41,12 @@ const FILESYSTEM_WATCHERS = [{
   absolute: 'reload/mounts/.',
 }]
 
+const EXECUTING_MAPS = {}
+const RESOLVE_DEDICATED = {}
+
 module.exports = {
+  EXECUTING_MAPS,
+  RESOLVE_DEDICATED,
   FILESYSTEM_WATCHERS,
   STATUS_MENU,
   GAME_SERVERS,

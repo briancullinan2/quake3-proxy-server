@@ -1,9 +1,8 @@
 
-const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
-const { GAME_SERVERS } = require('../gameServer/processes.js')
+const { RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 const UDP_SOCKETS = []
@@ -13,7 +12,6 @@ const MASTER_SERVICE = [
   'getserversResponse', 'getservers ', 'heartbeat ', 'infoResponse\n',
   'subscribe', 'statusResponse\n', 'print',
 ]
-const RESOLVE_INFOS = {}
 const RESOLVE_STATUS = {}
 
 
@@ -31,29 +29,36 @@ function sendOOB(socket, message, rinfo) {
 async function heartbeat(socket, message, rinfo) {
   console.log('Heartbeat: ', rinfo)
   // wait for a successful infoResponse before confirming
-  let info = await new Promise(function (resolve, reject) {
+  if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
+    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+  }
+  if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
+    GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
+  }
+  let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
+
+  let infos = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
       reject(new Error('Heartbeat getinfo timed out.'))
     }, INFO_TIMEOUT)
-    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
-      GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    if(typeof RESOLVE_STATUS[challenge] == 'undefined') {
+      RESOLVE_STATUS[challenge] = []
     }
-    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
-      GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
-    }
-    let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
-    RESOLVE_INFOS[challenge] = function (info) {
+    RESOLVE_STATUS[challenge].push(function (info) {
       clearTimeout(cancelTimer)
       resolve(info)
-    }
+    })
     sendOOB(socket, 'getinfo ' + challenge, rinfo)
     sendOOB(socket, 'getstatus ' + challenge, rinfo)
   })
 
   // resolve awaiting `getServers` command for new local dedicated
-  if (rinfo.address == '127.0.0.1') {
+  if(typeof infos.qps_serverId != 'undefined') {
+    if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
+      RESOLVE_DEDICATED[infos.qps_serverId] = []
+    }
     let res
-    while ((res = RESOLVE_DEDICATED.pop())) {
+    while ((res = RESOLVE_DEDICATED[infos.qps_serverId].shift())) {
       res()
     }
   }
@@ -62,17 +67,28 @@ async function heartbeat(socket, message, rinfo) {
 async function statusResponse(socket, message, rinfo) {
   // TODO: decode status, part info, part player list
   let infos = await infoResponse(socket, message, rinfo)
-  if (typeof RESOLVE_STATUS[infos.challenge] != 'undefined') {
-    RESOLVE_STATUS[infos.challenge](infos)
-    delete RESOLVE_STATUS[infos.challenge]
-  }
+
   let playerStrings = Array.from(message)
     .map(c => String.fromCharCode(c)).join('').split('\n').slice(1)
   for (let i = 0; i < playerStrings.length; i++) {
     // TODO: parsePlayer()
   }
+
+  if(typeof infos.qps_serverId != 'undefined') {
+    // create the key just so we know not to create one in the future, we have control already
+    if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
+      RESOLVE_DEDICATED[infos.qps_serverId] = []
+    }
+  }
+
   //console.log(infos, playerStrings)
-  
+  if (typeof RESOLVE_STATUS[infos.challenge] != 'undefined') {
+    let res
+    while ((res = RESOLVE_STATUS[infos.challenge].shift())) {
+      res(GAME_SERVERS[rinfo.address + ':' + rinfo.port])
+    }
+  }
+
   return infos
 }
 
@@ -94,10 +110,7 @@ async function infoResponse(socket, message, rinfo) {
     Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
     GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
   }
-  if (typeof RESOLVE_INFOS[infos.challenge] != 'undefined') {
-    RESOLVE_INFOS[infos.challenge](GAME_SERVERS[rinfo.address + ':' + rinfo.port])
-    delete RESOLVE_INFOS[infos.challenge]
-  }
+
   return infos
 }
 
@@ -240,7 +253,6 @@ module.exports = {
   MASTER_PORTS,
   INFO_TIMEOUT,
   RESOLVE_STATUS,
-  RESOLVE_INFOS,
   GAME_SERVERS,
   serveMaster,
   sendOOB,

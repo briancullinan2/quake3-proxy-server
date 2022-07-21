@@ -213,11 +213,14 @@ async function serveGameInfo(request, response, next) {
       let cancelTimer = setTimeout(function () {
         reject(new Error('Game status timed out.'))
       }, INFO_TIMEOUT)
-      RESOLVE_STATUS[serverInfo.challenge] = function (info) {
+      if(typeof RESOLVE_STATUS[serverInfo.challenge] == 'undefined') {
+        RESOLVE_STATUS[serverInfo.challenge] = []
+      }
+      RESOLVE_STATUS[serverInfo.challenge].push(function (info) {
         clearTimeout(cancelTimer)
         updatePageViewers('/games')
         resolve(info)
-      }
+      })
       sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serverInfo.challenge, serverInfo)
     }))
   }
