@@ -465,6 +465,10 @@ async function serveVirtual(request, response, next) {
     return
   }
 
+  if(!isIndex) {
+    return next()
+  }
+
 
   // TODO: server a file from inside a pk3 to the pk3dirs
   // TODO: move to layeredDir()?
