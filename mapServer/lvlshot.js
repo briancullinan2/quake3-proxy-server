@@ -191,10 +191,6 @@ async function execLevelshot(mapname) {
   }
 
   const screenshotCommands = [
-    '+set', 'fs_basepath', FS_BASEPATH,
-    '+set', 'fs_homepath', FS_GAMEHOME,
-    '+set', 'bot_enable', '0',
-    '+set', 'developer', '0',
     // Ironically, the thing I learned working for the radio station about
     //   M$ Windows not being able to run without a video card for remote
     //   desktop, but Xvfb working fine with remote desktop, has suddenly

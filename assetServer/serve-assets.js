@@ -1,43 +1,19 @@
 const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
-const { ASSET_MENU } = require('../contentServer/serve-settings.js')
+const { ASSET_FEATURES, ASSET_MENU } = require('../contentServer/serve-settings.js')
 
 
 // TODO: provide editor / viewer for selected file type
 
 async function serveAssets(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  let ASSET_FEATURES = [{
-    title: 'Virtual FS',
-    subtitle: 'Combined baseq3/pak0.pk3dir',
-    link: 'baseq3/pak0.pk3dir/?index',
-    levelshot: '/build/virtual.svg'
-  }, {
-    title: 'Repacked Cache',
-    subtitle: 'On Demand Transcoding',
-    link: 'repacked/baseq3/pak0.pk3dir/?index',
-    levelshot: '/build/repack.svg'
-  }, {
-    title: 'Live Dev',
-    subtitle: 'FS Watcher / Hot-reloading',
-    link: 'build/?index',
-    levelshot: '/build/livecode.svg'
-  }, {
-    title: 'Directories',
-    subtitle: 'Settings / Auto-detect',
-    link: 'settings',
-  }, {
-    title: 'Downloads',
-    subtitle: 'Find Remote content',
-    link: 'downloads',
-    levelshot: '/build/downloads.svg'
-  }]
+  
 
   response.setHeader('content-type', 'text/html')
-  return response.send(renderIndex(`
-  ${renderMenu(ASSET_MENU, 'asset-menu')}
-  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  return response.send(renderIndex(
+  renderMenu(ASSET_MENU, 'metadata-menu')
+  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
-  <h2>Asset server</h2>
+  <h2><a name="assets">Asset server</a></h2>
   <p>By default, the server responds with a plain HTML page with links for the
   directory listing. For your convenience, and for the sake of navigation,
   entering the directory listing through this interface will continue to

@@ -1,6 +1,7 @@
 // TODO: list connected clients and usernames
-const { renderIndex } = require('../utilities/render.js')
+const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { UDP_CLIENTS, SESSION_URLS, SESSION_IDS } = require('../proxyServer/serve-udp.js')
+const { STATUS_MENU } = require('../gameServer/processes.js')
 
 async function serveConnections(request, response, next) {
   let ports = Object.keys(UDP_CLIENTS)
@@ -22,9 +23,8 @@ async function serveConnections(request, response, next) {
     return multicast
   }).flat(1)
   return response.send(renderIndex(
-    //renderMenu(PROXY_MENU, 'downloads-menu')
-    //+ 
-    `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+    renderMenu(STATUS_MENU, 'downloads-menu')
+    + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <div class="info-layout">
     <h2>Proxy Clients</h2>
     <ol class="directory-list">${proxyConnections.map(renderConnection).join('\n')}

@@ -4,9 +4,9 @@ const path = require('path')
 const fs = require('fs')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
-const { ASSET_MENU, renderFilelist } = require('../contentServer/serve-settings.js')
+const { ASSET_FEATURES, renderFilelist } = require('../contentServer/serve-settings.js')
 const { getGames } = require('../utilities/env.js')
-const { calculateSize } = require('../utilities/watch.js')
+const { calculateSize } = require('../utilities/async-size.js')
 const { combinedDir } = require('../assetServer/layered.js')
 
 const LIVE_EXPLAINATION = `
@@ -105,7 +105,7 @@ async function serveLive(request, response, next) {
   }
 
   return response.send(renderIndex(`
-  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  ${renderMenu(ASSET_FEATURES, 'asset-menu')}
   <div class="info-layout">${filename.length <= 1 ? LIVE_EXPLAINATION : ''}
     ${await renderDirectory(filename.length <= 1
     ? 'live (combined)' : path.join('build', filename), await Promise.all(directoryFiltered), !isIndex)}

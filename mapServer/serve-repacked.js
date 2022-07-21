@@ -4,7 +4,7 @@ const { PassThrough, Readable } = require('stream')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
-const { ASSET_MENU } = require('../contentServer/serve-settings.js')
+const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { fileKey, streamFileKey } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
@@ -67,7 +67,7 @@ async function serveRepacked(request, response, next) {
   if (!modname || modname.length == 0) {
     let allGames = await filteredGames()
     return response.send(renderIndex(`
-    ${renderMenu(ASSET_MENU, 'asset-menu')}
+    ${renderMenu(ASSET_FEATURES, 'asset-menu')}
     <div class="info-layout">${REPACKED_DESCRIPTION}
       ${await renderDirectory('repacked (virtual)', allGames, !isIndex)}
     </div>`))
@@ -89,7 +89,7 @@ async function serveRepacked(request, response, next) {
   if (pk3File.length == 0) {
     let directory = await filteredPk3List(modname, pk3Names)
     return response.send(renderIndex(`
-    ${renderMenu(ASSET_MENU, 'asset-menu')}
+    ${renderMenu(ASSET_FEATURES, 'asset-menu')}
     <div class="info-layout">
       ${await renderDirectory(path.join('repacked', modname), directory, !isIndex)}
     </div>`))
@@ -194,7 +194,7 @@ async function serveRepacked(request, response, next) {
 
 
   return response.send(renderIndex(`
-  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  ${renderMenu(ASSET_FEATURES, 'asset-menu')}
   <div class="info-layout">
     ${await renderDirectory(path.join('repacked', modname,
     pk3File + 'dir', pk3InnerPath), directory, !isIndex)}

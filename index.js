@@ -12,7 +12,6 @@ const path = require('path')
 const { HTTP_PORTS, createWebServers } = require('./contentServer/express.js')
 const { createMasters } = require('./gameServer/serve-master.js')
 const { MASTER_PORTS } = require('./gameServer/master.js')
-const { serveDedicated } = require('./gameServer/serve-process.js')
 const {
   setDownload, setRepack, downloadCache, repackedCache, setGame,
   addDownload, setWatcherPID, addRepacked, addGame,
@@ -232,11 +231,6 @@ function main() {
   if (START_SERVICES.length > 0) {
     createWebServers(START_SERVICES)
   }
-
-  //if (START_SERVICES.includes('all')
-  //  || START_SERVICES.includes('dedicated')) {
-  //  serveDedicated()
-  //}
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('tty')) {

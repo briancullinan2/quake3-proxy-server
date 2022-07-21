@@ -1,4 +1,5 @@
 const { renderIndex, renderFeature, renderMenu } = require('../utilities/render.js')
+const { ASSET_FEATURES, ASSET_MENU } = require('../contentServer/serve-settings.js')
 
 // TODO: provide editor / viewer for selected file type
 
@@ -6,27 +7,27 @@ async function serveMetadata(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let METADATA_FEATURES = [{
     title: 'Skins',
-    link: 'metadata/#skins',
+    link: 'metadata#skins',
     subtitle: 'Asset streaming / Indexing'
   }, {
     title: 'Arenas',
-    link: 'metadata/#arenas',
+    link: 'metadata#arenas',
     subtitle: 'Map Validation / Parsing'
   }, {
     title: 'Matches',
-    link: 'metadata/#matches',
+    link: 'metadata#matches',
     subtitle: 'Server Mocking / Recording'
   }, {
     title: 'Games',
-    link: 'metadata/#games',
+    link: 'metadata#games',
     subtitle: 'Master Servers / Mods'
   }]
 
   response.setHeader('content-type', 'text/html')
-  return response.send(renderIndex(`
-  ${renderMenu(METADATA_FEATURES, 'metadata-menu')}
-  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-  <div class="info-layout">
+  return response.send(renderIndex(
+  renderMenu(ASSET_FEATURES, 'asset-menu')
+  + renderMenu(METADATA_FEATURES, 'metadata-menu')
+  + `<div class="info-layout">
   <h2>Metadata</h2>
   <p>Each of the following pages demonstrates pulling data from multiple sources
   to make a coherant display. Otherwise, it would be simpler just to go out and

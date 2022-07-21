@@ -33,7 +33,7 @@ async function filteredMaps() {
     return {
       link: `maps/${mapname}`,
       levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
-      pakname: basename.replace('map-', '').replace('map_', ''),
+      pakname: 'Download: ' + basename.replace('map-', '').replace('map_', ''),
       title: mapname,
       bsp: mapname,
       have: true,

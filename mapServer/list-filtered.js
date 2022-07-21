@@ -3,7 +3,7 @@ const fs = require('fs')
 
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { repackedCache, getGames } = require('../utilities/env.js')
-const { calculateSize } = require('../utilities/watch.js')
+const { calculateSize } = require('../utilities/async-size.js')
 const { EXISTING_ZIPS, indexedSize, filteredDirectory, indexedDate, fileKey } = require('../utilities/zip.js')
 const { CONVERTED_IMAGES } = require('../cmdServer/cmd-convert.js')
 

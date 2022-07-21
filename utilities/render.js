@@ -19,7 +19,7 @@ function renderFeature(map) {
   result += `</a></h3>`
   result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot || '/unknownmap.jpg'}" />`
   if(map.download || map.pakname) {
-    result += `<a href="/maps/download/${map.bsp}">${map.pakname}</a>`
+    result += `<a href="/maps/download/${map.download || map.bsp}">${map.pakname || map.download}</a>`
   }
   //result += map.pakname.includes('.pk3') ? '' : '.pk3'
   return result

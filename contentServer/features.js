@@ -29,29 +29,11 @@ const CONTENT_FEATURES = {
     link: 'games',
     levelshot: `/build/games.svg`,
   },
-  'palette': {
-    title: 'Shaders',
-    subtitle: 'List Shaders / Palettes',
-    link: 'palette',
-    levelshot: `/build/shaders.svg`,
-  },
   'mods': {
     title: 'Mods',
     subtitle: 'Mods List / Supported games',
     link: 'mods',
     levelshot: `/build/mods.svg`,
-  },
-  'metadata': {
-    title: 'Metadata',
-    subtitle: 'Metadata / List datas',
-    link: 'metadata',
-    levelshot: `/build/metadata.svg`,
-  },
-  'process': {
-    title: 'Tasks',
-    subtitle: 'Process Server / Transcoding',
-    link: 'process',
-    levelshot: `/build/tasks.svg`,
   },
   'assets': {
     title: 'Assets',
@@ -59,30 +41,13 @@ const CONTENT_FEATURES = {
     link: 'assets',
     levelshot: `/build/bundle.svg`,
   },
-  'logs': {
-    title: 'Logs',
-    subtitle: 'Error Logs / Notifications',
-    link: 'logs',
-    levelshot: `/build/logs.svg`,
+  'process': {
+    title: 'Status',
+    subtitle: 'Server Status / Current tasks',
+    link: 'process',
+    levelshot: `/build/tasks.svg`,
   },
-  'users': {
-    title: 'Users',
-    subtitle: 'Users / Groups / Access',
-    link: 'users',
-    levelshot: `/build/users.svg`,
-  },
-  'downloads': {
-    title: 'Downloads',
-    subtitle: 'Download Remote content',
-    link: 'downloads',
-    levelshot: `/build/downloads.svg`,
-  },
-  'proxy': {
-    title: 'Proxy',
-    subtitle: 'Proxy Server',
-    link: 'proxy',
-    levelshot: `/build/proxy.svg`,
-  }
+
 }
 
 // TODO: some sort of registration system?

@@ -1,13 +1,14 @@
 const path = require('path')
 
 const { watcherPID } = require('../utilities/env.js')
-const { renderIndex } = require('../utilities/render.js')
+const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
 const { EXECUTING_MAPS, RESOLVE_DEDICATED, dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { GAME_SERVERS } = require('../gameServer/processes.js')
+const { STATUS_MENU, GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+
 
 async function serveDedicated() {
   try {
@@ -86,9 +87,8 @@ async function serveProcess(request, response, next) {
   .filter(zip => zip)
 
   return response.send(renderIndex(
-    //renderMenu(PROXY_MENU, 'downloads-menu')
-    //+ 
-    `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+    renderMenu(STATUS_MENU, 'downloads-menu')
+    + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
     <div class="info-layout">
     <h2>Task List</h2>
     <ol class="directory-list">${processes.map(renderProcess).join('\n')}
@@ -121,6 +121,7 @@ if (typeof node.mtime != 'undefined') {
   result += '</li>'
   return result
 }
+
 
 module.exports = {
   serveDedicated,

@@ -4,10 +4,11 @@ const path = require('path')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { filteredMaps } = require('../assetServer/list-maps.js')
 const { parseExisting } = require('./list-palettes.js')
-const { renderIndex, renderList } = require('../utilities/render.js')
+const { renderIndex, renderList, renderMenu } = require('../utilities/render.js')
 const { paletteCmd } = require('../cmdServer/cmd-palette.js')
 const { makePalette } = require('../assetServer/make-palette.js')
 const { parsePalette } = require('../assetServer/list-palettes.js')
+const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 
 let CACHED_PALETTE = ''
 
@@ -47,7 +48,9 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
   }
 
   let total = paletteNeeded.length
-  let index = renderIndex(renderList('/palette/', palettes, total))
+  let index = renderIndex(
+    renderMenu(ASSET_FEATURES, 'asset-menu')
+    + renderList('/palette/', palettes, total))
   response.setHeader('content-type', 'text/html')
   return response.send(index)
 }

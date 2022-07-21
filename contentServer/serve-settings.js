@@ -2,36 +2,63 @@ const fs = require('fs')
 const path = require('path')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
-const { getGames, repackedCache, downloadCache } = require('../utilities/env.js')
-const { FILESYSTEM_WATCHERS, calculateSize } = require('../utilities/watch.js')
+const { getGame, getGames, repackedCache, downloadCache } = require('../utilities/env.js')
+const { calculateSize } = require('../utilities/async-size.js')
+const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
 
-
-
-let ASSET_MENU = [{
-  title: 'Skins',
-  link: 'assets/#skins'
-}, {
-  title: 'Arenas',
-  link: 'assets/#arenas'
-}, {
-  title: 'Matches',
-  link: 'assets/#matches'
-}, {
-  title: 'Games',
-  link: 'assets/#games'
+let ASSET_FEATURES = [{
+  title: 'Shaders',
+  subtitle: 'List Shaders / Palettes',
+  link: 'palette',
+  levelshot: `/build/shaders.svg`,
 }, {
   title: 'Virtual FS',
-  link: 'baseq3/pak0.pk3dir/?index',
+  subtitle: `Combined ${getGame()}/pak0.pk3dir`,
+  link: getGame() + '/pak0.pk3dir/?index',
+  levelshot: '/build/virtual.svg'
 }, {
   title: 'Repacked Cache',
+  subtitle: 'On Demand Transcoding',
   link: 'repacked/baseq3/pak0.pk3dir/?index',
+  levelshot: '/build/repack.svg'
 }, {
   title: 'Live Dev',
+  subtitle: 'FS Watcher / Hot-reloading',
   link: 'build/?index',
+  levelshot: '/build/livecode.svg'
 }, {
   title: 'Directories',
-  link: 'settings'
+  subtitle: 'Settings / Auto-detect',
+  link: 'settings',
+}, {
+  title: 'Downloads',
+  subtitle: 'Find Remote content',
+  link: 'downloads',
+  levelshot: '/build/downloads.svg'
+}, {
+  title: 'Metadata',
+  subtitle: 'Metadata / List datas',
+  link: 'metadata',
+  levelshot: `/build/metadata.svg`,
 }]
+
+let ASSET_MENU = [{
+  title: 'Assets',
+  link: 'assets'
+}, {
+  title: 'Skins',
+  link: 'assets#skins'
+}, {
+  title: 'Arenas',
+  link: 'assets#arenas'
+}, {
+  title: 'Matches',
+  link: 'assets#matches'
+}, {
+  title: 'Games',
+  link: 'assets#games'
+}]
+
 
 
 // TODO: replace with filteredGames + formattedGames() 
@@ -168,7 +195,7 @@ async function serveSettings(request, response, next) {
 
 
   return response.send(renderIndex(`
-  ${renderMenu(ASSET_MENU, 'asset-menu')}
+  ${renderMenu(ASSET_FEATURES, 'asset-menu')}
   <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
   <div class="info-layout">
   <h2>Settings</h2>
@@ -236,6 +263,7 @@ async function serveSettings(request, response, next) {
 }
 
 module.exports = {
+  ASSET_FEATURES,
   ASSET_MENU,
   serveSettings,
   renderFilelist,

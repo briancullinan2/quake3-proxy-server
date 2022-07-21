@@ -1,6 +1,5 @@
 
 const { RESOLVE_DEDICATED } = require('../cmdServer/cmd-dedicated.js')
-const { serveDedicated } = require('../gameServer/serve-process.js')
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
@@ -245,6 +244,5 @@ module.exports = {
   GAME_SERVERS,
   serveMaster,
   sendOOB,
-  serveDedicated,
 }
 
