@@ -36,6 +36,8 @@ to host games at specific times.
 - mapServer - map and model uploader, drag and drop files or folders. Lists maps
 available for the masses to download. CDN-sourcing support?
 
+![content](./screenshot4.png?raw=true)
+
 - proxyServer - WebSocket and SOCKSv5 proxy server and reverse proxy 
 for creating game servers within a corporate network.
 
