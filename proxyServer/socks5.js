@@ -38,7 +38,7 @@ function createSOCKS(socket, redirectApp, sessionId) {
       let response = await parseSOCKS(sessionId, redirectApp, socket, message)
       socket.send(Buffer.from(response), { binary: true })
     } catch (e) {
-      console.error(e)
+      console.error('SOCKS', e)
       socket.send(Buffer.from([0x05, REP.GENFAIL]), { binary: true })
     }
   })

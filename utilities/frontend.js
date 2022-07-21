@@ -316,7 +316,7 @@ async function loadNextPage(page, halfwareMark) {
     json = await response.json()
     loading--
   } catch (e) {
-    console.error(e)
+    console.error('PAGING', e)
     loading--
     return
   }

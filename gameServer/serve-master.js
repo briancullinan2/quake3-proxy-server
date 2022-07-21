@@ -36,6 +36,9 @@ async function createMasters(mirror) {
           console.log(e)
         }
       })
+    UDP_SOCKETS[MASTER_PORTS[i]].on('error', function () {
+      console.log('MASTER:', arguments)
+    })
     await new Promise(resolve => UDP_SOCKETS[MASTER_PORTS[i]].once('listening', resolve))
 
     // since we have an http server to redirect to, if someone visits a service

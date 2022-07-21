@@ -65,7 +65,7 @@ async function streamFile(file, stream) {
     updatePageViewers('/process')
     file.zip.stream(file.key, (err, stm) => {
       if(err) {
-        console.error(err)
+        console.error('ZIP STREAMING', err)
         reject(new Error(err))
       }
       // TODO: result = await execCmd(command, stm)

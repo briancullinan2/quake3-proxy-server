@@ -440,7 +440,7 @@ async function serveVirtual(request, response, next) {
 
   // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
   if(pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', {sensitivity: 'base'})) {
-    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile)
+    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
     for(let i = 0; i < pk3s.length; i++) {
       if(isAlt && await streamImageKey(pk3s[i], pk3InnerPath, response)) {
         return

@@ -66,7 +66,7 @@ function createApplication(features) {
 
 function unhandledResponse(err, req, res, next) {
   if (err) {
-    console.error(err)
+    console.error('HTTP:', err)
   }
   if (req.headers['accept']
     && !req.headers['accept'].includes('text/html')

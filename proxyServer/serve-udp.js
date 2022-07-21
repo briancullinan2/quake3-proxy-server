@@ -31,7 +31,7 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
   // if we don't catch the error, it will become unhandled
   let thrown = false
   function catchError(err) {
-    console.error(err)
+    console.error('UDP:', err)
     thrown = true
   }
   if (port === 0 || typeof UDP_SERVERS[port] == 'undefined') {

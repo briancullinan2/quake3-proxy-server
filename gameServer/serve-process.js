@@ -44,7 +44,7 @@ async function serveDedicated() {
       }
     }
   } catch (e) {
-    console.error(e)
+    console.error('DEDICATED:', e)
   }
 }
 

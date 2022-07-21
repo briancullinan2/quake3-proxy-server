@@ -33,7 +33,7 @@ async function serveMapInfo(request, response, next) {
   try {
     mapInfo = await getMapInfo(mapname)
   } catch (e) {
-    console.error(e)
+    console.error('MAPINFO:', e)
     return next(e)
   }
 

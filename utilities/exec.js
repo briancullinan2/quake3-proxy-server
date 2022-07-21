@@ -35,7 +35,7 @@ async function execCmd(cmd, args, options) {
           }, PROCESS_INTERVAL)
         })
     } catch (e) {
-      console.error(e)
+      console.error('EXEC COMMAND:', e)
       return
     }
   }

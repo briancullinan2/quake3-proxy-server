@@ -24,7 +24,7 @@ async function servePaletteReal(start, end, filterMap, isJson, response) {
     try {
       mapInfo = await getMapInfo(filterMap)
     } catch (e) {
-      console.error(e)
+      console.error('MAPINFO:', e)
     }
     console.log(mapInfo.images)
     paletteNeeded = paletteNeeded.filter()

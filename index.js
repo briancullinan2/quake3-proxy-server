@@ -149,6 +149,7 @@ function printLogs(cmd) {
 
 isInside = false
 function exceptionHandler(ex) {
+  debugger
   if (isInside) {
     REDIRECTED_ERRORS.push([ex])
     previousError(REDIRECTED_ERRORS.length, 'unhandled:',

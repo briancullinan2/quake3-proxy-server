@@ -89,8 +89,10 @@ function parseCurlys(shaderText) {
 }
 
 
+// TODO: make an index of shader names, then as they are loaded, parse for
+//   image maps, and return a list of possible images
 async function ScanAndLoadShaderFiles() {
-  let chunk_size = 3
+let chunk_size = 3
   let shaders = await existingShaders()
   let shaderChunks = shaders.map(function (e, i, arr) { 
     return i%chunk_size===0 ? arr.slice(i,i+chunk_size) : null; 
@@ -116,9 +118,6 @@ async function ScanAndLoadShaderFiles() {
     }
     await Promise.all(promises)
   }
-  // TODO: make an index of shader names, then as they are loaded, parse for
-  //   image maps, and return a list of possible images
-  //console.log(SHADER_BODY)
 }
 
 
