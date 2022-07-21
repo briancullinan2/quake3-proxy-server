@@ -106,7 +106,7 @@ async function serveLevelshot(request, response, next) {
       return response.sendFile(levelshot)
     }
   } catch (e) {
-    console.error(e)
+    console.error('LVLSHOT:', e)
   }
 
   next()

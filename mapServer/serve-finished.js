@@ -7,7 +7,7 @@ const fs = require('fs')
 
 const { getGame } = require('../utilities/env.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
-const { repackBasepack } = require('../mapServer/repack.js')
+const { repackBasemap, repackBasepack } = require('../mapServer/repack.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { findFile } = require('../assetServer/virtual.js')
 
