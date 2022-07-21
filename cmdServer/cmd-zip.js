@@ -8,7 +8,7 @@ async function zipCmd(fullPath, update, newZip) {
   let pk3InnerPath = fullPath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '')
   let startArgs = ['-v']
   if(update) {
-    startArgs.push('-u')
+    startArgs.push(typeof update == 'string' ? update : '-u')
   }
   startArgs.push.apply(startArgs, [
     '../' + path.basename(newZip), path.join('./', pk3InnerPath)

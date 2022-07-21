@@ -178,6 +178,10 @@ async function repackBasepack(modname) {
         allPromises.push(Promise.resolve(processImage(file, newFile)))
       } else {
         // TODO: statSync() for update checking
+        let newTime = fs.statSync(newFile).mtime.getTime()
+        if(newTime > file.time) {
+          file.time = newTime
+        }
       }
       if(file.time > maxMtime) {
         maxMtime = file.time
@@ -209,6 +213,7 @@ async function repackBasepack(modname) {
   let filesToRemove = []
   let filesInIndex = {}
   if (fs.existsSync(newZip)) {
+    let existingTime = fs.statSync(newZip).mtime.getTime()
     let existingIndex = await getIndex(newZip)
     // TODO: remove already up to date items here not to slow down process server
     //   with redundant checks. stat everything as it's added and check if the time 
@@ -218,14 +223,19 @@ async function repackBasepack(modname) {
       let file = existingIndex[i]
       let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
       if(typeof includedDates[newFile] == 'undefined') {
+        delete includedDates[newFile]
         filesToRemove.push(file)
-      } else if(fs.statSync(newFile).mtime.getTime() > file.mtime) {
+      } else if(includedDates[newFile] > existingTime) {
         filesInIndex[newFile] = file
         // update the zip file
       } else {
         filesInIndex[newFile] = file
         delete includedDates[newFile]
       }
+    }
+    for(let i = 0; i < filesToRemove.length; i++) {
+      console.log('Removing: ', filesToRemove[i])
+      await zipCmd(filesToRemove[i], '-d', newZip)
     }
     //return newZip
   }
