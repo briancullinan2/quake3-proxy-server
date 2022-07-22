@@ -25,7 +25,6 @@ const STYLES  = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
 const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
-const LVLSHOTS = fs.readFileSync(path.resolve(__dirname + '/../utilities/levelinfo.cfg')).toString('utf-8')
 const REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
 const DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
 
@@ -168,7 +167,6 @@ module.exports = {
   SCRIPTS,
   UNKNOWN,
   INDEX,
-  LVLSHOTS,
   MODS,
   MODS_NAMES,
   setGame,

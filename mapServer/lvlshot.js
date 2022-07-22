@@ -2,7 +2,6 @@
 const path = require('path')
 const fs = require('fs')
 
-const { FS_BASEPATH, FS_GAMEHOME, LVLSHOTS } = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
@@ -10,7 +9,7 @@ const { START_SERVICES } = require('../contentServer/features.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { EXECUTING_MAPS } = require('../gameServer/processes.js')
-const { UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
+const { RESOLVE_STATUS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -40,11 +39,13 @@ async function processQueue() {
   let mapNames = Object.keys(EXECUTING_LVLSHOTS)
   let mapNamesFiltered = mapNames.sort(function (a, b) {
     // sort by the average minimum * number of tasks
+    EXECUTING_LVLSHOTS[a].sort((c, d) => (d.subscribers || 0) - (c.subscribers || 0))
+    EXECUTING_LVLSHOTS[b].sort((c, d) => (d.subscribers || 0) - (c.subscribers || 0))
     let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
     let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
     let aSum = aTasks.reduce((sum, task) => (sum + task.time), 0)
     let bSum = bTasks.reduce((sum, task) => (sum + task.time), 0)
-    return bSum / bTasks.length - aSum / aTasks.length
+    return aSum / aTasks.length - bSum / bTasks.length
   }).slice(0, MAX_RENDERERS)
 
   for(let i = 0; i < mapNamesFiltered.length; ++i) {
@@ -74,7 +75,12 @@ async function processQueue() {
       } else {
         // TODO: use RCON interface to control servers and get information
         let task = EXECUTING_LVLSHOTS[mapname].shift()
+        let server = Object.values().filter(info => info.qps_serverId == freeRenderer.challenge)
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + task.cmd, freeRenderer)
+        // when we get a print response, let waiting clients know about it
+        RESOLVE_STATUS[server.challenge].push(function (logs) {
+          updateSubscribers(mapname, logs, task)
+        })
       }
     }
   }
@@ -134,8 +140,6 @@ async function serveLvlshot(mapname) {
         server.logs += lines + '\n'
         updatePageViewers('/rcon')
       }
-      //Promise.all(LVL_COMMANDS.map(updateSubscribers.apply(null, server.mapname, server.logs)))
-
     })
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]

@@ -87,7 +87,6 @@ async function listVirtual(pk3InnerPath, newFile, modname) {
     localDirectory = layeredDir(path.join(modname, pk3InnerPath), includeBuild)
   }
 
-
   if (newFile
     && path.basename(newFile).localeCompare('pak0.pk3', 'en', { sensitivity: 'base' }) == 0) {
     let gamedir = layeredDir(path.join(modname, pk3InnerPath), false)
@@ -202,6 +201,7 @@ async function filteredGames() {
 
 
 async function filteredMaps(modname) {
+  let zeroTimer = new Promise(resolve => setTimeout(resolve.bind(null, '0B (Calculating)'), 200))
   let pk3s = await listMaps(modname)
   // always included for repack 
   //   because this is how baseq3a is built
@@ -209,7 +209,7 @@ async function filteredMaps(modname) {
     pk3s.unshift('pak0')
   }
 
-  return pk3s.map(mapname => {
+  let pk3Files = pk3s.map(mapname => {
     let realPath = findFile(modname + '/' + MAP_DICTIONARY[mapname])
     if (!realPath) {
       realPath = ''
@@ -221,6 +221,26 @@ async function filteredMaps(modname) {
       isDirectory: true,
     })
   }).filter(file => file)
+
+  localDirectory = await Promise.all(layeredDir(modname, true)
+  .map(async (file) => {
+    let stat = fs.statSync(file)
+    return Object.assign({}, stat, {
+      name: path.basename(file),
+      absolute: path.basename(path.dirname(path.dirname(path.dirname(file))))
+        + '/' + path.basename(path.dirname(path.dirname(file)))
+        + '/' + path.basename(path.dirname(file)) + '/.',
+      size: await Promise.any([calculateSize(file), zeroTimer]),
+      isDirectory: stat.isDirectory(),
+      link: path.join('/', modname, path.basename(file)) + (stat.isDirectory() ? '/' : '')
+    })
+  }))
+
+  for(let i = 0; i < localDirectory.length; i++) {
+    pk3Files.push(localDirectory[i])
+  }
+
+  return pk3Files
 }
 
 
@@ -259,6 +279,18 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
       }
     } else {
       // TODO: try alternate cached formats
+      if(!pk3File || !fs.existsSync(pk3File)) {
+        for (let i = 0; i < IMAGE_FORMATS.length; i++) {
+          let altPath = findFile(pk3File.replace(path.extname(pk3File), IMAGE_FORMATS[i]))
+          if(altPath) {
+            pk3File = altPath
+            break
+          }
+        }
+      }
+      if(!fs.existsSync(pk3File)) {
+        return false
+      }
     }
     isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
   } catch (e) {
@@ -389,7 +421,6 @@ async function serveVirtual(request, response, next) {
 
   // TODO: convert and redirect, then display the correct file in the index
   // TODO: combine with serve-repacked, fs.createReadStream
-  let regularFile
   if (filename.match('index.html')) {
     response.setHeader('content-type', 'text/html')
     return response.send(renderIndex(
@@ -407,19 +438,20 @@ async function serveVirtual(request, response, next) {
       }], 'games-menu')))
   }
 
+  let regularFile
   if (!filename.includes('.pk3')) {
-    regularFile = findFile(modname + '/' + filename)
+    regularFile = modname + '/' + filename
+  } else {
+    regularFile = modname + '/' + pk3InnerPath
   }
-  if (!regularFile) {
-    regularFile = findFile(modname + '/' + pk3InnerPath)
+  if (isAlt && await streamImageKey(regularFile, filename, response)) {
+    return
   }
+  if (isAlt && await streamAudioKey(regularFile, filename, response)) {
+    return
+  }
+  regularFile = findFile(regularFile)
   if (regularFile && !fs.statSync(regularFile).isDirectory()) {
-    if (isAlt && await streamImageKey(regularFile, filename, response)) {
-      return
-    }
-    if (isAlt && await streamAudioKey(regularFile, filename, response)) {
-      return
-    }
     return response.sendFile(regularFile)
   }
 

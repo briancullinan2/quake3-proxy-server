@@ -5,6 +5,8 @@ const fs = require('fs')
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS } = require('../mapServer/lvlshot.js')
+const { FS_GAMEHOME } = require('../utilities/env.js')
+const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
 
 async function serveLevelshot(request, response, next) {
   let basegame = getGame()
@@ -23,7 +25,7 @@ async function serveLevelshot(request, response, next) {
     return response.sendFile(UNKNOWN)
   }
 
-  let mapname = path.basename(filename).replace('.jpg', '')
+  let mapname = path.basename(filename).replace(path.extname(filename), '')
     .replace(/_screenshot[0-9]+/gi, '')
     .replace(/_tracemap[0-9]+/gi, '')
   // replace the full pk3 name that we looked up in another service with
@@ -37,17 +39,22 @@ async function serveLevelshot(request, response, next) {
     return response.sendFile(levelshot)
   }
 
-
-
-  
+  // TODO: search alternates like .tga to find in home directory
   levelshot = findFile(filename)
   if (levelshot && !levelshot.match(/\.pk3$/i)) {
     return response.sendFile(levelshot)
   }
 
+  let matchName = (/screenshot[0-9]+|levelshot[0-9]+/).exec(filename)
+  if(!matchName && filename.match(mapname)) {
+    matchName = mapname
+  } else {
+    matchName = matchName[0]
+  }
+
   // still can't find a levelshot or screenshot, execute the engine to generate
   try {
-    let logs = await execLevelshot(mapname)
+    let logs = await execLevelshot(mapname, matchName)
     levelshot = findFile(localLevelshot)
     if (levelshot) {
       return response.sendFile(levelshot)
@@ -139,28 +146,31 @@ async function execLevelshot(mapname, waitFor) {
     }))
   }
 
-  //let basegame = getGame()
+  let basegame = getGame()
   //fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
-  //fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
-  //let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
-  //fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
-
+  // TODO: this will need to be an API controllable by utilities/watch.js
+  let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo.cfg')
+  if(!fs.existsSync(lvlconfig) || fs.statSync(lvlconfig).mtime > fs.statSync(LVLSHOTS).mtime) {
+    fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
+    fs.writeFileSync(lvlconfig, fs.readFileSync(LVLSHOTS))
+    // .replace(/\$\{mapname\}/ig, mapname)
+  }
 
   // figure out which images are missing and do it in one shot
   queueTask({
-    cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshot ; ',
+    cmd: ' ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
     test: path.join('levelshots', mapname + '.jpg')
   })
   queueTask({
     // special exception
-    cmd: ' ; vstr setupLevelshot ;  ; vstr takeLevelshotFullsize ; ',
+    cmd: ` ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
     test: path.join('screenshots', mapname + '_screenshot0001.jpg')
   })
   queueTask({
     // special exception
-    cmd: ' ; vstr screenshotBirdsEyeView ; ',
+    cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
     test: path.join('screenshots', mapname + '_screenshot0002.jpg')
   })

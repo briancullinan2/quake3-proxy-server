@@ -77,7 +77,7 @@ async function getMapInfo(mapname) {
 
   }
   if(images.length == 0 || entities.length == 0) {
-    Promise.resolve(execLevelshot(mapname))
+    Promise.resolve(execLevelshot(mapname, /saveents|imagelist/i))
         .then(console.log).catch(console.error)
   }
   if(images.length == 0) {
