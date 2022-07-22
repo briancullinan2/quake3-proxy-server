@@ -114,6 +114,10 @@ async function execCmd(cmd, args, options) {
 const EXECUTING_ONCE = {}
 
 
+// TODO: CODE REVIEW, using the same technique in compress.js (CURRENTLY_UNPACKING)
+//   but the last resolve function would be here after the resolve(stderr)
+//   instead of after, in the encapsulating function call.
+
 async function onceOrTimeout(key, promise) {
 
   // prevent clients from making multiple requests on 

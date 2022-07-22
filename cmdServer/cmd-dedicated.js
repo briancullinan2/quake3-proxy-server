@@ -1,6 +1,6 @@
 const { PassThrough, Readable } = require('stream')
 
-const { EXE_NAME, DED_NAME } = require('../utilities/env.js')
+const { EXE_NAME, DED_NAME, getGame } = require('../utilities/env.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { execCmd } = require('../utilities/exec.js')
 const { FS_GAMEHOME, FS_BASEPATH } = require('../utilities/env.js')
@@ -31,6 +31,12 @@ async function dedicatedCmd(startArgs, callback) {
   ps = await execCmd(dedicated, [
     '+set', 'fs_basepath', FS_BASEPATH,
     '+set', 'fs_homepath', FS_GAMEHOME,
+    '+set', 'fs_basegame', getGame(),
+    // Ironically, the thing I learned working for the radio station about
+    //   M$ Windows not being able to run without a video card for remote
+    //   desktop, but Xvfb working fine with remote desktop, has suddenly
+    //   become relevant, and now I understand why.
+    // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
     '+set', 'r_headless', '1',
     '+set', 'bot_enable', '0',
     // TODO: fix and remove this

@@ -6,46 +6,77 @@ const { FS_BASEPATH, FS_GAMEHOME, LVLSHOTS } = require('../utilities/env.js')
 const { convertImage } = require('../contentServer/convert.js')
 const { getGame } = require('../utilities/env.js')
 const { repackedCache } = require('../utilities/env.js')
-const { lvlshotCmd } = require('../mapServer/serve-lvlshot.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { EXECUTING_MAPS } = require('../gameServer/processes.js')
+const { UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 
+
+// TODO: this is pretty lame, tried to make a screenshot, and a
+//   bunch of stuff failed, now I have some arbitrary wait time
+//   and it works okay, but a real solution would be "REAL-TIME"!
+// TODO: open a control port and create a new master server. One
+//   separate master control for every single map, split up and only
+//   do 10 maps at a time, because of this.
+
+const LVLSHOT_TIMEOUT = 5000
 const RENDERER_TIMEOUT = 10000
 const MAX_RENDERERS = 4
 const EXECUTING_LVLSHOTS = {}
-const RENDERER_PROCESS = {}
 let lvlshotTimer
 
-async function serveQueue() {
+async function processQueue() {
   // TODO: keep track of levelshot servers separately, sort / priorize by 
   //   Object.keys(EXECUTING_LVLSHOTS) == mapname, then prioritize by list
   //   i.e. if there are 2 maps with 2 tasks, there should be 4 servers running
   //   in parallel with 2 redundant maps loaded.
   if (!lvlshotTimer) {
-    lvlshotTimer = setInterval(serveQueue, 1000 / 60)
+    lvlshotTimer = setInterval(processQueue, 1000 / 60)
   }
   
-  let mapNames = Object.keys(EXECUTING_LVLSHOTS)
   // sort by if the existing stack has less than <MAX_RENDERERS> commands
   //   and if the time is less than <RENDERER_TIMEOUT> from the request
+  let mapNames = Object.keys(EXECUTING_LVLSHOTS)
   let mapNamesFiltered = mapNames.sort(function (a, b) {
     // sort by the average minimum * number of tasks
     let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
     let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
-    return Math.sum(...aTasks.map(task => task.time)) / aTasks.length
-      - Math.sum(...bTasks.map(task => task.time)) / aTasks.length
+    let aSum = aTasks.reduce((sum, task) => (sum + task.time), 0)
+    let bSum = bTasks.reduce((sum, task) => (sum + task.time), 0)
+    return bSum / bTasks.length - aSum / aTasks.length
   }).slice(0, MAX_RENDERERS)
+
   for(let i = 0; i < mapNamesFiltered.length; ++i) {
     // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
     //   of the <MAX_RENDERERS> servers to perform simultaneously.
-    let task = EXECUTING_LVLSHOTS[mapNamesFiltered[i]].shift()
-    
-    // TODO: use RCON interface to control servers and get information
-    //if(Object.keys(RENDERER_PROCESS).length < 4) {
-    //  serveLvlshot(mapname)
-    //}
+    let mapname = mapNamesFiltered[i]
+    let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+    let mapRenderers = renderers.filter(map => map.mapname == mapname)
+    let freeRenderers = renderers.filter(map => !map.working)
+    if(freeRenderers.length == 0) {
+      if(mapRenderers.length == 0) {
+        if(renderers.length >= 4) {
+          continue // can't do anything
+        } else { // start another server
+          serveLvlshot(mapname)
+          continue
+        }
+      } else {
+        continue // wait for another renderer to pick it up
+      }
+    } else {
+      let mapRenderer = freeRenderers.filter(map => map.mapname == mapname)[0]
+      if (!mapRenderer || EXECUTING_LVLSHOTS[mapname].length > 4) {
+        // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, freeRenderers[0])
+        continue
+      } else {
+        // TODO: use RCON interface to control servers and get information
+        let task = EXECUTING_LVLSHOTS[mapname].shift()
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + task.command, freeRenderer)
+      }
+    }
   }
 
   // return promise wait on filtered tasks
@@ -54,20 +85,44 @@ async function serveQueue() {
 
 // TODO: turn this into some sort of temporary cfg script
 async function serveLvlshot(mapname) {
-  if(Object.keys(RENDERER_PROCESS).length >= 4) {
+  // TODO: wait for the new dedicated process to connect to our specialized
+  //   control port. Now we have a Quake 3 server command pipe. Send OOB
+  //   RCON messages to control our own process remotely / asynchronously.
+  // TODO: take the screenshots, run client commands using local dedicate 
+  //   connected commands (side-effect, easily switch out client to a real
+  //   server using the reconnect command).
+  if(Object.values(EXECUTING_MAPS).filter(map => map.renderer).length >= 4) {
     return
   }
+
+  // only start one dedicated server at a time
+  let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => list.length > 0)[0]
+  if(challenge) {
+    return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
+  }
+
   try {
+    
     let challenge = buildChallenge()
+    RESOLVE_DEDICATED[challenge] = []
+    RESOLVE_DEDICATED[challenge].push(function () {
+      console.log('Dedicated started.')
+      updatePageViewers('/games')
+    })
+
     let ps = await dedicatedCmd([
-      '+set', 'dedicated', '2',
+      '+set', 'dedicated', '1',
       '+set', 'sv_master2', '""',
       '+set', 'sv_master3', '""',
       '+sets', 'qps_serverId', challenge,
       '+set', 'rconPassword2', 'password1',
       '+set', 'sv_dlURL', '//maps/repacked/%1',
-      '+map', mapname, 
+      '+devmap', mapname,
       '+wait', '300', '+heartbeat',
+      // TODO: run a few frames to load images before
+      //   taking a screen shot and exporting canvas
+      //   might also be necessary for aligning animations.
+      // '+exec', `".config/levelinfo_${mapname}.cfg"`,
     ], function (lines) {
       let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
       if(!server) {
@@ -82,14 +137,14 @@ async function serveLvlshot(mapname) {
     })
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]
-      delete EXECUTING_LVLSHOTS[ps.pid]
     })
     EXECUTING_MAPS[challenge] = {
+      renderer: true,
       challenge: challenge,
       pid: ps.pid,
       mapname: mapname,
     }
-    EXECUTING_LVLSHOTS[ps.pid] = ps
+    EXECUTING_LVLSHOTS[mapname] = []
   } catch (e) {
     console.error('DEDICATED:', e)
   }
@@ -173,6 +228,11 @@ async function execLevelshot(mapname) {
     })))
   }
 
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
+  let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
+  fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
+
   // figure out which images are missing and do it in one shot
   let LVL_COMMANDS = [{
     mapname: mapname,
@@ -195,20 +255,23 @@ async function execLevelshot(mapname) {
   // TODO: take screenshot from every camera position
   // TODO: export all BLUEPRINTS and all facets through sv_bsp_mini
   // TODO: palette pastel full levelshot
-
-  const TRACEMAPS = {
-    1: ' ; vstr exportAreaMask ; ',
-    2: ' ; vstr exportHeightMap ; ',
-    3: ' ; vstr exportSkybox ; ',
-    4: ' ; vstr exportBottomup ; ',
-    5: ' ; vstr exportGroundheight ; ',
-    6: ' ; vstr exportSkyboxVolume ; ',
-    7: ' ; vstr exportSkyboxVolume2 ; ',
-    8: ' ; vstr exportSkyboxVolume3 ; ',
+  const TRACEMAPS = [
+    'areamask',
+    'heightmap',
+    'skybox',
+    'bottomup',
+    'groundheight',
+    'skyboxvolume',
+    'skyboxvolume2',
+    'skyboxvolume3',
+  ]
+  for(let i = 0; i < TRACEMAPS.length; i++) {
+    let tracename = `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`
+    // set exportAreaMask "wait 30 ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap0001 ; "
 
   }
+
   LVL_COMMANDS.push.apply(LVL_COMMANDS, Object.keys(TRACEMAPS).map(i => {
-    let tracename = `${mapname}_tracemap${String(i).padStart(4, '0')}.jpg`
     return {
       mapname: mapname,
       // special exception
@@ -235,33 +298,6 @@ async function execLevelshot(mapname) {
     test: path.join('maps', mapname + '-images.txt')
   })
 
-  if(START_SERVICES.includes('cache')) {
-    fs.mkdirSync(path.join(repackedCache()[0], '/maps/'), { recursive: true })
-  }
-
-  for(let i = 0; i < LVL_COMMANDS.length; i++) {
-    for(let j = 0; j < caches.length; j++) {
-      if(fs.existsSync(path.join(caches[j], LVL_COMMANDS[i].test))) {
-        LVL_COMMANDS[i].done = true
-        break
-      }
-    }
-
-    if(LVL_COMMANDS[i].done) {
-      continue
-    }
-
-    // resolve based on filename and no logs? 
-    //   i.e. output already exists, but not converted
-    if(await LVL_COMMANDS[i].resolve('', LVL_COMMANDS[i])) {
-      LVL_COMMANDS[i].done = true
-      continue
-    }
-
-    newVstr += LVL_COMMANDS[i].cmd
-    // TODO: queue the commands for the map and wait for individual success
-  }
-
   /*
   let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
   if (!fs.existsSync(shaderFile)) {
@@ -269,37 +305,12 @@ async function execLevelshot(mapname) {
   }
   */
 
-  if (newVstr.length == 0) {
-    return
+  if(START_SERVICES.includes('cache')) {
+    fs.mkdirSync(path.join(repackedCache()[0], '/maps/'), { recursive: true })
   }
 
-  const screenshotCommands = [
-    // Ironically, the thing I learned working for the radio station about
-    //   M$ Windows not being able to run without a video card for remote
-    //   desktop, but Xvfb working fine with remote desktop, has suddenly
-    //   become relevant, and now I understand why.
-    // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
-    '+set', 'r_headless', '1',
-
-    // TODO: run a few frames to load images before
-    //   taking a screen shot and exporting canvas
-    //   might also be necessary for aligning animations.
-    '+set', 'lvlshotCommands', `"${newVstr}"`,
-    '+exec', `".config/levelinfo_${mapname}.cfg"`,
-    '+vstr', 'resetLvlshot',
-    '+devmap', mapname,
-    '+heartbeat',
-    '+vstr', 'lvlshotCommands',
-    '+wait', '200', '+quit'
-  ]
 
 
-
-  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
-  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
-  let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo_' + mapname + '.cfg')
-  fs.writeFileSync(lvlconfig, LVLSHOTS.replace(/\$\{mapname\}/ig, mapname))
-  
   // TODO: filtered to a specific task listed above based 
   //   on where the mapinfo request came from
   EXECUTING_LVLSHOTS[mapname] = LVL_COMMANDS
@@ -313,13 +324,13 @@ async function execLevelshot(mapname) {
   })
 
   return await Promise.all(LVL_COMMANDS
-    .filter(cmd => cmd.cmd.includes('saveents') || cmd.cmd.includes('imagelist'))
-    .map(cmd => new Promise(resolve => {
-      if(typeof cmd.subscribers == 'undefined') {
-        cmd.subscribers = []
-      }
-      cmd.subscribers.push(resolve)
-    })))
+  .filter(cmd => cmd.cmd.includes('saveents') || cmd.cmd.includes('imagelist'))
+  .map(cmd => new Promise(resolve => {
+    if(typeof cmd.subscribers == 'undefined') {
+      cmd.subscribers = []
+    }
+    cmd.subscribers.push(resolve)
+  })))
 }
 
 

@@ -11,28 +11,25 @@ const { EXECUTING_MAPS, RESOLVE_DEDICATED, STATUS_MENU,
 const { updatePageViewers } = require('../contentServer/session.js')
 
 
-const SERVER_STARTTIME = 5000
+const DEDICATED_TIMEOUT = 5000
 
 
 async function serveDedicated() {
-  if (Object.keys(RESOLVE_DEDICATED).length > 0) {
+  // only ever start 1 control server
+  if(Object.keys(RESOLVE_DEDICATED).length > 0) {
     return
   }
+
+  // only start one dedicated server at a time
+  let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => list.length > 0)[0]
+  if(challenge) {
+    return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
+  }
+
   try {
     let challenge = buildChallenge()
-
-    if(typeof RESOLVE_DEDICATED[challenge] == 'undefined') {
-      RESOLVE_DEDICATED[challenge] = []
-    } // else
-    //if(RESOLVE_DEDICATED[challenge].length > 0) {
-      // TODO: wait for existing server to start
-    //  return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
-    //}
-    let cancelTimer = setTimeout(function () {
-      throw new Error('Start server timed out.')
-    }, SERVER_STARTTIME)
+    RESOLVE_DEDICATED[challenge] = []
     RESOLVE_DEDICATED[challenge].push(function () {
-      clearTimeout(cancelTimer)
       console.log('Dedicated started.')
       updatePageViewers('/games')
     })

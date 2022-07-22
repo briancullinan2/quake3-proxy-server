@@ -51,8 +51,7 @@ async function createMasters(mirror) {
   // look for existing servers we might have left laying around from last session to commandeer
   setTimeout(function () {
     // don't hold up own local server on loading itself
-    if (Object.keys(GAME_SERVERS).length == 0
-      && Object.keys(RESOLVE_DEDICATED).length == 0) {
+    if (Object.keys(RESOLVE_DEDICATED).length == 0) {
       serveDedicated()
     }
   }, 3000)

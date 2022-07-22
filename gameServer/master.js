@@ -2,7 +2,7 @@
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 // repack live http://ws.q3df.org/maps/download/%1
-const { RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
+const { EXECUTING_MAPS, RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 const UDP_SOCKETS = []
@@ -79,6 +79,9 @@ async function statusResponse(socket, message, rinfo) {
     if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
       RESOLVE_DEDICATED[infos.qps_serverId] = []
     }
+    if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
+      EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
+    }
   }
 
   //console.log(infos, playerStrings)
@@ -89,7 +92,7 @@ async function statusResponse(socket, message, rinfo) {
     }
   }
 
-  return infos
+  return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }
 
 
@@ -106,12 +109,10 @@ async function infoResponse(socket, message, rinfo) {
     }, {})
 
   // TODO: store by address and port instead of challenge to prevent duplicates
-  if (typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] != 'undefined') {
-    Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
-    GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
-  }
-
-  return infos
+  Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
+  GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
+  
+  return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }
 
 

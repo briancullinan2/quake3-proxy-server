@@ -3,61 +3,8 @@ const fs = require('fs')
 
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
-const { EXE_NAME, getGame } = require('../utilities/env.js')
-const { repackedCache } = require('../utilities/env.js')
-const { updatePageViewers } = require('../contentServer/session.js')
-const { CHILD_PROCESS, onceOrTimeout } = require('../utilities/exec.js')
+const { getGame } = require('../utilities/env.js')
 
-// TODO: this is pretty lame, tried to make a screenshot, and a
-//   bunch of stuff failed, now I have some arbitrary wait time
-//   and it works okay, but a real solution would be "REAL-TIME"!
-// TODO: open a control port and create a new master server. One
-//   separate master control for every single map, split up and only
-//   do 10 maps at a time, because of this.
-
-// TODO: combine this master server serveDed()
-async function lvlshotCmd(mapname, startArgs, callback) {
-  // TODO: wait for the new dedicated process to connect to our specialized
-  //   control port. Now we have a Quake 3 server command pipe. Send OOB
-  //   RCON messages to control our own process remotely / asynchronously.
-  // TODO: take the screenshots, run client commands using local dedicate 
-  //   connected commands (side-effect, easily switch out client to a real
-  //   server using the reconnect command).
-  let client = findFile(EXE_NAME)
-  const { execFile } = require('child_process')
-
-  // TODO: CODE REVIEW, using the same technique in compress.js (CURRENTLY_UNPACKING)
-  //   but the last resolve function would be here after the resolve(stderr)
-  //   instead of after, in the encapsulating function call.
-  return await onceOrTimeout(mapname, new Promise(function (resolve, reject) {
-    let ps
-    ps = execFile(client, startArgs,
-      function (errCode, stdout, stderr) {
-        if (errCode > 0) {
-          reject(new Error(stderr))
-        } else {
-          resolve(stderr + stdout)
-        }
-      })
-    let stderr = ''
-    let stdout = ''
-    ps.stderr.on('data', (data) => {
-      stderr += data.toString('utf-8')
-      if(callback) {
-        callback(stderr + stdout)
-      }
-    })
-    ps.stdout.on('data', (data) => {
-      stdout += data.toString('utf-8')
-      if(callback) {
-        callback(stderr + stdout)
-      }
-    })
-    CHILD_PROCESS[ps.pid] = [EXE_NAME].concat(['+map', mapname]).join(' ')
-    updatePageViewers('/process')
-  }))
-
-}
 
 async function serveLevelshot(request, response, next) {
   let basegame = getGame()
@@ -114,7 +61,6 @@ async function serveLevelshot(request, response, next) {
 
 
 module.exports = {
-  lvlshotCmd,
   serveLevelshot,
 }
 
