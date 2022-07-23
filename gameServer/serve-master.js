@@ -59,7 +59,11 @@ async function createMasters(mirror) {
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');
     //UDP_SOCKETS[MASTER_PORTS[0]].addMembership('255.255.255.255', '127.0.0.1');
-    Promise.resolve(queryMaster('127.0.0.1:' + (27960 + i)))
+    GAME_SERVERS['127.0.0.1:' + (27960 + i)] = {
+      address: '127.0.0.1',
+      port: 27960 + i,
+    }
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ', GAME_SERVERS['127.0.0.1:' + (27960 + i)])
   }
 
   // I think it would be very fullfuling for our species

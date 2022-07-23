@@ -71,6 +71,7 @@ async function statusResponse(socket, message, rinfo) {
 
   let playerStrings = Array.from(message)
     .map(c => String.fromCharCode(c)).join('').split('\n').slice(1)
+
   for (let i = 0; i < playerStrings.length; i++) {
     // TODO: parsePlayer()
   }
@@ -82,6 +83,7 @@ async function statusResponse(socket, message, rinfo) {
     }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
+      EXECUTING_MAPS[infos.qps_serverId].renderer = !!infos.qps_renderer
     }
   }
 
@@ -110,7 +112,7 @@ async function infoResponse(socket, message, rinfo) {
     }, {})
 
   // TODO: store by address and port instead of challenge to prevent duplicates
-  Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port] || {}, infos)
+  Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port], infos)
   GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
   
   return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
@@ -220,7 +222,6 @@ async function serveMaster(socket, message, rinfo) {
     }
     let request = Array.from(buffer.slice(0, MASTER_SERVICE[i].length))
       .map(c => String.fromCharCode(c)).join('')
-
     if (MASTER_SERVICE[i].localeCompare(
       request, 'en', { sensitivity: 'base' }) != 0
     ) {

@@ -58,10 +58,12 @@ async function execCmd(cmd, args, options) {
           return resolve('')
         }
         let ps = spawn(cmd, args, {
-          timeout: options && (options.detached || options.background) ? void 0 : 3600,
+          timeout: options && (options.detached || options.background) ? void 0 : 3600000,
           cwd: (options ? options.cwd : null) || process.cwd(),
-          shell: options ? options.shell : false || false,
-          detached: options ? options.detached : false || false,
+          shell: (options ? options.shell : false) || false,
+          detached: (options ? options.detached : false) || false,
+          stdio: options && options.detached 
+              ? ['ignore', 'ignore', 'ignore'] : ['ignore', 'pipe', 'pipe'],
         })
         RUNNING++
         let pid = LIMIT + ':' + ps.pid

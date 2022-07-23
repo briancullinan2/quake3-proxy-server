@@ -22,7 +22,7 @@ async function dedicatedCmd(startArgs, callback) {
   const readable = Readable.from(passThrough)
   readable.on('data', function (data) {
     let lines = Array.from(data).map(c => String.fromCharCode(c)).join('').trim()
-    //console.log('ENGINE: ', lines)
+    console.log('ENGINE: ', lines)
     if(callback) {
       callback(lines)
     }
@@ -38,17 +38,23 @@ async function dedicatedCmd(startArgs, callback) {
     //   become relevant, and now I understand why.
     // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
     '+set', 'bot_enable', '0',
+    '+set', 'logfile', '4',
     // TODO: fix and remove this
     '+set', 'cl_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
     '+set', 'sv_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
     '+set', 'fs_excludeReference', 'baseq3/pak8a demoq3/pak8a',
     '+set', 'sv_allowDownload', '5', // NO UDP DOWNLOAD
   ].concat(startArgs), {
+    //shell: true,
+    detached: true,
     background: true,
     write: passThrough,
     error: passThrough,
   })
-
+  ps.on('close', function () {
+    console.log('Stopping server')
+  })
+  ps.unref()
   return ps
 }
 

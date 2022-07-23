@@ -22,7 +22,7 @@ const GAMEINFO_TIMEOUT = 60 * 1000
 */
 
 async function gameInfo(serverInfo) {
-  if (!serverInfo.hostname || !serverInfo.mapname) {
+  if (!serverInfo.mapname) {
     return
   }
   let mapname = serverInfo.mapname.toLocaleLowerCase()
@@ -34,7 +34,7 @@ async function gameInfo(serverInfo) {
     levelshot = '/unknownmap.jpg'
   }
   return {
-    title: serverInfo.hostname,
+    title: serverInfo.hostname || serverInfo.sv_hostname,
     levelshot: levelshot,
     bsp: mapname,
     pakname: MAP_DICTIONARY[mapname],
