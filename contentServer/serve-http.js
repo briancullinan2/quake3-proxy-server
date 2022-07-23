@@ -52,6 +52,7 @@ function setupExtensions(features, app) {
     app.use(/\/maps\/[0-9]+\/[0-9]+$/i, serveMapsRange)
     app.use(/\/maps\/[^\/]+$/i, serveMapInfo)
     app.use(/\/maps\/?$/i, serveMaps)
+    app.use('/maps/reload', downloadAllMeta)
   }
 
 
@@ -131,22 +132,13 @@ function setupExtensions(features, app) {
     app.use(serveVirtual) // /home fs for updates
   }
 
-
-  return
-
-
   if (features.includes('all')
-    || features.includes('maps')) {
-    app.use('/maps/reload', downloadAllMeta)
-    app.use(/\/maps\/[0-9]+\/[0-9]+/i, serveMapsRange)
-    app.use(/\/maps\/.+/, serveMapInfo)
-    app.use('/maps', serveMaps)
+    || features.includes('lvlshot')) {
+    app.use('/*/*/levelshots/*.*', serveLevelshot)
+    app.use('/*/screenshots/*.*', serveLevelshot)
+    app.use('/*/levelshots/*.*', serveLevelshot)
+    app.use('/*/maps/*_tracemap*.*', serveLevelshot)
   }
-
-  app.use('/*/*/levelshots/*.jpg', serveLevelshot)
-  app.use('/*/screenshots/*.jpg', serveLevelshot)
-  app.use('/*/levelshots/*.jpg', serveLevelshot)
-  app.use('/*/maps/*_tracemap*.jpg', serveLevelshot)
 
 }
 

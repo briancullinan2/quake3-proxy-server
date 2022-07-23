@@ -37,11 +37,9 @@ async function dedicatedCmd(startArgs, callback) {
     //   desktop, but Xvfb working fine with remote desktop, has suddenly
     //   become relevant, and now I understand why.
     // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
-    '+set', 'r_headless', '1',
     '+set', 'bot_enable', '0',
     // TODO: fix and remove this
-    '+set', 'sv_pure', '1', 
-    '+set', 'developer', '1',
+    '+set', 'cl_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
     '+set', 'sv_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
     '+set', 'fs_excludeReference', 'baseq3/pak8a demoq3/pak8a',
     '+set', 'sv_allowDownload', '5', // NO UDP DOWNLOAD

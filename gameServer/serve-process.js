@@ -35,12 +35,16 @@ async function serveDedicated() {
     })
 
     let ps = await dedicatedCmd([
+      '+set', 'sv_pure', '1', 
       '+set', 'dedicated', '2',
+      '+set', 'developer', '1',
       '+set', 'sv_master2', '"207.246.91.235:27950"',
       '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
-      '+sets', 'qps_serverId', challenge,
+      '+sets', 'qps_serverId', '"' + challenge + '"',
       '+set', 'rconPassword2', 'password1',
-      '+set', 'sv_dlURL', '//maps/repacked/%1',
+      '+set', 'sv_fps', '300',
+      '+set', 'sv_snaps', '60',
+      '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+map', 'lsdm3_v1', 
       '+wait', '300', '+heartbeat',
     ], function (lines) {

@@ -13,6 +13,7 @@ const MASTER_SERVICE = [
   'subscribe', 'statusResponse\n', 'print',
 ]
 const RESOLVE_STATUS = {}
+const RESOLVE_LOGS = {}
 
 
 function sendOOB(socket, message, rinfo) {
@@ -184,18 +185,25 @@ async function getServers(socket, message, rinfo) {
 
 
 async function print(socket, message, rinfo) {
+  let lines = Array.from(message)
+    .map(c => String.fromCharCode(c)).join('')
+  console.log('ENGINE: print ', lines)
   let server = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   if(!server) {
     // ignore?
     return
   }
-  let lines = Array.from(message)
-    .map(c => String.fromCharCode(c)).join('')
   if(typeof server.logs == 'undefined') {
     server.logs = ''
   }
   server.logs += lines + '\n'
-  console.log('ENGINE: print ', lines)
+  if (typeof RESOLVE_LOGS[infos.challenge] != 'undefined') {
+    let res
+    while ((res = RESOLVE_LOGS[infos.challenge].shift())) {
+      res(server.logs)
+    }
+  }
+
   updatePageViewers('/rcon')
 }
 
@@ -250,6 +258,7 @@ async function serveMaster(socket, message, rinfo) {
 }
 
 module.exports = {
+  RESOLVE_LOGS,
   UDP_SOCKETS,
   MASTER_PORTS,
   INFO_TIMEOUT,

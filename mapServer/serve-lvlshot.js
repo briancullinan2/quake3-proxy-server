@@ -4,9 +4,13 @@ const fs = require('fs')
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
-const { EXECUTING_LVLSHOTS } = require('../mapServer/lvlshot.js')
+const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
 const { FS_GAMEHOME } = require('../utilities/env.js')
+const { RESOLVE_DEDICATED } = require('../gameServer/processes.js')
+
+
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
+
 
 async function serveLevelshot(request, response, next) {
   let basegame = getGame()
@@ -16,35 +20,20 @@ async function serveLevelshot(request, response, next) {
   }
 
   let match
-  if (!(match = (/levelshots\/|screenshots\/|maps\//i).exec(filename))) {
+  if (!(match = (/levelshots|screenshots|maps/i).exec(path.dirname(filename)))) {
     return next()
   }
   match = match[0].toLocaleLowerCase()
 
-  if (filename.match('/unknownmap.jpg')) {
-    return response.sendFile(UNKNOWN)
-  }
-
-  let mapname = path.basename(filename).replace(path.extname(filename), '')
-    .replace(/_screenshot[0-9]+/gi, '')
-    .replace(/_tracemap[0-9]+/gi, '')
   // replace the full pk3 name that we looked up in another service with
   //   the simpler output pathname, i.e. /baseq3/pak0.pk3/levelshots/q3dm0.jpg
   //   is also an alias for the path /baseq3/levelshots/q3dm0.jpg
   // we're assuming there aren't duplicate bsp names to worry about in the 
   //   levelshots/ and screenshots/ directories.
+  let mapname = path.basename(filename).replace(path.extname(filename), '')
+    .replace(/_screenshot[0-9]+/gi, '')
+    .replace(/_tracemap[0-9]+/gi, '')
   let localLevelshot = path.join(basegame, match, path.basename(filename))
-  let levelshot = findFile(localLevelshot)
-  if (levelshot) {
-    return response.sendFile(levelshot)
-  }
-
-  // TODO: search alternates like .tga to find in home directory
-  levelshot = findFile(filename)
-  if (levelshot && !levelshot.match(/\.pk3$/i)) {
-    return response.sendFile(levelshot)
-  }
-
   let matchName = (/screenshot[0-9]+|levelshot[0-9]+/).exec(filename)
   if(!matchName && filename.match(mapname)) {
     matchName = mapname
@@ -80,7 +69,7 @@ async function resolveScreenshot(logs, task) {
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
-  let screenName = path.basename(task.test).replace(path.extname(task.test), '')
+  let screenName = path.basename(task.outFile).replace(path.extname(task.outFile), '')
   let match
   while (match = WROTE_SCREENSHOT.exec(logs)) {
     let outputEnts = path.join(FS_GAMEHOME, getGame(), match[1])
@@ -90,6 +79,8 @@ async function resolveScreenshot(logs, task) {
       }
       continue
     }
+    return true
+
     // TODO: don't wait for anything?
     if(match[1].match(screenName)) {
       await convertImage(outputEnts, match[1], '80%')
@@ -103,9 +94,9 @@ async function resolveScreenshot(logs, task) {
 
 
 async function resolveEnts(logs, task) {
-  let outputEnts = path.join(FS_GAMEHOME, getGame(), task.test)
+  let outputEnts = path.join(FS_GAMEHOME, getGame(), task.outFile)
   if (fs.existsSync(outputEnts)) {
-    fs.renameSync(outputEnts, path.join(repackedCache()[0], task.test))
+    fs.renameSync(outputEnts, path.join(repackedCache()[0], task.outFile))
     return true
   }
 
@@ -122,13 +113,14 @@ async function resolveImages(logs, task) {
   let images = imageList[0].split('\n').slice(1, -3)
     .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
   if(START_SERVICES.includes('cache')) {
-    fs.writeFileSync(path.join(repackedCache()[0], task.test), images)
+    fs.writeFileSync(path.join(repackedCache()[0], task.outFile), images)
   }
   
 }
 
 
 async function execLevelshot(mapname, waitFor) {
+  let basegame = getGame()
 
   if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
     EXECUTING_LVLSHOTS[mapname] = []
@@ -143,36 +135,34 @@ async function execLevelshot(mapname, waitFor) {
       mapname: mapname,
       time: Date.now(),
       subscribers: [],
+      working: false,
     }))
   }
 
-  let basegame = getGame()
-  //fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '/maps/'), { recursive: true })
   // TODO: this will need to be an API controllable by utilities/watch.js
   let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo.cfg')
   if(!fs.existsSync(lvlconfig) || fs.statSync(lvlconfig).mtime > fs.statSync(LVLSHOTS).mtime) {
     fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
     fs.writeFileSync(lvlconfig, fs.readFileSync(LVLSHOTS))
-    // .replace(/\$\{mapname\}/ig, mapname)
   }
 
   // figure out which images are missing and do it in one shot
   queueTask({
     cmd: ' ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
-    test: path.join('levelshots', mapname + '.jpg')
+    outFile: path.join('levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
     cmd: ` ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
-    test: path.join('screenshots', mapname + '_screenshot0001.jpg')
+    outFile: path.join('screenshots', mapname + '_screenshot0001.tga')
   })
   queueTask({
     // special exception
     cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
-    test: path.join('screenshots', mapname + '_screenshot0002.jpg')
+    outFile: path.join('screenshots', mapname + '_screenshot0002.tga')
   })
 
   // TODO: take screenshot from every camera position
@@ -191,9 +181,9 @@ async function execLevelshot(mapname, waitFor) {
   for(let i = 0; i < TRACEMAPS.length; i++) {
     queueTask({
       // special exception
-      cmd: `set exportAreaMask "wait 30 ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap0001 ; "`,
+      cmd: ` ; wait 30 ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i).padStart(4, '0')} ; `,
       resolve: resolveScreenshot,
-      test: path.join('maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
+      outFile: path.join('maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
     })
   }
 
@@ -202,14 +192,14 @@ async function execLevelshot(mapname, waitFor) {
     // special exception
     cmd: ' ; saveents ; ',
     resolve: resolveEnts,
-    test: path.join('maps', mapname + '.ent')
+    outFile: path.join('maps', mapname + '.ent')
   })
 
   queueTask({
     // special exception
     cmd: ' ; imagelist ; ',
     resolve: resolveImages,
-    test: path.join('maps', mapname + '-images.txt')
+    outFile: path.join('maps', mapname + '-images.txt')
   })
 
   /*
@@ -219,6 +209,8 @@ async function execLevelshot(mapname, waitFor) {
   }
   */
 
+  Promise.resolve(processQueue())
+  
   if(!waitFor) {
     return
   }

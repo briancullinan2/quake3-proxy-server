@@ -1,15 +1,9 @@
 
-const path = require('path')
-const fs = require('fs')
-
-const { convertImage } = require('../contentServer/convert.js')
-const { getGame } = require('../utilities/env.js')
-const { repackedCache } = require('../utilities/env.js')
-const { START_SERVICES } = require('../contentServer/features.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
-const { EXECUTING_MAPS } = require('../gameServer/processes.js')
-const { RESOLVE_STATUS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
+const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
+const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
+const buildChallenge = require('../quake3Utils/generate-challenge.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -21,9 +15,10 @@ const { RESOLVE_STATUS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameS
 
 const LVLSHOT_TIMEOUT = 5000
 const RENDERER_TIMEOUT = 10000
-const MAX_RENDERERS = 4
+const MAX_RENDERERS = 2
 const EXECUTING_LVLSHOTS = {}
 let lvlshotTimer
+let RUNCMD = 0
 
 async function processQueue() {
   // TODO: keep track of levelshot servers separately, sort / priorize by 
@@ -60,25 +55,44 @@ async function processQueue() {
         if(renderers.length >= 4) {
           continue // can't do anything
         } else { // start another server
-          serveLvlshot(mapname)
+          Promise.resolve(serveLvlshot(mapname))
           continue
         }
       } else {
         continue // wait for another renderer to pick it up
       }
     } else {
-      let mapRenderer = freeRenderers.filter(map => map.mapname == mapname)[0]
-      if (!mapRenderer || EXECUTING_LVLSHOTS[mapname].length > 4) {
+      let serversAvailable = freeRenderers
+          .sort((a, b) => (b.mapname == mapname ? 1 : 0) - (a.mapname == mapname ? 1 : 0))
+          .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
+          .filter(server => server)
+      if (!serversAvailable || serversAvailable.length == 0) {
+        continue
+      } else
+      if(serversAvailable[0].mapname != mapname  &&  EXECUTING_LVLSHOTS[mapname].length > 4) {
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, freeRenderers[0])
+        console.log('Switching maps: ' + mapname)
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
         continue
       } else {
         // TODO: use RCON interface to control servers and get information
         let task = EXECUTING_LVLSHOTS[mapname].shift()
-        let server = Object.values().filter(info => info.qps_serverId == freeRenderer.challenge)
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + task.cmd, freeRenderer)
+        if(!task) {
+          continue
+        }
+        ++RUNCMD
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+        EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = task
+        task.subscribers.push(function () {
+          console.log('Task completed: took ' + (Date.now() - task.time) / 1000 + ' seconds')
+          EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = false
+        })
         // when we get a print response, let waiting clients know about it
-        RESOLVE_STATUS[server.challenge].push(function (logs) {
+        if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
+          RESOLVE_LOGS[serversAvailable[0].challenge] = []
+        }
+        RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
           updateSubscribers(mapname, logs, task)
         })
       }
@@ -90,7 +104,7 @@ async function processQueue() {
 
 
 // TODO: turn this into some sort of temporary cfg script
-async function serveLvlshot(mapname) {
+async function serveLvlshot(mapname, waitFor) {
   // TODO: wait for the new dedicated process to connect to our specialized
   //   control port. Now we have a Quake 3 server command pipe. Send OOB
   //   RCON messages to control our own process remotely / asynchronously.
@@ -102,9 +116,13 @@ async function serveLvlshot(mapname) {
   }
 
   // only start one dedicated server at a time
-  let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => list.length > 0)[0]
+  let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => RESOLVE_DEDICATED[list].length > 0)[0]
   if(challenge) {
-    return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
+    if(waitFor) {
+      return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
+    } else {
+      return
+    }
   }
 
   try {
@@ -112,33 +130,35 @@ async function serveLvlshot(mapname) {
     let challenge = buildChallenge()
     RESOLVE_DEDICATED[challenge] = []
     RESOLVE_DEDICATED[challenge].push(function () {
-      console.log('Dedicated started.')
+      console.log('Renderer started.')
       updatePageViewers('/games')
     })
 
     let ps = await dedicatedCmd([
-      '+set', 'dedicated', '1',
+      '+set', 'sv_pure', '0', 
+      '+set', 'dedicated', '0',
+      '+set', 'developer', '0',
+      '+set', 'r_headless', '1',
+      '+set', 'in_mouse', '0',
       '+set', 'sv_master2', '""',
       '+set', 'sv_master3', '""',
-      '+sets', 'qps_serverId', challenge,
+      '+sets', 'qps_serverId', '"' + challenge + '"',
+      '+sets', 'qps_renderer', '1',
+      '+set', 'com_maxfps', '60',
       '+set', 'rconPassword2', 'password1',
-      '+set', 'sv_dlURL', '//maps/repacked/%1',
+      '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+devmap', mapname,
-      '+wait', '300', '+heartbeat',
+      '+exec', `".config/levelinfo.cfg"`,
+      '+wait', '240', '+heartbeat',
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
       //   might also be necessary for aligning animations.
-      // '+exec', `".config/levelinfo_${mapname}.cfg"`,
     ], function (lines) {
-      let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
-      if(!server) {
-        //console.log(lines)
-      } else {
-        if(typeof server.logs == 'undefined') {
-          server.logs = ''
-        }
-        server.logs += lines + '\n'
-        updatePageViewers('/rcon')
+      EXECUTING_MAPS[challenge].logs += lines + '\n'
+      if(EXECUTING_MAPS[challenge].working) {
+        updateSubscribers(EXECUTING_MAPS[challenge].mapname, 
+                          EXECUTING_MAPS[challenge].logs,
+                          EXECUTING_MAPS[challenge].working)
       }
     })
     ps.on('close', function () {
@@ -149,8 +169,11 @@ async function serveLvlshot(mapname) {
       challenge: challenge,
       pid: ps.pid,
       mapname: mapname,
+      logs: ''
     }
-    EXECUTING_LVLSHOTS[mapname] = []
+    if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
+      EXECUTING_LVLSHOTS[mapname] = []
+    }
   } catch (e) {
     console.error('DEDICATED:', e)
   }
@@ -181,5 +204,6 @@ async function updateSubscribers(mapname, logs, cmd) {
 
 module.exports = {
   EXECUTING_LVLSHOTS,
+  processQueue,
 }
 

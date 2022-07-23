@@ -7,7 +7,7 @@ const SUPPORTED_SERVICES = [
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 
   'assets', 'metadata', 'logs', 'users', 'sitemap',
-  'all'
+  'all', 'lvlshot',
 ]
 
 const CONTENT_FEATURES = {
