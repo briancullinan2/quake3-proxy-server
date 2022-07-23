@@ -59,7 +59,7 @@ async function serveLevelshot(request, response, next) {
         passThrough.pipe(response)
         convertCmd(levelshot, outFile[0], void 0, passThrough, '.jpg')
       }).then(convertedFile => {
-        CONVERTED_IMAGES[levelshot] = Buffer.concat(convertedFile)
+        CONVERTED_IMAGES[levelshot.replace(path.extname(levelshot), '.jpg')] = Buffer.concat(convertedFile)
       }))
       return
     } else {
@@ -138,17 +138,34 @@ async function execLevelshot(mapname, waitFor) {
     EXECUTING_LVLSHOTS[mapname] = []
   }
 
+  let promises = []
+
   function queueTask(task) {
     let existing = EXECUTING_LVLSHOTS[mapname].filter(map => map.cmd == task.cmd)
     if(existing.length > 0) {
+      if(existing[0].cmd.match(waitFor)) {
+        promises.push(new Promise(resolve => {
+          existing[0].subscribers.push(function () {
+            resolve(existing[0].outFile)
+          })
+        }))
+      }
       return
     }
-    EXECUTING_LVLSHOTS[mapname].push(Object.assign(task, {
+    let newTask = Object.assign({}, task, {
       mapname: mapname,
       time: Date.now(),
       subscribers: [],
       working: false,
-    }))
+    })
+    if(newTask.cmd.match(waitFor)) {
+      promises.push(new Promise(resolve => {
+        newTask.subscribers.push(function () {
+          resolve(newTask.outFile)
+        })
+        EXECUTING_LVLSHOTS[mapname].push(newTask)
+      }))
+    }
   }
 
   // TODO: this will need to be an API controllable by utilities/watch.js
@@ -200,12 +217,12 @@ async function execLevelshot(mapname, waitFor) {
   }
 
   // TODO: export / write entities / mapname.ents file
-  queueTask({
+  //queueTask({
     // special exception
-    cmd: ' ; saveents ; ',
-    resolve: resolveEnts,
-    outFile: path.join(basegame, 'maps', mapname + '.ent')
-  })
+  //  cmd: ' ; saveents ; ',
+  //  resolve: resolveEnts,
+  //  outFile: path.join(basegame, 'maps', mapname + '.ent')
+  //})
 
 
   // TODO: figure out how to resolve a client command
@@ -225,23 +242,16 @@ async function execLevelshot(mapname, waitFor) {
 
   Promise.resolve(processQueue())
   
-  if(!waitFor) {
-    return
-  }
 
+  // return promise wait on filtered tasks
+  if(waitFor) {
+    return await Promise.all(promises)
+  }
   // TODO: filtered to a specific task listed above based 
   //   on where the mapinfo request came from
-  // return promise wait on filtered tasks
-  return await Promise.all(EXECUTING_LVLSHOTS[mapname]
-  .filter(cmd => cmd.cmd.match(waitFor))
-  .map(cmd => new Promise(resolve => {
-    if(typeof cmd.subscribers == 'undefined') {
-      cmd.subscribers = []
-    }
-    cmd.subscribers.push(function () {
-      resolve(cmd.outFile)
-    })
-  })))
+  //return await Promise.all(EXECUTING_LVLSHOTS[mapname]
+  //.filter(cmd => )
+  //.map(async cmd => )
 }
 
 

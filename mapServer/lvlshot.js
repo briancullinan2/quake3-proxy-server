@@ -79,8 +79,8 @@ async function processQueue() {
         continue
       } else {
         // TODO: use RCON interface to control servers and get information
-        let task = EXECUTING_LVLSHOTS[mapname].shift()
-        if(!task) {
+        let task = EXECUTING_LVLSHOTS[mapname][0]
+        if(!task || task.done) {
           continue
         }
         if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
@@ -219,6 +219,7 @@ async function updateSubscribers(mapname, logs, cmd) {
 
   cmd.done = true
   if(cmd.subscribers) {
+    console.log('goddamnit', cmd.subscribers)
     for(let j = 0; j < cmd.subscribers.length; ++j) {
       cmd.subscribers[j](logs)
     }
