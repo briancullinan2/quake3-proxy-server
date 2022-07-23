@@ -86,9 +86,13 @@ async function processQueue() {
         if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
           continue // already done, don't command
         }
+        // TODO: add a checkin and a timeout to retry the task
+
+
 
         EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = task
         task.subscribers.push(function () {
+          EXECUTING_LVLSHOTS[mapname].shift()
           console.log('Task completed: took ' + (Date.now() - task.time) / 1000 + ' seconds')
           EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = false
         })
@@ -219,7 +223,6 @@ async function updateSubscribers(mapname, logs, cmd) {
 
   cmd.done = true
   if(cmd.subscribers) {
-    console.log('goddamnit', cmd.subscribers)
     for(let j = 0; j < cmd.subscribers.length; ++j) {
       cmd.subscribers[j](logs)
     }
