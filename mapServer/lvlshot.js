@@ -52,7 +52,7 @@ async function processQueue() {
     let freeRenderers = renderers.filter(map => !map.working)
     if(freeRenderers.length == 0) {
       if(mapRenderers.length == 0) {
-        if(renderers.length >= 4) {
+        if(renderers.length >= MAX_RENDERERS) {
           continue // can't do anything
         } else { // start another server
           Promise.resolve(serveLvlshot(mapname))
@@ -80,9 +80,7 @@ async function processQueue() {
         if(!task) {
           continue
         }
-        ++RUNCMD
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+
         EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = task
         task.subscribers.push(function () {
           console.log('Task completed: took ' + (Date.now() - task.time) / 1000 + ' seconds')
@@ -95,6 +93,13 @@ async function processQueue() {
         RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
           updateSubscribers(mapname, logs, task)
         })
+
+        console.log('Starting renderer task: ', task)
+        ++RUNCMD
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+
+
       }
     }
   }
@@ -111,7 +116,7 @@ async function serveLvlshot(mapname, waitFor) {
   // TODO: take the screenshots, run client commands using local dedicate 
   //   connected commands (side-effect, easily switch out client to a real
   //   server using the reconnect command).
-  if(Object.values(EXECUTING_MAPS).filter(map => map.renderer).length >= 4) {
+  if(Object.values(EXECUTING_MAPS).filter(map => map.renderer).length >= MAX_RENDERERS) {
     return
   }
 
@@ -133,7 +138,12 @@ async function serveLvlshot(mapname, waitFor) {
       console.log('Renderer started.')
       updatePageViewers('/games')
     })
-
+    EXECUTING_MAPS[challenge] = {
+      renderer: true,
+      challenge: challenge,
+      mapname: mapname,
+      logs: ''
+    }
     let ps = await dedicatedCmd([
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
@@ -161,16 +171,10 @@ async function serveLvlshot(mapname, waitFor) {
                           EXECUTING_MAPS[challenge].working)
       }
     })
+    EXECUTING_MAPS[challenge].pid = ps.pid
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]
     })
-    EXECUTING_MAPS[challenge] = {
-      renderer: true,
-      challenge: challenge,
-      pid: ps.pid,
-      mapname: mapname,
-      logs: ''
-    }
     if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
       EXECUTING_LVLSHOTS[mapname] = []
     }

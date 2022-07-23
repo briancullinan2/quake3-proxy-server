@@ -81,9 +81,16 @@ async function statusResponse(socket, message, rinfo) {
     if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
       RESOLVE_DEDICATED[infos.qps_serverId] = []
     }
+    if(typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
+      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started')
+      EXECUTING_MAPS[infos.qps_serverId] = {
+        renderer: !!infos.qps_renderer,
+        logs: '',
+        challenge: infos.qps_serverId,
+      }
+    }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
-      EXECUTING_MAPS[infos.qps_serverId].renderer = !!infos.qps_renderer
     }
   }
 
@@ -189,7 +196,6 @@ async function getServers(socket, message, rinfo) {
 async function print(socket, message, rinfo) {
   let lines = Array.from(message)
     .map(c => String.fromCharCode(c)).join('')
-  console.log('ENGINE: print ', lines)
   let server = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   if(!server) {
     // ignore?
@@ -199,13 +205,13 @@ async function print(socket, message, rinfo) {
     server.logs = ''
   }
   server.logs += lines + '\n'
-  if (typeof RESOLVE_LOGS[infos.challenge] != 'undefined') {
+  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', lines)
+  if (typeof RESOLVE_LOGS[server.challenge] != 'undefined') {
     let res
-    while ((res = RESOLVE_LOGS[infos.challenge].shift())) {
+    while ((res = RESOLVE_LOGS[server.challenge].shift())) {
       res(server.logs)
     }
   }
-
   updatePageViewers('/rcon')
 }
 

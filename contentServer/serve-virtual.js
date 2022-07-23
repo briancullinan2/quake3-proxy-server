@@ -536,7 +536,7 @@ async function serveVirtual(request, response, next) {
 
   // duck out early
   if (!directory || directory.length <= 0) {
-    return next(new Error('Path not found: ' + filename))
+    return next(/* new Error('Virtual path not found: ' + filename) */)
   }
 
   return response.send(renderIndex(`

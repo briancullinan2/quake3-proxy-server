@@ -35,7 +35,7 @@ async function serveLevelshot(request, response, next) {
     .replace(/_tracemap[0-9]+/gi, '')
   let localLevelshot = path.join(basegame, match, path.basename(filename))
   let matchName = (/screenshot[0-9]+|levelshot[0-9]+/).exec(filename)
-  if(!matchName && filename.match(mapname)) {
+  if(!matchName) {
     matchName = mapname
   } else {
     matchName = matchName[0]
@@ -47,6 +47,8 @@ async function serveLevelshot(request, response, next) {
     levelshot = findFile(localLevelshot)
     if (levelshot) {
       return response.sendFile(levelshot)
+    } else {
+      throw new Error('Lvlshot failed.')
     }
   } catch (e) {
     console.error('LVLSHOT:', e)
@@ -65,7 +67,7 @@ async function serveLevelshot(request, response, next) {
 //   and rotate maps between them.
 
 async function resolveScreenshot(logs, task) {
-
+  console.log('----------------------', logs)
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
@@ -148,13 +150,13 @@ async function execLevelshot(mapname, waitFor) {
 
   // figure out which images are missing and do it in one shot
   queueTask({
-    cmd: ' ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot levelshot ; ',
+    cmd: ' ; vstr setupLevelshot ; levelshot ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
     outFile: path.join('levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupLevelshot ; wait 30 ; levelshot ; wait 30 ; screenshot ${mapname}_screenshot0001 ; `,
+    cmd: ` ; vstr setupLevelshot ; levelshot ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
     outFile: path.join('screenshots', mapname + '_screenshot0001.tga')
   })
@@ -181,7 +183,7 @@ async function execLevelshot(mapname, waitFor) {
   for(let i = 0; i < TRACEMAPS.length; i++) {
     queueTask({
       // special exception
-      cmd: ` ; wait 30 ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i).padStart(4, '0')} ; `,
+      cmd: ` ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i).padStart(4, '0')} ; `,
       resolve: resolveScreenshot,
       outFile: path.join('maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
     })

@@ -129,15 +129,15 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('virtual')) {
-    app.use(serveVirtual) // /home fs for updates
+    app.use('/*', serveVirtual) // /home fs for updates
   }
 
   if (features.includes('all')
     || features.includes('lvlshot')) {
-    app.use('/*/*/levelshots/*.*', serveLevelshot)
-    app.use('/*/screenshots/*.*', serveLevelshot)
-    app.use('/*/levelshots/*.*', serveLevelshot)
-    app.use('/*/maps/*_tracemap*.*', serveLevelshot)
+    app.use('/*/*/levelshots/*', serveLevelshot)
+    app.use('/*/screenshots/*', serveLevelshot)
+    app.use('/*/levelshots/*', serveLevelshot)
+    app.use('/*/maps/*_tracemap*', serveLevelshot)
   }
 
 }

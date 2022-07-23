@@ -62,8 +62,7 @@ async function execCmd(cmd, args, options) {
           cwd: (options ? options.cwd : null) || process.cwd(),
           shell: (options ? options.shell : false) || false,
           detached: (options ? options.detached : false) || false,
-          stdio: options && options.detached 
-              ? ['ignore', 'ignore', 'ignore'] : ['ignore', 'pipe', 'pipe'],
+          stdio: options && options.detached ? 'ignore' : 'pipe',
         })
         RUNNING++
         let pid = LIMIT + ':' + ps.pid
