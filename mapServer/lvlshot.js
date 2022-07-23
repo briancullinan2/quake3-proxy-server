@@ -54,7 +54,7 @@ async function processQueue() {
     if(freeRenderers.length == 0) {
       if(mapRenderers.length == 0) {
         if(renderers.length >= MAX_RENDERERS) {
-          console.log('Max servers: ' + mapname)
+          //console.log('Max servers: ' + mapname)
           continue // can't do anything
         } else { // start another server
           Promise.resolve(serveLvlshot(mapname))

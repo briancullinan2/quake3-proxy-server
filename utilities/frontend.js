@@ -74,14 +74,14 @@ function pageBindings() {
 	if(connectAddr && typeof Cbuf_AddText != 'undefined') {
     let reconnect = addressToString(Cvar_VariableString('cl_reconnectArgs'))
     if(!reconnect.includes(connectAddr[0])) {
-      //Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
+      Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
     }
   }
   let MATCH_MAPNAME = /maps\/([^\/]+)$/gi
 	let mapname = MATCH_MAPNAME.exec(window.location.pathname + '')
 	if(mapname && typeof Cbuf_AddText != 'undefined') {
     if(mapname != addressToString(Cvar_VariableString('mapname'))) {
-      //Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
+      Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
     }
   }
 

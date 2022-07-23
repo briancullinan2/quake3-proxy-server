@@ -351,6 +351,18 @@ async function streamAudioKey(pk3File, pk3InnerPath, response) {
     }
   } else {
     // TODO: try alternate cached formats
+    if(!pk3File || !fs.existsSync(pk3File)) {
+      for (let i = 0; i < AUDIO_FORMATS.length; i++) {
+        let altPath = findFile(pk3File.replace(path.extname(pk3File), AUDIO_FORMATS[i]))
+        if(altPath) {
+          pk3File = altPath
+          break
+        }
+      }
+    }
+    if(!fs.existsSync(pk3File)) {
+      return false
+    }
   }
 
   response.setHeader('content-type', 'audio/ogg')

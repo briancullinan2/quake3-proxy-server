@@ -779,6 +779,7 @@ ol li.unused-path a,
   display: flex;
   /* padding-top:22px; */
   flex-direction: row;
+  user-select: none;
 }
 
 #viewport-frame canvas {
