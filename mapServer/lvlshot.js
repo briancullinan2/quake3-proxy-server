@@ -80,6 +80,9 @@ async function processQueue() {
         if(!task) {
           continue
         }
+        if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
+          continue // already done, don't command
+        }
 
         EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = task
         task.subscribers.push(function () {
@@ -96,15 +99,29 @@ async function processQueue() {
 
         console.log('Starting renderer task: ', task)
         ++RUNCMD
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
+            + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' 
+            + RUNCMD, serversAvailable[0])
 
 
       }
     }
   }
 
-  // return promise wait on filtered tasks
+
+  Object.values(EXECUTING_MAPS).forEach(map => {
+    if(map.working && (!map.updated || Date.now() - map.updated > 1000)) {
+      map.updated = Date.now()
+      let server = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
+      if(server) {
+        updateSubscribers(map.mapname, server.logs, map.working)
+      } else {
+        updateSubscribers(map.mapname, map.logs, map.working)
+      }
+    }
+  })
+
 }
 
 
@@ -189,11 +206,11 @@ async function serveLvlshot(mapname, waitFor) {
 //   to allow clients to subscribe
 async function updateSubscribers(mapname, logs, cmd) {
   if(cmd.done) {
-    return
+    return true
   }
   let isResolved = await cmd.resolve(logs, cmd)
   if(!isResolved) {
-    return
+    return false
   }
 
   cmd.done = true
@@ -203,6 +220,7 @@ async function updateSubscribers(mapname, logs, cmd) {
     }
   }
   updatePageViewers('\/maps\/' + mapname)
+  return true
 }
 
 

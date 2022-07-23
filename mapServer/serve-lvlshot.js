@@ -67,11 +67,13 @@ async function serveLevelshot(request, response, next) {
 //   and rotate maps between them.
 
 async function resolveScreenshot(logs, task) {
-  console.log('----------------------', logs)
   // convert TGAs to JPG.
   // TODO: transparent PNGs with special background color?
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
-  let screenName = path.basename(task.outFile).replace(path.extname(task.outFile), '')
+  let screenName = task.outFile.replace(path.extname(task.outFile), '.tga')
+  if(findFile(screenName)) {
+    return true
+  }
   let match
   while (match = WROTE_SCREENSHOT.exec(logs)) {
     let outputEnts = path.join(FS_GAMEHOME, getGame(), match[1])
@@ -82,16 +84,8 @@ async function resolveScreenshot(logs, task) {
       continue
     }
     return true
-
-    // TODO: don't wait for anything?
-    if(match[1].match(screenName)) {
-      await convertImage(outputEnts, match[1], '80%')
-      return true
-    } else {
-      convertImage(outputEnts, match[1], '80%')
-    }
   }
-
+  return false
 }
 
 
@@ -152,19 +146,19 @@ async function execLevelshot(mapname, waitFor) {
   queueTask({
     cmd: ' ; vstr setupLevelshot ; levelshot ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
-    outFile: path.join('levelshots', mapname + '.tga')
+    outFile: path.join(basegame, 'levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
     cmd: ` ; vstr setupLevelshot ; levelshot ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
-    outFile: path.join('screenshots', mapname + '_screenshot0001.tga')
+    outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0001.tga')
   })
   queueTask({
     // special exception
     cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
-    outFile: path.join('screenshots', mapname + '_screenshot0002.tga')
+    outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0002.tga')
   })
 
   // TODO: take screenshot from every camera position
@@ -185,7 +179,7 @@ async function execLevelshot(mapname, waitFor) {
       // special exception
       cmd: ` ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i).padStart(4, '0')} ; `,
       resolve: resolveScreenshot,
-      outFile: path.join('maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
+      outFile: path.join(basegame, 'maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
     })
   }
 
@@ -194,14 +188,14 @@ async function execLevelshot(mapname, waitFor) {
     // special exception
     cmd: ' ; saveents ; ',
     resolve: resolveEnts,
-    outFile: path.join('maps', mapname + '.ent')
+    outFile: path.join(basegame, 'maps', mapname + '.ent')
   })
 
   queueTask({
     // special exception
     cmd: ' ; imagelist ; ',
     resolve: resolveImages,
-    outFile: path.join('maps', mapname + '-images.txt')
+    outFile: path.join(basegame, 'maps', mapname + '-images.txt')
   })
 
   /*
@@ -219,6 +213,7 @@ async function execLevelshot(mapname, waitFor) {
 
   // TODO: filtered to a specific task listed above based 
   //   on where the mapinfo request came from
+  // return promise wait on filtered tasks
   return await Promise.all(EXECUTING_LVLSHOTS[mapname]
   .filter(cmd => cmd.cmd.match(waitFor))
   .map(cmd => new Promise(resolve => {
