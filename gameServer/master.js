@@ -82,12 +82,12 @@ async function statusResponse(socket, message, rinfo) {
       RESOLVE_DEDICATED[infos.qps_serverId] = []
     }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
-      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started')
       EXECUTING_MAPS[infos.qps_serverId] = {
         renderer: !!infos.qps_renderer,
         logs: '',
         challenge: infos.qps_serverId,
       }
+      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started', EXECUTING_MAPS)
     }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname

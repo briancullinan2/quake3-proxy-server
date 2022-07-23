@@ -27,6 +27,7 @@ async function processQueue() {
   //   in parallel with 2 redundant maps loaded.
   if (!lvlshotTimer) {
     lvlshotTimer = setInterval(processQueue, 1000 / 60)
+    return
   }
   
   // sort by if the existing stack has less than <MAX_RENDERERS> commands
@@ -53,12 +54,14 @@ async function processQueue() {
     if(freeRenderers.length == 0) {
       if(mapRenderers.length == 0) {
         if(renderers.length >= MAX_RENDERERS) {
+          console.log('Max servers: ' + mapname)
           continue // can't do anything
         } else { // start another server
           Promise.resolve(serveLvlshot(mapname))
           continue
         }
       } else {
+        //console.log('Delegate: ' + mapname)
         continue // wait for another renderer to pick it up
       }
     } else {
@@ -67,6 +70,7 @@ async function processQueue() {
           .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
           .filter(server => server)
       if (!serversAvailable || serversAvailable.length == 0) {
+        console.log('None available: ' + mapname)
         continue
       } else
       if(serversAvailable[0].mapname != mapname  &&  EXECUTING_LVLSHOTS[mapname].length > 4) {
@@ -75,15 +79,18 @@ async function processQueue() {
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
         // so it doesn't try and change all servers
         EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = true
-        EXECUTING_MAPS[serversAvailable[0].qps_serverId].map = mapname
+        // this will be updated by the time the server switches
+        //EXECUTING_MAPS[serversAvailable[0].qps_serverId].map = mapname
         continue
       } else {
         // TODO: use RCON interface to control servers and get information
         let task = EXECUTING_LVLSHOTS[mapname][0]
         if(!task || task.done) {
+          //console.log('No tasks: ' + mapname)
           continue
         }
         if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
+          EXECUTING_LVLSHOTS[mapname].shift()
           continue // already done, don't command
         }
         // TODO: add a checkin and a timeout to retry the task
@@ -184,6 +191,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+devmap', mapname,
       '+exec', `".config/levelinfo.cfg"`,
+      '+vstr', 'resetLvlshot',
       '+wait', '240', '+heartbeat',
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
@@ -222,10 +230,16 @@ async function updateSubscribers(mapname, logs, cmd) {
   }
 
   cmd.done = true
+  if(!lvlshotTimer) {
+    throw new Error('Task completed before service started.')
+  }
   if(cmd.subscribers) {
     for(let j = 0; j < cmd.subscribers.length; ++j) {
       cmd.subscribers[j](logs)
     }
+    cmd.subscribers.splice(0)
+  } else {
+    throw new Error('No subscribers!')
   }
   updatePageViewers('\/maps\/' + mapname)
   return true

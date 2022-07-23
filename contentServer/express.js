@@ -35,10 +35,12 @@ function createApplication(features) {
     }
 
 
-    if (filename.length <= 1 || filename.match('/index.html')) {
+    if (filename.match('/index.html')) {
       if (features.includes('all') || features.includes('virtual')) {
         return next()
       }
+    }
+    if(filename.length <= 1) {
       return serveFeatures(features, res)
     }
 

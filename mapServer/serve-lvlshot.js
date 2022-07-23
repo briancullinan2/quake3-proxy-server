@@ -47,7 +47,7 @@ async function serveLevelshot(request, response, next) {
   try {
     let outFile = await execLevelshot(mapname, matchName)
     let levelshot
-    if (outFile && (levelshot = findFile(outFile[0]))) {
+    if (outFile && outFile[0] && (levelshot = findFile(outFile[0]))) {
       response.setHeader('content-type', 'image/jpg')
       const passThrough = new PassThrough()
       const readable = Readable.from(passThrough)
@@ -158,13 +158,14 @@ async function execLevelshot(mapname, waitFor) {
       subscribers: [],
       working: false,
     })
+    let promise = new Promise(resolve => {
+      newTask.subscribers.push(resolve)
+      EXECUTING_LVLSHOTS[mapname].push(newTask)
+    }).then(() => newTask.outFile)
     if(newTask.cmd.match(waitFor)) {
-      promises.push(new Promise(resolve => {
-        newTask.subscribers.push(function () {
-          resolve(newTask.outFile)
-        })
-        EXECUTING_LVLSHOTS[mapname].push(newTask)
-      }))
+      promises.push(promise)
+    } else {
+      Promise.resolve(promise)
     }
   }
 
@@ -240,12 +241,13 @@ async function execLevelshot(mapname, waitFor) {
   }
   */
 
-  Promise.resolve(processQueue())
-  
-
   // return promise wait on filtered tasks
   if(waitFor) {
+    Promise.resolve(processQueue()).then(() => console.log('Starting renderer service.'))
     return await Promise.all(promises)
+  } else {
+    Promise.resolve(Promise.all(promises))
+    Promise.resolve(processQueue())
   }
   // TODO: filtered to a specific task listed above based 
   //   on where the mapinfo request came from
