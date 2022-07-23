@@ -91,6 +91,7 @@ async function statusResponse(socket, message, rinfo) {
     }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
+      EXECUTING_MAPS[infos.qps_serverId].working = false
     }
   }
 
@@ -201,11 +202,13 @@ async function print(socket, message, rinfo) {
     // ignore?
     return
   }
+
+console.log(lines)
+
   if(typeof server.logs == 'undefined') {
     server.logs = ''
   }
   server.logs += lines + '\n'
-  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', lines)
   if (typeof RESOLVE_LOGS[server.challenge] != 'undefined') {
     let res
     while ((res = RESOLVE_LOGS[server.challenge].shift())) {

@@ -1,5 +1,6 @@
 const path = require('path')
 const fs = require('fs')
+const { PassThrough, Readable } = require('stream')
 
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
@@ -7,6 +8,7 @@ const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
 const { FS_GAMEHOME } = require('../utilities/env.js')
 const { RESOLVE_DEDICATED } = require('../gameServer/processes.js')
+const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 
 
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
@@ -43,10 +45,23 @@ async function serveLevelshot(request, response, next) {
 
   // still can't find a levelshot or screenshot, execute the engine to generate
   try {
-    let logs = await execLevelshot(mapname, matchName)
-    levelshot = findFile(localLevelshot)
-    if (levelshot) {
-      return response.sendFile(levelshot)
+    let outFile = await execLevelshot(mapname, matchName)
+    let levelshot
+    if (outFile && (levelshot = findFile(outFile[0]))) {
+      response.setHeader('content-type', 'image/jpg')
+      const passThrough = new PassThrough()
+      const readable = Readable.from(passThrough)
+      // force async so other threads can answer page requests during conversion
+      Promise.resolve(new Promise(resolve => {
+        let chunks = []
+        readable.on('data', chunks.push.bind(chunks))
+        readable.on('end', resolve.bind(null, chunks))
+        passThrough.pipe(response)
+        convertCmd(levelshot, outFile[0], void 0, passThrough, '.jpg')
+      }).then(convertedFile => {
+        CONVERTED_IMAGES[levelshot] = Buffer.concat(convertedFile)
+      }))
+      return
     } else {
       throw new Error('Lvlshot failed.')
     }
@@ -90,12 +105,11 @@ async function resolveScreenshot(logs, task) {
 
 
 async function resolveEnts(logs, task) {
-  let outputEnts = path.join(FS_GAMEHOME, getGame(), task.outFile)
+  let outputEnts = path.join(FS_GAMEHOME, task.outFile)
   if (fs.existsSync(outputEnts)) {
-    fs.renameSync(outputEnts, path.join(repackedCache()[0], task.outFile))
     return true
   }
-
+  return false
 }
 
 
@@ -106,10 +120,12 @@ async function resolveImages(logs, task) {
   if (!imageList) {
     return
   }
+  console.log(logs)
   let images = imageList[0].split('\n').slice(1, -3)
     .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
   if(START_SERVICES.includes('cache')) {
-    fs.writeFileSync(path.join(repackedCache()[0], task.outFile), images)
+    return true
+    //fs.writeFileSync(path.join(repackedCache()[0], task.outFile), images)
   }
   
 }
@@ -177,9 +193,9 @@ async function execLevelshot(mapname, waitFor) {
   for(let i = 0; i < TRACEMAPS.length; i++) {
     queueTask({
       // special exception
-      cmd: ` ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i).padStart(4, '0')} ; `,
+      cmd: ` ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i + 1).padStart(4, '0')} ; `,
       resolve: resolveScreenshot,
-      outFile: path.join(basegame, 'maps', `${mapname}_tracemap${String(i).padStart(4, '0')}.tga`)
+      outFile: path.join(basegame, 'maps', `${mapname}_tracemap${String(i + 1).padStart(4, '0')}.tga`)
     })
   }
 
@@ -191,12 +207,14 @@ async function execLevelshot(mapname, waitFor) {
     outFile: path.join(basegame, 'maps', mapname + '.ent')
   })
 
-  queueTask({
+
+  // TODO: figure out how to resolve a client command
+  //queueTask({
     // special exception
-    cmd: ' ; imagelist ; ',
-    resolve: resolveImages,
-    outFile: path.join(basegame, 'maps', mapname + '-images.txt')
-  })
+  //  cmd: ' ; imagelist ; ',
+  //  resolve: resolveImages,
+  //  outFile: path.join(basegame, 'maps', mapname + '-images.txt')
+  //})
 
   /*
   let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
@@ -220,7 +238,9 @@ async function execLevelshot(mapname, waitFor) {
     if(typeof cmd.subscribers == 'undefined') {
       cmd.subscribers = []
     }
-    cmd.subscribers.push(resolve)
+    cmd.subscribers.push(function () {
+      resolve(cmd.outFile)
+    })
   })))
 }
 

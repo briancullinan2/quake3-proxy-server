@@ -73,6 +73,9 @@ async function processQueue() {
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         console.log('Switching maps: ' + mapname)
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
+        // so it doesn't try and change all servers
+        EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = true
+        EXECUTING_MAPS[serversAvailable[0].qps_serverId].map = mapname
         continue
       } else {
         // TODO: use RCON interface to control servers and get information
@@ -111,7 +114,8 @@ async function processQueue() {
 
 
   Object.values(EXECUTING_MAPS).forEach(map => {
-    if(map.working && (!map.updated || Date.now() - map.updated > 1000)) {
+    if(typeof map.working == 'object'
+       && (!map.updated || Date.now() - map.updated > 1000)) {
       map.updated = Date.now()
       let server = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
       if(server) {
@@ -182,7 +186,7 @@ async function serveLvlshot(mapname, waitFor) {
       //   might also be necessary for aligning animations.
     ], function (lines) {
       EXECUTING_MAPS[challenge].logs += lines + '\n'
-      if(EXECUTING_MAPS[challenge].working) {
+      if(typeof EXECUTING_MAPS[challenge].working == 'object') {
         updateSubscribers(EXECUTING_MAPS[challenge].mapname, 
                           EXECUTING_MAPS[challenge].logs,
                           EXECUTING_MAPS[challenge].working)

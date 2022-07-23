@@ -5,6 +5,7 @@ const { FindShaderInShaderText } = require('../assetServer/shaders.js')
 
 async function renderImages(images, pk3name, basegame) {
   let imageHtml = ''
+  return imageHtml
   // sort by the second directory and group by like trenchbroom does
   images.sort(/* (a, b) => {
     let ai = a.indexOf('/')

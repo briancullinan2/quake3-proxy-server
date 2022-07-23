@@ -105,7 +105,7 @@ async function serveRcon(request, response, next) {
   }
 
   if(request.method == 'POST') {
-    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command, serverInfo)
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command + '  \n', serverInfo)
     return response.json({})
   }
 
