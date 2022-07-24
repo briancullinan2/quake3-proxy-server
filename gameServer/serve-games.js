@@ -120,6 +120,7 @@ async function serveRcon(request, response, next) {
     levelshot = 'unknownmap.jpg'
   }
 
+  // update the server with a status once every 60 seconds to make sure we are still alive
   let updateTime = 0
   if(serverInfo.sv_maxRate) {
     updateTime = parseInt(serverInfo.sv_maxRate)

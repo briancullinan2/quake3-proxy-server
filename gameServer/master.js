@@ -29,14 +29,16 @@ function sendOOB(socket, message, rinfo) {
 
 async function heartbeat(socket, message, rinfo) {
   console.log('Heartbeat: ', rinfo)
+  let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   // wait for a successful infoResponse before confirming
-  if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
-    GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+  if(typeof SERVER == 'undefined') {
+    SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
   }
-  if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
-    GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
+  if(typeof SERVER.challenge == 'undefined') {
+    SERVER.challenge = buildChallenge()
   }
-  let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
+  let challenge = SERVER.challenge
+  SERVER.timeUpdated = Date.now()
 
   let infos = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
@@ -64,6 +66,9 @@ async function heartbeat(socket, message, rinfo) {
     }
   }
 }
+
+
+
 
 async function statusResponse(socket, message, rinfo) {
   // TODO: decode status, part info, part player list
@@ -197,22 +202,23 @@ async function getServers(socket, message, rinfo) {
 async function print(socket, message, rinfo) {
   let lines = Array.from(message)
     .map(c => String.fromCharCode(c)).join('')
-  let server = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
-  if(!server) {
+  const SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
+  if(!SERVER) {
     // ignore?
     return
   }
+  SERVER.timeUpdated = Date.now()
 
-console.log(lines)
+  //console.log(lines)
 
-  if(typeof server.logs == 'undefined') {
-    server.logs = ''
+  if(typeof SERVER.logs == 'undefined') {
+    SERVER.logs = ''
   }
-  server.logs += lines + '\n'
-  if (typeof RESOLVE_LOGS[server.challenge] != 'undefined') {
+  SERVER.logs += lines + '\n'
+  if (typeof RESOLVE_LOGS[SERVER.challenge] != 'undefined') {
     let res
-    while ((res = RESOLVE_LOGS[server.challenge].shift())) {
-      res(server.logs)
+    while ((res = RESOLVE_LOGS[SERVER.challenge].shift())) {
+      res(SERVER.logs)
     }
   }
   updatePageViewers('/rcon')

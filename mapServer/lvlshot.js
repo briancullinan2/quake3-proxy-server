@@ -13,6 +13,7 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 //   separate master control for every single map, split up and only
 //   do 10 maps at a time, because of this.
 
+const RESOLVE_INTERVAL = 1000
 const LVLSHOT_TIMEOUT = 5000
 const RENDERER_TIMEOUT = 10000
 const MAX_RENDERERS = 2
@@ -26,6 +27,7 @@ async function processQueue() {
   //   i.e. if there are 2 maps with 2 tasks, there should be 4 servers running
   //   in parallel with 2 redundant maps loaded.
   if (!lvlshotTimer) {
+    console.log('Starting renderer service.')
     lvlshotTimer = setInterval(processQueue, 1000 / 60)
     return
   }
@@ -51,6 +53,7 @@ async function processQueue() {
     let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
     let mapRenderers = renderers.filter(map => map.mapname == mapname)
     let freeRenderers = renderers.filter(map => !map.working)
+
     if(freeRenderers.length == 0) {
       if(mapRenderers.length == 0) {
         if(renderers.length >= MAX_RENDERERS) {
@@ -65,22 +68,28 @@ async function processQueue() {
         continue // wait for another renderer to pick it up
       }
     } else {
+
       let serversAvailable = freeRenderers
           .sort((a, b) => (b.mapname == mapname ? 1 : 0) - (a.mapname == mapname ? 1 : 0))
           .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
           .filter(server => server)
+
+      let SERVER
       if (!serversAvailable || serversAvailable.length == 0) {
         console.log('None available: ' + mapname)
         continue
-      } else
+      } else {
+        SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
+      }
+
       if(serversAvailable[0].mapname != mapname  &&  EXECUTING_LVLSHOTS[mapname].length > 4) {
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         console.log('Switching maps: ' + mapname)
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
         // so it doesn't try and change all servers
-        EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = true
+        SERVER.working = true
         // this will be updated by the time the server switches
-        //EXECUTING_MAPS[serversAvailable[0].qps_serverId].map = mapname
+        //SERVER.mapname = mapname
         continue
       } else {
         // TODO: use RCON interface to control servers and get information
@@ -96,13 +105,13 @@ async function processQueue() {
         // TODO: add a checkin and a timeout to retry the task
 
 
-
-        EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = task
+        SERVER.working = task
         task.subscribers.push(function () {
           EXECUTING_LVLSHOTS[mapname].shift()
           console.log('Task completed: took ' + (Date.now() - task.time) / 1000 + ' seconds')
-          EXECUTING_MAPS[serversAvailable[0].qps_serverId].working = false
+          SERVER.working = false
         })
+        task.started = Date.now()
         // when we get a print response, let waiting clients know about it
         if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
           RESOLVE_LOGS[serversAvailable[0].challenge] = []
@@ -113,30 +122,32 @@ async function processQueue() {
 
         console.log('Starting renderer task: ', task)
         ++RUNCMD
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
-            + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' 
-            + RUNCMD, serversAvailable[0])
-
-
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
       }
     }
   }
 
 
   Object.values(EXECUTING_MAPS).forEach(map => {
-    if(typeof map.working == 'object'
-       && (!map.updated || Date.now() - map.updated > 1000)) {
-      map.updated = Date.now()
-      let server = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
-      if(server) {
-        updateSubscribers(map.mapname, server.logs, map.working)
-      } else {
-        updateSubscribers(map.mapname, map.logs, map.working)
-      }
+    if(typeof map.working != 'object') {
+      return
+    }
+    if(map.working.updated && Date.now() - map.working.updated < RESOLVE_INTERVAL) {
+      return
+    }
+    map.working.updated = Date.now()
+    let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
+    if(Date.now() - map.working.started > RENDERER_TIMEOUT) {
+      map.timedout = true
+    }
+    if(SERVER) {
+      updateSubscribers(map.mapname, SERVER.logs, map.working)
+    } else {
+      updateSubscribers(map.mapname, map.logs, map.working)
     }
   })
-
 }
 
 

@@ -243,7 +243,7 @@ async function execLevelshot(mapname, waitFor) {
 
   // return promise wait on filtered tasks
   if(waitFor) {
-    Promise.resolve(processQueue()).then(() => console.log('Starting renderer service.'))
+    Promise.resolve(processQueue())
     return await Promise.all(promises)
   } else {
     Promise.resolve(Promise.all(promises))

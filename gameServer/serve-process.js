@@ -48,14 +48,14 @@ async function serveDedicated() {
       '+map', 'lsdm3_v1', 
       '+wait', '300', '+heartbeat',
     ], function (lines) {
-      let server = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
-      if(!server) {
+      const SERVER = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
+      if(!SERVER) {
         //console.log(lines)
       } else {
-        if(typeof server.logs == 'undefined') {
-          server.logs = ''
+        if(typeof SERVER.logs == 'undefined') {
+          SERVER.logs = ''
         }
-        server.logs += lines + '\n'
+        SERVER.logs += lines + '\n'
         updatePageViewers('/rcon')
       }
     })
