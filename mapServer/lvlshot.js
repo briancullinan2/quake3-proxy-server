@@ -15,8 +15,7 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 const RESOLVE_INTERVAL = 1000
-const LVLSHOT_TIMEOUT = 5000
-const RENDERER_TIMEOUT = 10000
+const RENDERER_TIMEOUT = 3000
 const MAX_RENDERERS = 5
 const EXECUTING_LVLSHOTS = {}
 let lvlshotTimer
@@ -123,7 +122,8 @@ async function processQueue() {
 
 
       // switch the maps
-      if(serversAvailable[0].mapname != mapname  &&  EXECUTING_LVLSHOTS[mapname].length > 4) {
+      if(serversAvailable[0].mapname != mapname  &&  
+        !mapNamesFiltered.includes(serversAvailable[0].mapname)) {
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         console.log('Switching maps: ' + mapname)
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
@@ -146,6 +146,7 @@ async function processQueue() {
             EXECUTING_LVLSHOTS[mapname].shift()
             console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
           }
+          task.timedout = false
           SERVER.working = false
           sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
         })
@@ -161,8 +162,8 @@ async function processQueue() {
         console.log('Starting renderer task: ', task)
         ++RUNCMD
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
+        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
       }
     }
   }
@@ -236,13 +237,14 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'sv_master3', '""',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+sets', 'qps_renderer', '1',
-      '+set', 'com_maxfps', '60',
+      '+set', 'com_maxfps', '30',
+      '+set', 'sv_fps', '30',
       '+set', 'rconPassword2', 'password1',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+devmap', mapname,
       '+exec', `".config/levelinfo.cfg"`,
       '+vstr', 'resetLvlshot',
-      '+wait', '240', '+heartbeat',
+      '+wait', '30', '+heartbeat',
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
       //   might also be necessary for aligning animations.

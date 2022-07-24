@@ -42,7 +42,7 @@ async function serveDedicated() {
       '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+set', 'rconPassword2', 'password1',
-      '+set', 'sv_fps', '300',
+      '+set', 'sv_fps', '100',
       '+set', 'sv_snaps', '60',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+map', 'lsdm3_v1', 
