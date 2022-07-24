@@ -1,20 +1,16 @@
 const fs = require('fs')
 const path = require('path')
-const { PassThrough, Readable } = require('stream')
 
-const { fileKey, streamFileKey } = require('../utilities/zip.js')
+const { streamFile } = require('../assetServer/stream-file.js')
 const { findFile, gameDirectories } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
-const { filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
+const { filteredPk3Directory } = require('../mapServer/list-filtered.js')
 const { renderIndex, renderEngine, renderMenu } = require('../utilities/render.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
 const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
   MODS_NAMES, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/async-size.js')
-const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
-const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
-const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 
@@ -244,163 +240,6 @@ async function filteredMaps(modname) {
 }
 
 
-// TODO: fs.createReadStream for loading common downloads into memory
-async function streamImageKey(pk3File, pk3InnerPath, response) {
-  if (!IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
-    return false
-  }
-
-  let isOpaque
-  try {
-    if (pk3File.match(/\.pk3$/i)) {
-      let file = await fileKey(pk3File, pk3InnerPath)
-      if (!(file) || unsupportedImage(pk3InnerPath)) {
-        for (let i = 0; i < IMAGE_FORMATS.length; i++) {
-          let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
-          
-          // try to find file by any extension, then convert
-          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')] != 'undefined') {
-            response.setHeader('content-type', 'image/jpg')
-            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')])
-            return true
-          } else 
-          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')] != 'undefined') {
-            response.setHeader('content-type', 'image/png')
-            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')])
-            return true
-          }
-
-          file = await fileKey(pk3File, altPath)
-          if (file) {
-            pk3InnerPath = altPath
-            break
-          }
-        }
-      }
-    } else {
-      // TODO: try alternate cached formats
-      if(!pk3File || !fs.existsSync(pk3File) || unsupportedImage(pk3InnerPath)) {
-        for (let i = 0; i < IMAGE_FORMATS.length; i++) {
-          let altPath = findFile(pk3File.replace(path.extname(pk3File), IMAGE_FORMATS[i]))
-          if(!altPath) {
-            continue
-          }
-          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')] != 'undefined') {
-            response.setHeader('content-type', 'image/jpg')
-            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')])
-            return true
-          } else
-          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')] != 'undefined') {
-            response.setHeader('content-type', 'image/png')
-            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')])
-            return true
-          }
-          pk3File = altPath
-          break
-        }
-      }
-      if(!fs.existsSync(pk3File)) {
-        return false
-      }
-    }
-
-
-    isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
-
-
-  } catch (e) {
-    if (e.message.includes('File not found')) {
-      return false
-    } else {
-      throw e
-    }
-  }
-
-  let newExt = isOpaque ? '.jpg' : '.png'
-  response.setHeader('content-type', 'image/' + newExt.substring(1))
-  const passThrough = new PassThrough()
-  const readable = Readable.from(passThrough)
-  // force async so other threads can answer page requests during conversion
-  Promise.resolve(new Promise(resolve => {
-    let chunks = []
-    readable.on('data', chunks.push.bind(chunks))
-    readable.on('end', resolve.bind(null, chunks))
-    passThrough.pipe(response)
-    convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt)
-  }).then(convertedFile => {
-    let key = pk3File.match(/\.pk3$/i)
-        ? path.join(pk3File, pk3InnerPath)
-        : pk3File
-    CONVERTED_IMAGES[key.replace(path.extname(pk3File), newExt)] = 
-        Buffer.concat(convertedFile)
-  }))
-  return true
-}
-
-
-
-// TODO:
-async function streamAudioKey(pk3File, pk3InnerPath, response) {
-  if (!AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
-    return false
-  }
-
-  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
-  if (typeof CONVERTED_SOUNDS[strippedPath + '.ogg'] != 'undefined') {
-    response.setHeader('content-type', 'audio/ogg')
-    response.send(CONVERTED_SOUNDS[strippedPath + '.ogg'])
-    return true
-  }
-
-  if (pk3File.match(/\.pk3$/i)) {
-    let file = await fileKey(pk3File, pk3InnerPath)
-    if (!(file)) {
-      for (let i = 0; i < AUDIO_FORMATS.length; i++) {
-        let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), AUDIO_FORMATS[i])
-        file = await fileKey(pk3File, altPath)
-        if (file) {
-          pk3InnerPath = altPath
-          break
-        }
-      }
-    }
-    if (!file) {
-      return false
-    }
-  } else {
-    // TODO: try alternate cached formats
-    if(!pk3File || !fs.existsSync(pk3File)) {
-      for (let i = 0; i < AUDIO_FORMATS.length; i++) {
-        let altPath = findFile(pk3File.replace(path.extname(pk3File), AUDIO_FORMATS[i]))
-        if(altPath) {
-          pk3File = altPath
-          break
-        }
-      }
-    }
-    if(!fs.existsSync(pk3File)) {
-      return false
-    }
-  }
-
-  response.setHeader('content-type', 'audio/ogg')
-  const passThrough = new PassThrough()
-  const readable = Readable.from(passThrough)
-  // force async so other threads can answer page requests during conversion
-  Promise.resolve(new Promise(resolve => {
-    let chunks = []
-    readable.on('data', chunks.push.bind(chunks))
-    readable.on('end', resolve.bind(null, chunks))
-    passThrough.pipe(response)
-    encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, false)
-  }).then(convertedFile => {
-    CONVERTED_SOUNDS[path.join(pk3File, pk3InnerPath)] =
-      CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)
-  }))
-  return true
-}
-
-
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -474,15 +313,8 @@ async function serveVirtual(request, response, next) {
   } else {
     regularFile = modname + '/' + pk3InnerPath
   }
-  if (isAlt && await streamImageKey(regularFile, filename, response)) {
+  if(isAlt && await streamFile(regularFile, response)) {
     return
-  }
-  if (isAlt && await streamAudioKey(regularFile, filename, response)) {
-    return
-  }
-  regularFile = findFile(regularFile)
-  if (regularFile && !fs.statSync(regularFile).isDirectory()) {
-    return response.sendFile(regularFile)
   }
 
 
@@ -500,30 +332,14 @@ async function serveVirtual(request, response, next) {
   }
 
   // TODO: exception for pak0.pk3 to search all base pk3s for the correct file
-  if (pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', { sensitivity: 'base' })) {
-    let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-    for (let i = 0; i < pk3s.length; i++) {
-      if (isAlt && await streamImageKey(pk3s[i], pk3InnerPath, response)) {
-        return
-      }
-      if (isAlt && await streamAudioKey(pk3s[i], pk3InnerPath, response)) {
-        return
-      }
-      if (await streamFileKey(pk3s[i], pk3InnerPath, response)) {
-        return
-      }
+  if(pk3Name) {
+    if(isAlt && await streamFile(path.join(modname, pk3Name, pk3InnerPath), response)) {
+      return 
     }
-  }
-  if (pk3File && isAlt
-    && await streamImageKey(pk3File, pk3InnerPath, response)) {
-    return
-  }
-  if (pk3File && isAlt
-    && await streamAudioKey(pk3File, pk3InnerPath, response)) {
-    return
-  }
-  if (pk3File && await streamFileKey(pk3File, pk3InnerPath, response)) {
-    return
+  } else {
+    if(isAlt && await streamFile(path.join(modname, filename), response)) {
+      return 
+    }
   }
 
   if (!isIndex) {

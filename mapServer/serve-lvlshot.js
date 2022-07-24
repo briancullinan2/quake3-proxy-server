@@ -44,28 +44,10 @@ async function serveLevelshot(request, response, next) {
   }
 
   // still can't find a levelshot or screenshot, execute the engine to generate
-  try {
-    let timeout = new Promise(resolve => setTimeout(resolve, 200))
-    let outFile = await Promise.any([execLevelshot(mapname, matchName), timeout])
-    let levelshot
-    if (outFile && outFile[0] && (levelshot = findFile(outFile[0]))) {
-      response.setHeader('content-type', 'image/jpg')
-      const passThrough = new PassThrough()
-      const readable = Readable.from(passThrough)
-      // force async so other threads can answer page requests during conversion
-      Promise.resolve(new Promise(resolve => {
-        let chunks = []
-        readable.on('data', chunks.push.bind(chunks))
-        readable.on('end', resolve.bind(null, chunks))
-        passThrough.pipe(response)
-        convertCmd(levelshot, outFile[0], void 0, passThrough, '.jpg')
-      }).then(convertedFile => {
-        CONVERTED_IMAGES[levelshot.replace(path.extname(levelshot), '.jpg')] = Buffer.concat(convertedFile)
-      }))
-      return
-    }
-  } catch (e) {
-    console.error('LVLSHOT:', e)
+  let timeout = new Promise(resolve => setTimeout(resolve, 200))
+  let outFile = await Promise.any([execLevelshot(mapname, matchName), timeout])
+  if(outFile && outFile[0] && (await streamFile(outFile[0], response))) {
+    return
   }
 
   next()

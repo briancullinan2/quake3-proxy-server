@@ -40,7 +40,7 @@ function createApplication(features) {
         return next()
       }
     }
-    if(filename.length <= 1) {
+    if(filename.length <= 1 && !isIndex) {
       return serveFeatures(features, res)
     }
 

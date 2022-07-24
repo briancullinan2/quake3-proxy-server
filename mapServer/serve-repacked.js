@@ -1,18 +1,14 @@
 
 const path = require('path')
-const { PassThrough, Readable } = require('stream')
 
-const { findFile, gameDirectories } = require('../assetServer/virtual.js')
+const { streamFile, findAlt } = require('../assetServer/stream-file.js')
+const { gameDirectories } = require('../assetServer/virtual.js')
 const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
-const { fileKey, streamFileKey } = require('../utilities/zip.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
-const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
 const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
-const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 
 
 const REPACKED_DESCRIPTION = `
@@ -102,84 +98,20 @@ async function serveRepacked(request, response, next) {
     return next(new Error('Not in pk3s: ' + pk3File))
   }
 
-  let newFile = findFile(modname + '/' + pk3File)
-  // TODO: replace with streamAudioKey and findAlt()
-  if (isAlt && IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
-    && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
-    let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
-    // try to find file by any extension, then convert
-    if(typeof CONVERTED_IMAGES[strippedPath + '.jpg'] != 'undefined') {
-      response.setHeader('content-type', 'image/jpg')
-      return response.send(CONVERTED_IMAGES[strippedPath + '.jpg'])
-    } else
-    if(typeof CONVERTED_IMAGES[strippedPath + '.png'] != 'undefined') {
-      response.setHeader('content-type', 'image/png')
-      return response.send(CONVERTED_IMAGES[strippedPath + '.png'])
-    }
-    let isOpaque = await opaqueCmd(newFile, pk3InnerPath)
-    let newExt = isOpaque ? '.png' : '.jpg'
-    response.setHeader('content-type', 'image/' + newExt.substring(1))
-    const passThrough = new PassThrough()
-    const readable = Readable.from(passThrough)
-    // force async so other threads can answer page requests during conversion
-    Promise.resolve(new Promise(resolve => {
-      let chunks = []
-      readable.on('data', chunks.push.bind(chunks))
-      readable.on('end', resolve.bind(null, chunks))
-      passThrough.pipe(response)
-      convertCmd(newFile, pk3InnerPath, void 0, passThrough, newExt)
-    }).then(convertedFile => {
-      CONVERTED_IMAGES[path.join(newFile, pk3InnerPath)] = 
-      CONVERTED_IMAGES[strippedPath + newExt] = Buffer.concat(convertedFile)
-    }))
+  if(isAlt && await streamFile(modname + '/' + pk3File, response)) {
     return
   }
 
-  // TODO: replace with streamAudioKey and findAlt()
-  if (isAlt && AUDIO_FORMATS.includes(path.extname(pk3InnerPath))
-    && !path.extname(pk3InnerPath).match(/\.ogg$/i)) {
-    let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
-    if(typeof CONVERTED_SOUNDS[strippedPath + '.ogg'] != 'undefined') {
-      response.setHeader('content-type', 'audio/ogg')
-      return response.send(CONVERTED_SOUNDS[strippedPath + '.ogg'])
-    }
-    response.setHeader('content-type', 'audio/ogg')
-    const passThrough = new PassThrough()
-    const readable = Readable.from(passThrough)
-    // force async so other threads can answer page requests during conversion
-    Promise.resolve(new Promise(resolve => {
-      let chunks = []
-      readable.on('data', chunks.push.bind(chunks))
-      readable.on('end', resolve.bind(null, chunks))
-      passThrough.pipe(response)
-      encodeCmd(newFile, pk3InnerPath, void 0, passThrough, false)
-    }).then(convertedFile => {
-      CONVERTED_SOUNDS[path.join(newFile, pk3InnerPath)] = 
-      CONVERTED_SOUNDS[strippedPath + '.ogg'] = Buffer.concat(convertedFile)
-    }))
-    return
-  }
-
-  if (!isIndex && await streamFileKey(newFile, pk3InnerPath, response)) {
-    return
+  let newFile
+  if(pk3File) {
+    newFile = findAlt(path.join(modname, pk3File, pk3InnerPath))
+  } else {
+    newFile = findAlt(path.join(modname, filename))
   }
 
   if (!isIndex && !newFile) {
     return next()
   }
-
-  if (newFile && await fileKey(newFile, pk3InnerPath, response)) {
-    let isImage = IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
-    let isAudio = AUDIO_FORMATS.includes(path.extname(pk3InnerPath))
-    if(isImage) {
-      return response.send(await renderImages(pk3InnerPath, newFile, modname))
-    } else if (isAudio) {
-      return response.send(await renderSounds(pk3InnerPath, newFile, modname))
-    } else {
-      return next(new Error('Can\'t handle file: ' + pk3InnerPath))
-    }
-  }
-
 
   // TODO: combine these paths, extracted / cached with pk3InnerPath list
   let directory = []

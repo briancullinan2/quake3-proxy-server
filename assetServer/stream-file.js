@@ -97,7 +97,7 @@ async function findAlt(filename) {
 }
 
 
-function streamAudioFile(filename, response) {
+async function streamAudioFile(filename, response) {
   // findAlt()
   // streamAudioKey or pipe file
   if (!AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
@@ -130,12 +130,21 @@ function streamAudioFile(filename, response) {
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
 
   if (typeof CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')] != 'undefined') {
-    response.setHeader('content-type', 'audio/ogg')
-    response.send(CONVERTED_SOUNDS[strippedPath + '.ogg'])
+    if(typeof response.setHeader == 'function') {
+      response.setHeader('content-type', 'audio/ogg')
+      response.send(CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')])
+    } else {
+      const passThrough = new PassThrough()
+      passThrough.pipe(response)
+      passThrough.end(CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')])
+    }
     return true
   }
 
-  response.setHeader('content-type', 'audio/ogg')
+  if(typeof response.setHeader == 'function') {
+    response.setHeader('content-type', 'audio/ogg')
+  }
+  // .pipe(response)
   let passThrough = streamAndCache(key.replace(path.extname(pk3InnerPath), '.ogg'), CONVERTED_SOUNDS, response)
   // force async so other threads can answer page requests during conversion
   Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, false))
@@ -172,7 +181,7 @@ async function streamAndCache(key, cache, response) {
 }
 
 
-function streamImageFile(filename, response) {
+async function streamImageFile(filename, response) {
   if (!IMAGE_FORMATS.includes(path.extname(filename))) {
     return false
   }
@@ -201,20 +210,35 @@ function streamImageFile(filename, response) {
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
 
   if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')] != 'undefined') {
-    response.setHeader('content-type', 'image/jpg')
-    response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
+    if(typeof response.setHeader == 'function') {
+      response.setHeader('content-type', 'image/jpg')
+      response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
+    } else {
+      const passThrough = new PassThrough()
+      passThrough.pipe(response)
+      passThrough.end(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
+    }
     return true
   } else
     if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')] != 'undefined') {
-      response.setHeader('content-type', 'image/png')
-      response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')])
+      if(typeof response.setHeader == 'function') {
+        response.setHeader('content-type', 'image/png')
+        response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')])
+      } else {
+        const passThrough = new PassThrough()
+        passThrough.pipe(response)
+        passThrough.end(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
+      }
       return true
     }
 
   // TODO: call out to this somehow and result results
   isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
   let newExt = isOpaque ? '.jpg' : '.png'
-  response.setHeader('content-type', 'image/' + newExt.substring(1))
+  if(typeof response.setHeader == 'function') {
+    response.setHeader('content-type', 'image/' + newExt.substring(1))
+  }
+  // .pipe(response)
   let passThrough = streamAndCache(key.replace(path.extname(pk3InnerPath), newExt), CONVERTED_IMAGES, response)
   // force async so other threads can answer page requests during conversion
   Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt))
@@ -224,7 +248,7 @@ function streamImageFile(filename, response) {
 
 // TODO: streamFile that does the path setup?
 // leftovers?
-function streamFile(filename, stream) {
+async function streamFile(filename, stream) {
   // streamImageKey or streamAudioKey or findAlt()
 
   let pk3File
@@ -257,17 +281,25 @@ function streamFile(filename, stream) {
     if ((passThrough = streamImageFile(pk3File, stream))) {
       return passThrough
     } else
-      if (pk3Name && await streamFileKey(pk3File, pk3InnerPath, stream)) {
-        return
+      if (pk3Name && typeof pk3File == 'object' && !pk3File.isDirectory
+        && await streamFileKey(pk3File, pk3InnerPath, stream)) {
+        return true
       }
+
+  if(!fs.statSync(pk3File).isDirectory()) {
+    return false
+  }
 
   // TODO: cache read in CONVERTED_FILES?
   //passThrough.pipe(response)
   //passThrough.end(CONVERTED_FILES[strippedKey] || cache[key])
-
-  passThrough = fs.createReadStream(pk3File)
-  passThrough.pipe(stream)
-  return passThrough
+  if(typeof response.setHeader == 'function') {
+    response.sendFile(pk3File)
+  } else {
+    passThrough = fs.createReadStream(pk3File)
+    passThrough.pipe(stream)
+    return passThrough
+  }
 }
 
 module.exports = {

@@ -2,6 +2,8 @@
 //   use node watcher
 const path = require('path')
 const fs = require('fs')
+
+const { streamFile } = require('../assetServer/stream-file.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
 const { ASSET_FEATURES, renderFilelist } = require('../contentServer/serve-settings.js')
@@ -53,6 +55,7 @@ async function serveLive(request, response, next) {
     resolve.bind(null, '0B (Calculating)'), 200))
   let isIndex = request.url.match(/\?index/)
   let isJson = request.url.match(/\?json/)
+  let isAlt = request.url.match(/\?alt/)
   let filename = request.url.replace(/\?.*$/, '')
   if (filename.startsWith('/')) {
     filename = filename.substring(1)
@@ -71,6 +74,10 @@ async function serveLive(request, response, next) {
     GAME_ORDER = gameDirectories(modname).map(dir => path.join(dir, filename.substring(modname.length)))
   }
 
+  // so we can view images that will eventually be converted by the deploy process, live!
+  if(isAlt && await streamFile(filename, response)) {
+    return
+  }
 
   // list all game mods added intentionally from settings.json
   let BUILD_ORDER = buildDirectories()
@@ -84,7 +91,8 @@ async function serveLive(request, response, next) {
       return response.sendFile(BUILD_ORDER[i])
     }
   }
-      
+
+
   let directory = await combinedDir(BUILD_ORDER)
 
   let directoryFiltered = directory.map(async file => 
