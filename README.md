@@ -18,6 +18,11 @@ I still don't know what I'm doing. The file formats and layered directories make
 everything more complicate, I think. At least the existing code demonstrates the
 layered file-system and live-reloading game engine.
 
+As I'm starting to decode this and involve more features. I think part of the `fs` and `path` 
+complications come from the engine has a preference for virtual files inside pk3s. But
+for development we have a preference for individual files in project directories.
+Reversing these two principals takes a lot of extra FS database lookup code.
+
 
 ## Components
 

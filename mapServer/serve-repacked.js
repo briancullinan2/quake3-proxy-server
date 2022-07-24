@@ -103,7 +103,7 @@ async function serveRepacked(request, response, next) {
   }
 
   let newFile = findFile(modname + '/' + pk3File)
-
+  // TODO: replace with streamAudioKey and findAlt()
   if (isAlt && IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
     && !path.extname(pk3InnerPath).match(/\.png$|\.jpg$|\.jpeg$/i)) {
     let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
@@ -135,6 +135,7 @@ async function serveRepacked(request, response, next) {
     return
   }
 
+  // TODO: replace with streamAudioKey and findAlt()
   if (isAlt && AUDIO_FORMATS.includes(path.extname(pk3InnerPath))
     && !path.extname(pk3InnerPath).match(/\.ogg$/i)) {
     let strippedPath = path.join(newFile, pk3InnerPath).replace(path.extname(pk3InnerPath, ''))
@@ -167,7 +168,6 @@ async function serveRepacked(request, response, next) {
     return next()
   }
 
-  // TODO: add repackedCache()s
   if (newFile && await fileKey(newFile, pk3InnerPath, response)) {
     let isImage = IMAGE_FORMATS.includes(path.extname(pk3InnerPath))
     let isAudio = AUDIO_FORMATS.includes(path.extname(pk3InnerPath))

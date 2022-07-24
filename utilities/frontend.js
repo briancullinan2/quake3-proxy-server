@@ -5,12 +5,13 @@ let gameList
 let mapInfo
 let waveForm
 let remoteConsole
-
+let renderInterval
 
 function pageBindings() {
-  mapList = document.getElementById('map-list')
+  // TODO: remove all this, handled by callback system now
+  /*
   if(mapList) {
-    setInterval(refreshMaps, 20)
+    renderInterval setInterval(refreshMaps, 20)
     setInterval(function () { previousLine = -1 }, 500)
   }
 
@@ -25,6 +26,7 @@ function pageBindings() {
     setInterval(refreshMapinfo, 20)
     setInterval(function () { previousLine = -1 }, 2000)
   }
+  */
 
   let waveForm = document.getElementById('waveform')
   if(waveForm) {
@@ -160,19 +162,20 @@ async function initEvents() {
 }
 
 
-async function refreshMapinfo() {
-  
-}
-
-
 //window.addEventListener('scroll', refreshMaps)
 let previousLine = 0
 let previousHalf = 0
 let loading = 0
 
 async function refreshMaps() {
+  mapList = document.getElementById('map-list')
+
   if(!mapList || !mapList.children[0]) {
     return
+  }
+
+  if(!renderInterval) {
+    renderInterval = setInterval(refreshMaps, 50)
   }
 
   let lineHeight = mapList.children[0].clientHeight
@@ -204,7 +207,7 @@ async function refreshMaps() {
   let halfway = Math.ceil(count / itemsPerLine / 2)
   let halfwareMark = Math.floor(window.scrollY / (halfway * lineHeight))
   if(halfwareMark != previousHalf) {
-    loadNextPage(window.sessionCallback, halfwareMark)
+    Promise.resolve(loadNextPage(window.sessionCallback, halfwareMark))
   }
 
 
@@ -273,9 +276,11 @@ async function refreshMaps() {
     }
 
     let levelshot = item.children[1]
-    if(levelshot.getAttribute('src') != object.levelshot) {
-      levelshot.setAttribute('src', object.levelshot)
-    }
+    //if(levelshot.getAttribute('src') != object.levelshot) {
+      levelshot.setAttribute('src', object.levelshot 
+      //    + (object.levelshot.includes('?') ? '&t=' : '?t=') + Date.now()
+      )
+    //}
     if(object.have) {
       levelshot.classList.remove('unknownmap')
     } else {
@@ -335,6 +340,30 @@ function socketProxyControl(evt) {
   if(typeof evt.data != 'string') {
     return
   }
+  // TODO 
+  if(evt.data.startsWith('{')
+    || evt.data.startsWith('[')
+    || evt.data.startsWith('"')) {
+    // try to parse javascript
+    let json
+    try {
+      json = JSON.parse(evt.data)
+    } catch (e) {
+
+    }
+    // TODO: 
+    if (typeof window.sessionCallback != 'undefined') {
+      // replace contents of list instead of the entire dang DOM page
+      for(let i = 0; i < json.length; i++) {
+        window.sessionLines[json[i].index || i] = json[i]
+      }
+      previousLine = -1
+      refreshMaps()
+    }
+
+    // unlikely if fail but try the next statement anyways, 
+    //   in-case we are doing something stupid with JSON template strings in another module
+  } // else
   if(evt.data.includes('<html')) {
     let length = document.body.children.length
     let hasViewport = false
@@ -385,7 +414,9 @@ function socketProxyControl(evt) {
     return
   } else
   if(evt.data.startsWith('UPDATE: ')) {
-    if((window.location + '').match(evt.data.substring(8))) {
+    let regexp = tryRegExp(evt.data.substring(8))
+    if((window.location + '').match(evt.data.substring(8))
+      || (regexp && (window.location + '').match(regexp))) {
       if(previousUrl.localeCompare(evt.data.substring(8), 'en', {sensitivity: 'base'}) != 0) {
         previousUrl = evt.data.substring(8)
         clearTimeout(debounceTimer)
@@ -398,7 +429,11 @@ function socketProxyControl(evt) {
           if(!sock) {
             sock = NET.socket2
           }
-          sock.send(window.location + '', { binary: false })
+          if (typeof window.sessionCallback != 'undefined') {
+            sock.send(window.location.origin + window.location.pathname + '?json', { binary: false })
+          } else {
+            sock.send(window.location + '', { binary: false })
+          }
         }, 1000)
       }
     }
@@ -407,6 +442,12 @@ function socketProxyControl(evt) {
 
 }
 
-    
+function tryRegExp(exp) {
+  try {
+    return new RegExp(exp, 'gi')
+  } catch (e) {
+    return null
+  }
+}
 
 

@@ -124,7 +124,6 @@ async function resolveImages(logs, task) {
     .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
   if(START_SERVICES.includes('cache')) {
     return true
-    //fs.writeFileSync(path.join(repackedCache()[0], task.outFile), images)
   }
   
 }

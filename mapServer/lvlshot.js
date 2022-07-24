@@ -146,7 +146,7 @@ async function processQueue() {
         console.log('Switching maps: ' + mapname)
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         task = {
-          cmd: ` ; devmap ${mapname} ; `,
+          cmd: ` ; devmap ${mapname} ; wait 240 ; heartbeat ; `,
           resolve: resolveSwitchmap,
           outFile: void 0,
           mapname: mapname,
@@ -176,7 +176,7 @@ async function processQueue() {
         }
         task.timedout = false
         SERVER.working = false
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
+        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
       })
       // when we get a print response, let waiting clients know about it
       if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
@@ -186,13 +186,12 @@ async function processQueue() {
         updateSubscribers(mapname, logs, task)
       })
 
-      console.log('Starting renderer task: ', task)
+      console.log('Starting renderer task: ', serversAvailable[0].address + ':' + serversAvailable[0].port, task.cmd)
       ++RUNCMD
       setTimeout(function () {
         // TODO: ; set developer 1 ; 
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
       }, 100)
     }
   }
@@ -325,6 +324,7 @@ async function updateSubscribers(mapname, logs, cmd) {
     throw new Error('No subscribers!')
   }
   updatePageViewers('\/maps\/' + mapname)
+  updatePageViewers('\/maps\/?$')
   return true
 }
 

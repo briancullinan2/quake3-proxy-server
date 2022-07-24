@@ -4,7 +4,7 @@ const path = require('path')
 const { listPk3s } = require('../assetServer/layered.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
-const { TEMP_DIR, IMAGE_FORMATS, getGame, repackedCache } = require('../utilities/env.js')
+const { TEMP_DIR, IMAGE_FORMATS, getGame } = require('../utilities/env.js')
 
 const MATCH_PALETTE = /palette\s"(.*?)"\s([0-9]+(,[0-9]+)*)/ig
 

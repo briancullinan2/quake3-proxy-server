@@ -47,7 +47,6 @@ async function repackBasemap(mapname) {
   //   on server, and package into new converted / compressed zip
   let pk3name = MAP_DICTIONARY[mapname]
   let newFile = findFile(getGame() + '/' + pk3name)
-  let newZip = path.join(repackedCache(), path.basename(pk3name))
   let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
 
   // extract the BSP because we might change it anyways
@@ -76,7 +75,6 @@ async function repackBasemap(mapname) {
   // TODO: include startup sounds?
   // TODO: include base models
 
-  //return path.join(repackedCache(), mapname + '.pk3')
 }
 
 

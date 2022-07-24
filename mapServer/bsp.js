@@ -20,6 +20,7 @@ const MAP_ARENAS = {
 }
 
 
+// TODO: rewrite this completely use read BSP files directly or use WASM functionally
 async function getMapInfo(mapname) {
   let basegame = getGame()
   let caches = repackedCache()
@@ -64,7 +65,8 @@ async function getMapInfo(mapname) {
   let images = []
   for(let i = 0; i < caches.length; i++) {
 
-    let entityFile = path.join(caches[i], '/maps/', mapname + '.ent')
+  // TODO: contribute to lvlshot database cached locally
+  let entityFile = path.join(caches[i], '/maps/', mapname + '.ent')
     if (fs.existsSync(entityFile)) {
       entities = fs.readFileSync(entityFile).toString('utf-8')
     }
@@ -76,6 +78,8 @@ async function getMapInfo(mapname) {
     }
 
   }
+
+  // TODO: contribute to lvlshot database cached locally
   if(images.length == 0 || entities.length == 0) {
     Promise.resolve(execLevelshot(mapname, /saveents|imagelist/i))
         .then(console.log).catch(console.error)

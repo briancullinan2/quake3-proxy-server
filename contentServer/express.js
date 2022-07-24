@@ -78,7 +78,8 @@ function unhandledResponse(err, req, res, next) {
     if (req.headers['accept']
       && !req.headers['accept'].includes('text/html')
       && req.headers['accept'].includes('image/')) {
-      return res.sendFile(UNKNOWN)
+      res.setHeader('expires', Date.now())
+      return res.redirect(307, '/unknownmap.jpg')
     }
   // index page
   let index = renderIndex(`<div class="info-layout"><p>
