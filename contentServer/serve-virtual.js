@@ -250,26 +250,26 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
     return false
   }
 
-  let strippedPath = path.join(pk3File, pk3InnerPath).replace(path.extname(pk3InnerPath), '')
-  // try to find file by any extension, then convert
-  if (typeof CONVERTED_IMAGES[strippedPath + '.jpg'] != 'undefined') {
-    response.setHeader('content-type', 'image/jpg')
-    response.send(CONVERTED_IMAGES[strippedPath + '.jpg'])
-    return true
-  } else
-    if (typeof CONVERTED_IMAGES[strippedPath + '.png'] != 'undefined') {
-      response.setHeader('content-type', 'image/png')
-      response.send(CONVERTED_IMAGES[strippedPath + '.png'])
-      return true
-    }
-
   let isOpaque
   try {
     if (pk3File.match(/\.pk3$/i)) {
       let file = await fileKey(pk3File, pk3InnerPath)
-      if (!(file)) {
+      if (!(file) || unsupportedImage(pk3InnerPath)) {
         for (let i = 0; i < IMAGE_FORMATS.length; i++) {
           let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
+          
+          // try to find file by any extension, then convert
+          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')] != 'undefined') {
+            response.setHeader('content-type', 'image/jpg')
+            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')])
+            return true
+          } else 
+          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')] != 'undefined') {
+            response.setHeader('content-type', 'image/png')
+            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')])
+            return true
+          }
+
           file = await fileKey(pk3File, altPath)
           if (file) {
             pk3InnerPath = altPath
@@ -279,20 +279,35 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
       }
     } else {
       // TODO: try alternate cached formats
-      if(!pk3File || !fs.existsSync(pk3File)) {
+      if(!pk3File || !fs.existsSync(pk3File) || unsupportedImage(pk3InnerPath)) {
         for (let i = 0; i < IMAGE_FORMATS.length; i++) {
           let altPath = findFile(pk3File.replace(path.extname(pk3File), IMAGE_FORMATS[i]))
-          if(altPath) {
-            pk3File = altPath
-            break
+          if(!altPath) {
+            continue
           }
+          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')] != 'undefined') {
+            response.setHeader('content-type', 'image/jpg')
+            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.jpg')])
+            return true
+          } else
+          if (typeof CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')] != 'undefined') {
+            response.setHeader('content-type', 'image/png')
+            response.send(CONVERTED_IMAGES[altPath.replace(path.extname(altPath), '.png')])
+            return true
+          }
+          pk3File = altPath
+          break
         }
       }
       if(!fs.existsSync(pk3File)) {
         return false
       }
     }
+
+
     isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
+
+
   } catch (e) {
     if (e.message.includes('File not found')) {
       return false
@@ -313,8 +328,11 @@ async function streamImageKey(pk3File, pk3InnerPath, response) {
     passThrough.pipe(response)
     convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt)
   }).then(convertedFile => {
-    CONVERTED_IMAGES[path.join(pk3File, pk3InnerPath)] =
-      CONVERTED_IMAGES[strippedPath + newExt] = Buffer.concat(convertedFile)
+    let key = pk3File.match(/\.pk3$/i)
+        ? path.join(pk3File, pk3InnerPath)
+        : pk3File
+    CONVERTED_IMAGES[key.replace(path.extname(pk3File), newExt)] = 
+        Buffer.concat(convertedFile)
   }))
   return true
 }

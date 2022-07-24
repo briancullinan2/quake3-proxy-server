@@ -142,25 +142,22 @@ async function execLevelshot(mapname, waitFor) {
 
   function queueTask(task) {
     let existing = EXECUTING_LVLSHOTS[mapname].filter(map => map.cmd == task.cmd)
+    let newTask
     if(existing.length > 0) {
-      if(existing[0].cmd.match(waitFor)) {
-        promises.push(new Promise(resolve => {
-          existing[0].subscribers.push(function () {
-            resolve(existing[0].outFile)
-          })
-        }))
-      }
-      return
+      newTask = existing[0]
+    } else {
+      newTask = Object.assign({}, task, {
+        mapname: mapname,
+        created: Date.now(),
+        subscribers: [],
+      })
     }
-    let newTask = Object.assign({}, task, {
-      mapname: mapname,
-      time: Date.now(),
-      subscribers: [],
-      working: false,
-    })
+  
     let promise = new Promise(resolve => {
       newTask.subscribers.push(resolve)
-      EXECUTING_LVLSHOTS[mapname].push(newTask)
+      if(existing.length == 0) {
+        EXECUTING_LVLSHOTS[mapname].push(newTask)
+      }
     }).then(() => newTask.outFile)
     if(newTask.cmd.match(waitFor)) {
       promises.push(promise)
@@ -240,6 +237,7 @@ async function execLevelshot(mapname, waitFor) {
     newVstr += ' ; shaderlist ; '
   }
   */
+ console.log(EXECUTING_LVLSHOTS[mapname])
 
   // return promise wait on filtered tasks
   if(waitFor) {

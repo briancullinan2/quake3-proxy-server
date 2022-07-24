@@ -13,6 +13,7 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 //   separate master control for every single map, split up and only
 //   do 10 maps at a time, because of this.
 
+const GAMEINFO_TIMEOUT = 60 * 1000
 const RESOLVE_INTERVAL = 1000
 const LVLSHOT_TIMEOUT = 5000
 const RENDERER_TIMEOUT = 10000
@@ -41,8 +42,8 @@ async function processQueue() {
     EXECUTING_LVLSHOTS[b].sort((c, d) => (d.subscribers || 0) - (c.subscribers || 0))
     let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
     let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
-    let aSum = aTasks.reduce((sum, task) => (sum + task.time), 0)
-    let bSum = bTasks.reduce((sum, task) => (sum + task.time), 0)
+    let aSum = aTasks.reduce((sum, task) => (sum + task.created), 0)
+    let bSum = bTasks.reduce((sum, task) => (sum + task.created), 0)
     return aSum / aTasks.length - bSum / bTasks.length
   }).slice(0, MAX_RENDERERS)
 
@@ -56,7 +57,21 @@ async function processQueue() {
 
     if(freeRenderers.length == 0) {
       if(mapRenderers.length == 0) {
-        if(renderers.length >= MAX_RENDERERS) {
+        let notTimedOut = renderers.filter(map => {
+          let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
+          let updateTime = 0
+          if(SERVER && SERVER.sv_maxRate) {
+            updateTime = parseInt(SERVER.sv_maxRate)
+          }
+          if(updateTime < GAMEINFO_TIMEOUT) {
+            updateTime = GAMEINFO_TIMEOUT
+          }        
+          return !SERVER || !SERVER.timedout
+            // still include the server in the list unless it has failed a few times
+            //   to hit that higher GAMEINFO_TIMEOUT
+            || (Date.now() - SERVER.timeUpdated) < Math.max(updateTime)
+        })
+        if(notTimedOut.length >= MAX_RENDERERS) {
           //console.log('Max servers: ' + mapname)
           continue // can't do anything
         } else { // start another server
@@ -96,6 +111,9 @@ async function processQueue() {
         let task = EXECUTING_LVLSHOTS[mapname][0]
         if(!task || task.done) {
           //console.log('No tasks: ' + mapname)
+          if(task) {
+            EXECUTING_LVLSHOTS[mapname].shift()
+          }
           continue
         }
         if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
@@ -107,8 +125,12 @@ async function processQueue() {
 
         SERVER.working = task
         task.subscribers.push(function () {
-          EXECUTING_LVLSHOTS[mapname].shift()
-          console.log('Task completed: took ' + (Date.now() - task.time) / 1000 + ' seconds')
+          if(task.timedout) {
+            console.log('Task timedout. Retrying.')
+          } else {
+            EXECUTING_LVLSHOTS[mapname].shift()
+            console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
+          }
           SERVER.working = false
         })
         task.started = Date.now()
@@ -141,6 +163,7 @@ async function processQueue() {
     let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
     if(Date.now() - map.working.started > RENDERER_TIMEOUT) {
       map.timedout = true
+      map.working.timedout = true
     }
     if(SERVER) {
       updateSubscribers(map.mapname, SERVER.logs, map.working)
@@ -236,11 +259,13 @@ async function updateSubscribers(mapname, logs, cmd) {
     return true
   }
   let isResolved = await cmd.resolve(logs, cmd)
-  if(!isResolved) {
+  if(!isResolved && !cmd.timedout) {
     return false
   }
 
-  cmd.done = true
+  if(!cmd.timedout) {
+    cmd.done = true
+  }
   if(!lvlshotTimer) {
     throw new Error('Task completed before service started.')
   }
