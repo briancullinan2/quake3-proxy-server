@@ -15,8 +15,8 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 const RESOLVE_INTERVAL = 1000
-const RENDERER_TIMEOUT = 3000
-const MAX_RENDERERS = 5
+const RENDERER_TIMEOUT = 10000
+const MAX_RENDERERS = 3
 const EXECUTING_LVLSHOTS = {}
 let lvlshotTimer
 let RUNCMD = 0
@@ -40,6 +40,22 @@ function listJobs() {
 }
 
 
+async function resolveSwitchmap(logs, task) {
+  let working = Object.keys(EXECUTING_MAPS).filter(challenge => 
+    EXECUTING_MAPS[challenge].working == task)[0]
+  let serverInfo = Object.values(GAME_SERVERS).filter(info => 
+    info.qps_serverId == working)[0]
+  if(!working || !serverInfo) {
+    throw new Error('Not working!')
+  }
+
+  if(task.cmd.match(serverInfo.mapname)) {
+    return true
+  }
+  return false
+}
+
+
 async function processQueue() {
   // TODO: keep track of levelshot servers separately, sort / priorize by 
   //   Object.keys(EXECUTING_LVLSHOTS) == mapname, then prioritize by list
@@ -47,7 +63,9 @@ async function processQueue() {
   //   in parallel with 2 redundant maps loaded.
   if (!lvlshotTimer) {
     console.log('Starting renderer service.')
-    lvlshotTimer = setInterval(processQueue, 1000 / 60)
+    lvlshotTimer = setInterval(function () {
+      Promise.resolve(processQueue())
+    }, 1000 / 60)
     return
   }
   
@@ -122,49 +140,60 @@ async function processQueue() {
 
 
       // switch the maps
-      if(serversAvailable[0].mapname != mapname  &&  
-        !mapNamesFiltered.includes(serversAvailable[0].mapname)) {
-        // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
+      if(serversAvailable[0].mapname != mapname 
+        && !mapNamesFiltered.includes(serversAvailable[0].mapname)
+        && !task.cmd.match('devmap')) {
         console.log('Switching maps: ' + mapname)
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
-        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serversAvailable[0].challenge, serversAvailable[0])
-        // so it doesn't try and change all servers
-        SERVER.working = true
-        // this will be updated by the time the server switches
-        SERVER.mapname = mapname
-        continue
-      } else {
-        // run the task
-
-        SERVER.working = task
-        task.subscribers.push(function () {
-          // TODO: add a checkin and a timeout to retry the task
-          if(task.timedout) {
-            // TODO: add a retry counter
-            console.log('Task timed-out. Retrying.')
-          } else {
-            EXECUTING_LVLSHOTS[mapname].shift()
-            console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
-          }
-          task.timedout = false
-          SERVER.working = false
-          sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
-        })
-        task.started = Date.now()
-        // when we get a print response, let waiting clients know about it
-        if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
-          RESOLVE_LOGS[serversAvailable[0].challenge] = []
+        // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
+        task = {
+          cmd: ` ; devmap ${mapname} ; `,
+          resolve: resolveSwitchmap,
+          outFile: void 0,
+          mapname: mapname,
+          // drag the time average down so this event is sure to stick when using listJobs() to sort
+          //   what events to execute next
+          created: Number.MIN_VALUE, 
+          subscribers: [],
         }
-        RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
-          updateSubscribers(mapname, logs, task)
-        })
-
-        console.log('Starting renderer task: ', task)
-        ++RUNCMD
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' "' + task.cmd + '"', serversAvailable[0])
-        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
-        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
+        // so it doesn't try and change all servers, 
+        SERVER.working = true
+        // change this name here to fail the mapNamesFiltered condition
+        //   this will be updated by the time the server switches
+        //SERVER.mapname = mapname
       }
+
+      // run the task
+      SERVER.working = task
+      task.started = Date.now()
+      task.subscribers.push(function () {
+        // TODO: add a checkin and a timeout to retry the task
+        if(task.timedout) {
+          // TODO: add a retry counter
+          console.log('Task timed-out. Retrying.')
+        } else {
+          EXECUTING_LVLSHOTS[mapname].shift()
+          console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
+        }
+        task.timedout = false
+        SERVER.working = false
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
+      })
+      // when we get a print response, let waiting clients know about it
+      if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
+        RESOLVE_LOGS[serversAvailable[0].challenge] = []
+      }
+      RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
+        updateSubscribers(mapname, logs, task)
+      })
+
+      console.log('Starting renderer task: ', task)
+      ++RUNCMD
+      setTimeout(function () {
+        // TODO: ; set developer 1 ; 
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 status', serversAvailable[0])
+      }, 100)
     }
   }
 
@@ -230,7 +259,7 @@ async function serveLvlshot(mapname, waitFor) {
     let ps = await dedicatedCmd([
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
-      '+set', 'developer', '0',
+      '+set', 'developer', '1',
       '+set', 'r_headless', '1',
       '+set', 'in_mouse', '0',
       '+set', 'sv_master2', '""',
@@ -276,7 +305,7 @@ async function updateSubscribers(mapname, logs, cmd) {
   if(cmd.done) {
     return true
   }
-  let isResolved = await cmd.resolve(logs, cmd)
+  let isResolved = !!(await cmd.resolve(logs, cmd))
   if(!isResolved && !cmd.timedout) {
     return false
   }

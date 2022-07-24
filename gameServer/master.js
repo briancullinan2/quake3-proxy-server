@@ -23,7 +23,7 @@ function sendOOB(socket, message, rinfo) {
     socket.send(Buffer.from(response), { binary: true })
   } else {
     socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
-    socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
+    //socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
   }
 }
 
