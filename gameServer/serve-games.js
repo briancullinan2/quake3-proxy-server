@@ -130,7 +130,7 @@ async function serveRcon(request, response, next) {
   }
 
   if(!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime) {
-    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat ; status', serverInfo)
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serverInfo.challenge, serverInfo)
   }
 
   let logs = serverInfo.logs || '(no logs to show)'

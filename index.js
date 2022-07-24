@@ -110,8 +110,9 @@ function parseAguments(startArgs) {
   }
 }
 
-const { GAME_SERVERS } = require('./gameServer/processes.js')
+const { EXECUTING_MAPS, GAME_SERVERS } = require('./gameServer/processes.js')
 const { log: previousLog, error: previousError } = require('console')
+const { EXECUTING_LVLSHOTS, listJobs } = require('./mapServer/lvlshot.js')
 
 const REDIRECTED_LOGS = []
 const REDIRECTED_ERRORS = []
@@ -126,6 +127,13 @@ const CLI_COMMANDS = {
   'kill': process.exit,
   'games': function () {
     previousLog(GAME_SERVERS)
+  },
+  'maps': function () {
+    previousLog(EXECUTING_MAPS)
+    let jobs = listJobs()
+    previousLog(jobs)
+    previousLog(Object.keys(EXECUTING_LVLSHOTS))
+    previousLog(jobs.map(mapname => EXECUTING_LVLSHOTS[mapname][0]))
   }
 }
 

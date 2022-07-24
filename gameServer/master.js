@@ -57,6 +57,9 @@ async function heartbeat(socket, message, rinfo) {
 
   // resolve awaiting `getServers` command for new local dedicated
   if(typeof infos.qps_serverId != 'undefined') {
+    if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
+      EXECUTING_MAPS[infos.qps_serverId].timedout = false
+    }
     if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
       RESOLVE_DEDICATED[infos.qps_serverId] = []
     }
@@ -94,10 +97,6 @@ async function statusResponse(socket, message, rinfo) {
       }
       console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started', EXECUTING_MAPS)
     }
-    if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
-      EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
-      EXECUTING_MAPS[infos.qps_serverId].working = false
-    }
   }
 
   //console.log(infos, playerStrings)
@@ -116,6 +115,11 @@ async function infoResponse(socket, message, rinfo) {
   let messageString = Array.from(message)
     .map(c => String.fromCharCode(c)).join('').split('\n')[0]
 
+  let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
+  if(typeof SERVER == 'undefined') {
+    SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+  }
+
   let infos = messageString.split(/\\/gi)
     .reduce(function (obj, item, i, arr) {
       if (i > 0 && i % 2 == 1) {
@@ -124,9 +128,20 @@ async function infoResponse(socket, message, rinfo) {
       return obj
     }, {})
 
+  Object.assign(SERVER, infos)
+
+  console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
+  if(typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
+    EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
+    if(typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
+      EXECUTING_MAPS[SERVER.qps_serverId].working = false
+    }
+    console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
+    EXECUTING_MAPS[SERVER.qps_serverId].timedout = false
+  }
+
   // TODO: store by address and port instead of challenge to prevent duplicates
-  Object.assign(GAME_SERVERS[rinfo.address + ':' + rinfo.port], infos)
-  GAME_SERVERS[rinfo.address + ':' + rinfo.port].timeUpdated = Date.now()
+  SERVER.timeUpdated = Date.now()
   
   return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }

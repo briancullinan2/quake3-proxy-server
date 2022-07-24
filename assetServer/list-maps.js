@@ -32,7 +32,8 @@ async function filteredMaps() {
     let basename = MAP_DICTIONARY[mapname]
     return {
       link: `maps/${mapname}`,
-      levelshot: `/${basegame}/${basename}dir/levelshots/` + mapname + '.jpg',
+      // /baseq3/screenshots/smc06_qubit_screenshot0001.jpg?alt
+      levelshot: `/${basegame}/screenshots/` + mapname + '_screenshot0001.jpg?alt',
       pakname: 'Download: ' + basename.replace('map-', '').replace('map_', ''),
       title: mapname,
       bsp: mapname,

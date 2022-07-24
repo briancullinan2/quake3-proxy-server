@@ -8,7 +8,7 @@ const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackedCache } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
 const { layeredDir } = require('../assetServer/layered.js')
-const { execLevelshot } = require('../mapServer/lvlshot.js')
+const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { ScanAndLoadShaderFiles } = require('../assetServer/shaders.js')
 
 const GAME_ARENAS = {

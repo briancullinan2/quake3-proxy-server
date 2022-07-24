@@ -17,10 +17,29 @@ const GAMEINFO_TIMEOUT = 60 * 1000
 const RESOLVE_INTERVAL = 1000
 const LVLSHOT_TIMEOUT = 5000
 const RENDERER_TIMEOUT = 10000
-const MAX_RENDERERS = 2
+const MAX_RENDERERS = 5
 const EXECUTING_LVLSHOTS = {}
 let lvlshotTimer
 let RUNCMD = 0
+
+function listJobs() {
+  // sort by if the existing stack has less than <MAX_RENDERERS> commands
+  //   and if the time is less than <RENDERER_TIMEOUT> from the request
+  let mapNames = Object.keys(EXECUTING_LVLSHOTS)
+  let mapNamesFiltered = mapNames.sort(function (a, b) {
+    // sort by the average minimum * number of tasks
+    EXECUTING_LVLSHOTS[a].sort((c, d) => d.subscribers.length - c.subscribers.length)
+    EXECUTING_LVLSHOTS[b].sort((c, d) => d.subscribers.length - c.subscribers.length)
+    let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
+    let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
+    let aSum = aTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
+    let bSum = bTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
+    // oldest to newest
+    return aSum / aTasks.length - bSum / bTasks.length
+  }).slice(0, MAX_RENDERERS)
+  return mapNamesFiltered
+}
+
 
 async function processQueue() {
   // TODO: keep track of levelshot servers separately, sort / priorize by 
@@ -33,105 +52,102 @@ async function processQueue() {
     return
   }
   
-  // sort by if the existing stack has less than <MAX_RENDERERS> commands
-  //   and if the time is less than <RENDERER_TIMEOUT> from the request
-  let mapNames = Object.keys(EXECUTING_LVLSHOTS)
-  let mapNamesFiltered = mapNames.sort(function (a, b) {
-    // sort by the average minimum * number of tasks
-    EXECUTING_LVLSHOTS[a].sort((c, d) => (d.subscribers || 0) - (c.subscribers || 0))
-    EXECUTING_LVLSHOTS[b].sort((c, d) => (d.subscribers || 0) - (c.subscribers || 0))
-    let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
-    let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
-    let aSum = aTasks.reduce((sum, task) => (sum + task.created), 0)
-    let bSum = bTasks.reduce((sum, task) => (sum + task.created), 0)
-    return aSum / aTasks.length - bSum / bTasks.length
-  }).slice(0, MAX_RENDERERS)
+  let mapNamesFiltered = listJobs()
 
   for(let i = 0; i < mapNamesFiltered.length; ++i) {
     // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
     //   of the <MAX_RENDERERS> servers to perform simultaneously.
     let mapname = mapNamesFiltered[i]
     let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
-    let mapRenderers = renderers.filter(map => map.mapname == mapname)
     let freeRenderers = renderers.filter(map => !map.working)
 
     if(freeRenderers.length == 0) {
-      if(mapRenderers.length == 0) {
-        let notTimedOut = renderers.filter(map => {
-          let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
-          let updateTime = 0
-          if(SERVER && SERVER.sv_maxRate) {
-            updateTime = parseInt(SERVER.sv_maxRate)
-          }
-          if(updateTime < GAMEINFO_TIMEOUT) {
-            updateTime = GAMEINFO_TIMEOUT
-          }        
-          return !SERVER || !SERVER.timedout
-            // still include the server in the list unless it has failed a few times
-            //   to hit that higher GAMEINFO_TIMEOUT
-            || (Date.now() - SERVER.timeUpdated) < Math.max(updateTime)
-        })
-        if(notTimedOut.length >= MAX_RENDERERS) {
-          //console.log('Max servers: ' + mapname)
-          continue // can't do anything
-        } else { // start another server
-          Promise.resolve(serveLvlshot(mapname))
-          continue
+      let notTimedOut = renderers.filter(map => {
+        let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
+        let updateTime = 0
+        if(SERVER && SERVER.sv_maxRate) {
+          updateTime = parseInt(SERVER.sv_maxRate)
         }
-      } else {
-        //console.log('Delegate: ' + mapname)
-        continue // wait for another renderer to pick it up
+        if(updateTime < GAMEINFO_TIMEOUT) {
+          updateTime = GAMEINFO_TIMEOUT
+        }        
+        return !SERVER || !SERVER.timedout
+          // still include the server in the list unless it has failed a few times
+          //   to hit that higher GAMEINFO_TIMEOUT
+          || (Date.now() - SERVER.timeUpdated) < Math.max(updateTime)
+      })
+      if(notTimedOut.length >= MAX_RENDERERS) {
+        //console.log('Max servers: ' + mapname)
+        continue // can't do anything
+      } else { // start another server
+        Promise.resolve(serveLvlshot(mapname))
+        continue
       }
     } else {
 
+      let mapRenderers = renderers.filter(map => map.mapname == mapname)
       let serversAvailable = freeRenderers
-          .sort((a, b) => (b.mapname == mapname ? 1 : 0) - (a.mapname == mapname ? 1 : 0))
+          .sort((a, b) => (a.mapname == mapname ? 0 : 1) - (b.mapname == mapname ? 0 : 1))
           .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
           .filter(server => server)
-
       let SERVER
-      if (!serversAvailable || serversAvailable.length == 0) {
-        console.log('None available: ' + mapname)
+      if (serversAvailable.length == 0 || 
+        // if there are other renderers of this map name available
+        //   and there are other map names to serve, then try not to switch
+        (serversAvailable[0].mapname != mapname
+          && mapRenderers.length > 0 && mapNamesFiltered.length > 1)
+      ) {
+        //console.log('None available: ' + mapname)
         continue
       } else {
         SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
       }
+      //console.log('Server available: ', mapRenderers, mapname, serversAvailable[0])
+      
+      // remove tasks that have already completed so we don't waste time switching maps
 
+      // TODO: use RCON interface to control servers and get information
+      let task = EXECUTING_LVLSHOTS[mapname][0]
+      if(!task || task.done) {
+        //console.log('No tasks: ' + mapname)
+        if(task) {
+          EXECUTING_LVLSHOTS[mapname].shift()
+        }
+        continue
+      }
+      if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
+        console.log('Already done: ' + mapname)
+        EXECUTING_LVLSHOTS[mapname].shift()
+        continue // already done, don't command
+      }
+
+
+      // switch the maps
       if(serversAvailable[0].mapname != mapname  &&  EXECUTING_LVLSHOTS[mapname].length > 4) {
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         console.log('Switching maps: ' + mapname)
         sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 devmap ' + mapname, serversAvailable[0])
+        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serversAvailable[0].challenge, serversAvailable[0])
         // so it doesn't try and change all servers
         SERVER.working = true
         // this will be updated by the time the server switches
-        //SERVER.mapname = mapname
+        SERVER.mapname = mapname
         continue
       } else {
-        // TODO: use RCON interface to control servers and get information
-        let task = EXECUTING_LVLSHOTS[mapname][0]
-        if(!task || task.done) {
-          //console.log('No tasks: ' + mapname)
-          if(task) {
-            EXECUTING_LVLSHOTS[mapname].shift()
-          }
-          continue
-        }
-        if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
-          EXECUTING_LVLSHOTS[mapname].shift()
-          continue // already done, don't command
-        }
-        // TODO: add a checkin and a timeout to retry the task
-
+        // run the task
 
         SERVER.working = task
         task.subscribers.push(function () {
+          // TODO: add a checkin and a timeout to retry the task
           if(task.timedout) {
-            console.log('Task timedout. Retrying.')
+            // TODO: add a retry counter
+            console.log('Task timed-out. Retrying.')
           } else {
             EXECUTING_LVLSHOTS[mapname].shift()
             console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
           }
           SERVER.working = false
+          sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
         })
         task.started = Date.now()
         // when we get a print response, let waiting clients know about it
@@ -285,5 +301,6 @@ async function updateSubscribers(mapname, logs, cmd) {
 module.exports = {
   EXECUTING_LVLSHOTS,
   processQueue,
+  listJobs,
 }
 

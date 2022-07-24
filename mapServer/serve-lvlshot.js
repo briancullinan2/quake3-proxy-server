@@ -45,7 +45,8 @@ async function serveLevelshot(request, response, next) {
 
   // still can't find a levelshot or screenshot, execute the engine to generate
   try {
-    let outFile = await execLevelshot(mapname, matchName)
+    let timeout = new Promise(resolve => setTimeout(resolve, 200))
+    let outFile = await Promise.any([execLevelshot(mapname, matchName), timeout])
     let levelshot
     if (outFile && outFile[0] && (levelshot = findFile(outFile[0]))) {
       response.setHeader('content-type', 'image/jpg')
@@ -62,8 +63,6 @@ async function serveLevelshot(request, response, next) {
         CONVERTED_IMAGES[levelshot.replace(path.extname(levelshot), '.jpg')] = Buffer.concat(convertedFile)
       }))
       return
-    } else {
-      throw new Error('Lvlshot failed.')
     }
   } catch (e) {
     console.error('LVLSHOT:', e)
@@ -152,18 +151,13 @@ async function execLevelshot(mapname, waitFor) {
         subscribers: [],
       })
     }
-  
-    let promise = new Promise(resolve => {
-      newTask.subscribers.push(resolve)
-      if(existing.length == 0) {
-        EXECUTING_LVLSHOTS[mapname].push(newTask)
-      }
-    }).then(() => newTask.outFile)
-    if(newTask.cmd.match(waitFor)) {
-      promises.push(promise)
-    } else {
-      Promise.resolve(promise)
+    if(existing.length == 0) {
+      EXECUTING_LVLSHOTS[mapname].push(newTask)
     }
+    if(newTask.cmd.match(waitFor)) {
+      promises.push(newTask)
+    }
+    return newTask
   }
 
   // TODO: this will need to be an API controllable by utilities/watch.js
@@ -172,6 +166,9 @@ async function execLevelshot(mapname, waitFor) {
     fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
     fs.writeFileSync(lvlconfig, fs.readFileSync(LVLSHOTS))
   }
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, 'screenshots'), { recursive: true })
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, 'levelshots'), { recursive: true })
+  fs.mkdirSync(path.join(FS_GAMEHOME, basegame, 'maps'), { recursive: true })
 
   // figure out which images are missing and do it in one shot
   queueTask({
@@ -237,14 +234,20 @@ async function execLevelshot(mapname, waitFor) {
     newVstr += ' ; shaderlist ; '
   }
   */
- console.log(EXECUTING_LVLSHOTS[mapname])
+ //console.log(EXECUTING_LVLSHOTS[mapname])
 
   // return promise wait on filtered tasks
   if(waitFor) {
     Promise.resolve(processQueue())
-    return await Promise.all(promises)
+    if(promises.length == 0) {
+      return
+    } else {
+      return await Promise.all(promises.map(task => new Promise(resolve => {
+        task.subscribers.push(resolve)
+        updatePageViewers('\/maps')
+      })))
+    }
   } else {
-    Promise.resolve(Promise.all(promises))
     Promise.resolve(processQueue())
   }
   // TODO: filtered to a specific task listed above based 
@@ -257,5 +260,6 @@ async function execLevelshot(mapname, waitFor) {
 
 module.exports = {
   serveLevelshot,
+  execLevelshot,
 }
 
