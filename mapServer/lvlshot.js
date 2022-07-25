@@ -146,7 +146,7 @@ async function processQueue() {
         console.log('Switching maps: ' + mapname)
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         task = {
-          cmd: ` ; devmap ${mapname} ; wait 240 ; heartbeat ; `,
+          cmd: ` ; devmap ${mapname} ; wait 60 ; heartbeat ; `,
           resolve: resolveSwitchmap,
           outFile: void 0,
           mapname: mapname,

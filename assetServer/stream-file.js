@@ -141,7 +141,8 @@ async function streamAudioFile(filename, response) {
     }
 
   if (!pk3File
-    || !AUDIO_FORMATS.includes(path.extname(typeof pk3File == 'object' ? pk3File.name : pk3File))) {
+    || !AUDIO_FORMATS.includes(path.extname(typeof pk3File == 'object' 
+    ? pk3File.name : pk3File))) {
     return false
   }
 
@@ -323,7 +324,8 @@ async function streamFile(filename, stream) {
       }
 
 
-  if (fs.statSync(pk3File).isDirectory()) {
+  if (!fs.existsSync(pk3File)
+    || fs.statSync(pk3File).isDirectory()) {
     return false
   }
 

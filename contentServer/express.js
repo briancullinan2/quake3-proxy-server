@@ -55,12 +55,13 @@ function createApplication(features) {
 
   setupExtensions(features, app)
 
-  app.use(unhandledResponse)
+  if(!features.includes('debug')) {
+    app.use(unhandledResponse)
 
-  app.use('*', function (req, res, next) {
-    return unhandledResponse(void 0, req, res, next)
-  })
-
+    app.use('*', function (req, res, next) {
+      return unhandledResponse(void 0, req, res, next)
+    })
+  }
 
   return app
 }
