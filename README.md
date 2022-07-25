@@ -112,9 +112,9 @@ the average of the full (missing) image.
 * (DONE) Fix engine page transitions using History API
 * Logs history tracker using [Vis.js](https://visjs.github.io/vis-timeline/docs/timeline/#Example)
 * Engine cmd server and discord integration
-* Finish links and extra pages
+* Finish links and extra pages, image list HTML display in (virtual) mode
 * 100,000+ world / map compatibility
-* Game publishing services and engine menu overlay
+* (IN PROGRESS) Game publishing services and engine menu overlay
 * Automated match-making and new in-game UX
 * Integrated development environment, map editor, code editor, self-hosted
 

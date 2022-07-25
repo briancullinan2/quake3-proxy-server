@@ -29,7 +29,6 @@ function sendOOB(socket, message, rinfo) {
 
 
 async function heartbeat(socket, message, rinfo) {
-  console.log('Heartbeat: ', rinfo)
   let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   // wait for a successful infoResponse before confirming
   if(typeof SERVER == 'undefined') {
@@ -50,6 +49,13 @@ async function heartbeat(socket, message, rinfo) {
     }
     RESOLVE_STATUS[challenge].push(function (info) {
       clearTimeout(cancelTimer)
+      if(typeof EXECUTING_MAPS[info.qps_serverId] != 'object') {
+        console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname,
+          'Server is ', EXECUTING_MAPS[info.qps_serverId].working 
+          ? 'working' : 'available')
+      } else {
+        console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname)
+      }
       resolve(info)
     })
     sendOOB(socket, 'getinfo ' + challenge, rinfo)
@@ -131,13 +137,13 @@ async function infoResponse(socket, message, rinfo) {
 
   Object.assign(SERVER, infos)
 
-  console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
+  //console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
   if(typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
     EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
     if(typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
       EXECUTING_MAPS[SERVER.qps_serverId].working = false
     }
-    console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
+    //console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
     EXECUTING_MAPS[SERVER.qps_serverId].timedout = false
   }
 

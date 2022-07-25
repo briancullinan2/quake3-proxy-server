@@ -7,8 +7,6 @@ const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
 const { FS_GAMEHOME } = require('../utilities/env.js')
-const { RESOLVE_DEDICATED } = require('../gameServer/processes.js')
-const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 
 
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
@@ -67,7 +65,8 @@ async function resolveScreenshot(logs, task) {
   // TODO: transparent PNGs with special background color?
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
   let screenName = task.outFile.replace(path.extname(task.outFile), '.tga')
-  if(findFile(screenName)) {
+  let newFile = findFile(screenName)
+  if(newFile && fs.existsSync(newFile)) {
     return true
   }
   let match
@@ -130,6 +129,7 @@ async function execLevelshot(mapname, waitFor) {
         mapname: mapname,
         created: Date.now(),
         subscribers: [],
+        cmd: ' ; wait 16 ; ' + task.cmd
       })
     }
     if(existing.length == 0) {
@@ -153,19 +153,19 @@ async function execLevelshot(mapname, waitFor) {
 
   // figure out which images are missing and do it in one shot
   queueTask({
-    cmd: ' ; vstr setupLevelshot ; levelshot ; screenshot levelshot ; ',
+    cmd: ' ; vstr setupLevelshot ; levelshot ; wait 6; screenshot levelshot ; ',
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupLevelshot ; levelshot ; screenshot ${mapname}_screenshot0001 ; `,
+    cmd: ` ; vstr setupLevelshot ; levelshot ; wait 6; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0001.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
+    cmd: ` ; vstr setupBirdseye ; wait 6; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0002.tga')
   })

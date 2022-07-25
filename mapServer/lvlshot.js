@@ -15,8 +15,8 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 const RESOLVE_INTERVAL = 1000
-const RENDERER_TIMEOUT = 10000
-const MAX_RENDERERS = 3
+const RENDERER_TIMEOUT = 20000
+const MAX_RENDERERS = 2
 const EXECUTING_LVLSHOTS = {}
 let lvlshotTimer
 let RUNCMD = 0
@@ -125,15 +125,19 @@ async function processQueue() {
 
       // TODO: use RCON interface to control servers and get information
       let task = EXECUTING_LVLSHOTS[mapname][0]
-      if(!task || task.done) {
+      if(!task) {
         //console.log('No tasks: ' + mapname)
-        if(task) {
-          EXECUTING_LVLSHOTS[mapname].shift()
-        }
         continue
-      }
+      } else
+      if(task.done) {
+        EXECUTING_LVLSHOTS[mapname].shift()
+      } else
+      if(task.started && Date.now() - task.started < 100
+        || (task.started && !task.timedout)) {
+        continue // don't duplicate tasks
+      } else
       if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
-        console.log('Already done: ' + mapname)
+        //console.log('Already done: ' + mapname)
         EXECUTING_LVLSHOTS[mapname].shift()
         continue // already done, don't command
       }
@@ -146,7 +150,7 @@ async function processQueue() {
         console.log('Switching maps: ' + mapname)
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         task = {
-          cmd: ` ; devmap ${mapname} ; wait 60 ; heartbeat ; `,
+          cmd: ` ; devmap ${mapname} ; wait 30 ; heartbeat ; `,
           resolve: resolveSwitchmap,
           outFile: void 0,
           mapname: mapname,
@@ -164,6 +168,7 @@ async function processQueue() {
 
       // run the task
       SERVER.working = task
+      task.timedout = false
       task.started = Date.now()
       task.subscribers.push(function () {
         // TODO: add a checkin and a timeout to retry the task
@@ -174,7 +179,6 @@ async function processQueue() {
           EXECUTING_LVLSHOTS[mapname].shift()
           console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
         }
-        task.timedout = false
         SERVER.working = false
         //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
       })
@@ -265,14 +269,17 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'sv_master3', '""',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+sets', 'qps_renderer', '1',
-      '+set', 'com_maxfps', '30',
-      '+set', 'sv_fps', '30',
+      // snapshot server has low FPS
+      '+set', 'com_yieldCPU', '16',
+      '+set', 'com_maxfps', '3',
+      '+set', 'snaps', '10',
+      '+set', 'sv_fps', '10',
       '+set', 'rconPassword2', 'password1',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+devmap', mapname,
       '+exec', `".config/levelinfo.cfg"`,
       '+vstr', 'resetLvlshot',
-      '+wait', '30', '+heartbeat',
+      '+wait', '20', '+heartbeat',
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas
       //   might also be necessary for aligning animations.

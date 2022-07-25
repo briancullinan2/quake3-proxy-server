@@ -19,6 +19,7 @@ const { listGameNames } = require('../gameServer/list-games.js')
 
 // TODO: replace about 300 lines of code with 50 LoC
 const CONVERTED_FILES = {}
+const CONVERTED_TIMES = {}
 
 // TODO: CODE REVIEW, this is kind of like relinking when your functions aren't small enough
 //   because a single idea doesn't go far enough to prevent programmer from writing redundant
@@ -41,7 +42,7 @@ async function findAlt(filename) {
   if (filename.startsWith('/'))
     filename = filename.substring(1)
 
-  if(typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
+  if (typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
     return CACHY_PATHY[filename.toLocaleLowerCase()]
   }
 
@@ -49,16 +50,16 @@ async function findAlt(filename) {
   // TODO: lookup modname like in serve-virtual
   let pk3s = []
   let modname = filename.split('/')[0]
-  if(modname) {
+  if (modname) {
     let gameNames = listGameNames()
-    if(gameNames.includes(modname.toLocaleLowerCase())) {
+    if (gameNames.includes(modname.toLocaleLowerCase())) {
       pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
       pk3InnerPath = filename.substr(modname.length + 1)
     }
   }
 
-  let pk3File 
-  if(filename.match(/\.pk3/i)) {
+  let pk3File
+  if (filename.match(/\.pk3/i)) {
     pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
     pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
   }
@@ -141,8 +142,8 @@ async function streamAudioFile(filename, response) {
     }
 
   if (!pk3File
-    || !AUDIO_FORMATS.includes(path.extname(typeof pk3File == 'object' 
-    ? pk3File.name : pk3File))) {
+    || !AUDIO_FORMATS.includes(path.extname(typeof pk3File == 'object'
+      ? pk3File.name : pk3File))) {
     return false
   }
 
@@ -155,22 +156,38 @@ async function streamAudioFile(filename, response) {
   }
 
   let pk3InnerPath = typeof filename == 'object'
-   ? filename.name 
-   : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+    ? filename.name
+    : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3File.match(/\.pk3$/i)
       // not possible?
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
+  let newKey = key.replace(path.extname(key), '.ogg')
 
-  if (typeof CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')] != 'undefined') {
+
+  // update the file in memory if it has changed
+  let stat
+  if (!fs.existsSync(typeof pk3File == 'object' ? pk3File.file : pk3File)
+    || (stat = fs.statSync(typeof pk3File == 'object' ? pk3File.file : pk3File)).isDirectory()) {
+    return false
+  }
+  if (typeof pk3File == 'object'
+    && (typeof CONVERTED_TIMES[newKey] == 'undefined')
+    || stat.mtime.getTime() > CONVERTED_TIMES[newKey]) {
+    CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
+      CONVERTED_TIMES[newKey] = stat.mtime.getTime()
+  } else
+
+
+  if (typeof CONVERTED_SOUNDS[newKey] != 'undefined') {
     if (typeof response.setHeader == 'function') {
       response.setHeader('content-type', 'audio/ogg')
-      response.send(CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')])
+      response.send(CONVERTED_SOUNDS[newKey])
     } else {
       const passThrough = new PassThrough()
       passThrough.pipe(response)
-      passThrough.end(CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')])
+      passThrough.end(CONVERTED_SOUNDS[newKey])
     }
     return true
   }
@@ -179,7 +196,10 @@ async function streamAudioFile(filename, response) {
     response.setHeader('content-type', 'audio/ogg')
   }
   // .pipe(response)
-  let passThrough = streamAndCache(key.replace(path.extname(pk3InnerPath), '.ogg'), CONVERTED_SOUNDS, response)
+  let passThrough = streamAndCache(newKey, CONVERTED_SOUNDS, response)
+  CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
+    CONVERTED_TIMES[newKey] = stat.mtime.getTime()
+
   // force async so other threads can answer page requests during conversion
   Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, false))
   return true
@@ -188,7 +208,7 @@ async function streamAudioFile(filename, response) {
 
 
 function streamAndCache(key, cache, response) {
-  let strippedKey = key.replace(path.extname(key), '')
+  let strippedKey = key.replace(path.extname(key), '').toLocaleLowerCase()
   // TODO: store a piped stream in memory to save some bigger job we just did
   //   also, doesn't make sense to read from FS every time
   if (typeof CONVERTED_FILES[strippedKey] != 'undefined' || typeof cache[key] != 'undefined') {
@@ -239,45 +259,64 @@ async function streamImageFile(filename, response) {
   }
 
   let pk3InnerPath = typeof filename == 'object'
-   ? filename.name 
-   : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+    ? filename.name
+    : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3Name
       // not possible?
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
-
+  let newKey
   if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')] != 'undefined') {
-    if (typeof response.setHeader == 'function') {
-      response.setHeader('content-type', 'image/jpg')
-      response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
-    } else {
-      const passThrough = new PassThrough()
-      passThrough.pipe(response)
-      passThrough.end(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
-    }
-    return true
+    newKey = key.replace(path.extname(key), '.jpg')
   } else
-    if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')] != 'undefined') {
+  if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')] != 'undefined') {
+    newKey = key.replace(path.extname(key), '.png')
+  }
+  
+
+
+  // update the file in memory if it has changed
+  let stat
+  if (!fs.existsSync(typeof pk3File == 'object' ? pk3File.file : pk3File)
+    || (stat = fs.statSync(typeof pk3File == 'object' ? pk3File.file : pk3File)).isDirectory()) {
+    return false
+  }
+  if (!newKey) {
+    // fall through to convert
+  } else
+  if(typeof CONVERTED_TIMES[newKey] == 'undefined'
+    || stat.mtime.getTime() > CONVERTED_TIMES[newKey]) {
+    CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
+      CONVERTED_TIMES[newKey] = stat.mtime.getTime()
+    // fall through to convert
+  } else
+
+    if (typeof CONVERTED_IMAGES[newKey] != 'undefined') {
       if (typeof response.setHeader == 'function') {
-        response.setHeader('content-type', 'image/png')
-        response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')])
+        response.setHeader('content-type', 'image/' + path.extname(newKey).substring(1))
+        response.send(CONVERTED_IMAGES[newKey])
       } else {
         const passThrough = new PassThrough()
         passThrough.pipe(response)
-        passThrough.end(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
+        passThrough.end(CONVERTED_IMAGES[newKey])
       }
       return true
     }
 
+
   // TODO: call out to this somehow and result results
   isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
   let newExt = isOpaque ? '.jpg' : '.png'
+  newKey = key.replace(path.extname(key), newExt)
+  CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
+  CONVERTED_TIMES[newKey] = stat.mtime.getTime()
   if (typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'image/' + newExt.substring(1))
   }
+
   // .pipe(response)
-  let passThrough = streamAndCache(key.replace(path.extname(pk3InnerPath), newExt), CONVERTED_IMAGES, response)
+  let passThrough = streamAndCache(newKey, CONVERTED_IMAGES, response)
   // force async so other threads can answer page requests during conversion
   Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt))
   return true

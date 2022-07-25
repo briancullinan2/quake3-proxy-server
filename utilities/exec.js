@@ -64,7 +64,9 @@ async function execCmd(cmd, args, options) {
           detached: (options ? options.detached : false) || false,
           stdio: options && options.detached ? 'ignore' : 'pipe',
         })
-        RUNNING++
+        if(!options || !options.detached) {
+          RUNNING++ // don't coult detached toward total
+        }
         let pid = LIMIT + ':' + ps.pid
         CHILD_PROCESS[pid] = [cmd].concat(args).join(' ')
         updatePageViewers('/process')
