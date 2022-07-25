@@ -71,9 +71,15 @@ function pageBindings() {
     //initialize()
   }
 
+  // TODO: if not connected 
+  if(typeof Cbuf_ExecuteText != 'undefined') {
+    Cbuf_ExecuteText(0, stringToAddress('clientinfo ;\n'))
+  }
+
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
 	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
-	if(connectAddr && typeof Cbuf_AddText != 'undefined') {
+	if((typeof SYS != 'undefined' && SYS.state < 2)
+      || (connectAddr && typeof Cbuf_AddText != 'undefined')) {
     let reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
     if(!reconnect.includes(connectAddr[0])) {
       Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
@@ -81,7 +87,8 @@ function pageBindings() {
   }
   let MATCH_MAPNAME = /maps\/([^\/]+)$/gi
 	let mapname = MATCH_MAPNAME.exec(window.location.pathname + '')
-	if(mapname && typeof Cbuf_AddText != 'undefined') {
+	if(typeof SYS != 'undefined' && SYS.state < 2
+      || (mapname && typeof Cbuf_AddText != 'undefined')) {
     if(mapname != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
       Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
     }
