@@ -137,6 +137,8 @@ const SUPPORTED_FORMATS = [
   '.arena', // map based game mode definition
   // these can be compiled in game to run bot AI
   '.c', '.h', '.scc', 
+  // camera files
+  '.cam'
   // can load async
   // '.map', '.aas', '.md5', 
   // '.bsp', '.md3',  '.iqm', '.mdr',

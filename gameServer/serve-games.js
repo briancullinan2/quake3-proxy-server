@@ -212,7 +212,7 @@ async function serveGameInfo(request, response, next) {
     && (!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime)) {
     Promise.resolve(new Promise((resolve, reject) => {
       let cancelTimer = setTimeout(function () {
-        reject(new Error('Game status timed out.'))
+        console.error(new Error('Game status timed out.'))
       }, INFO_TIMEOUT)
       if(typeof RESOLVE_STATUS[serverInfo.challenge] == 'undefined') {
         RESOLVE_STATUS[serverInfo.challenge] = []

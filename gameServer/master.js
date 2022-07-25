@@ -42,7 +42,7 @@ async function heartbeat(socket, message, rinfo) {
 
   let infos = await new Promise(function (resolve, reject) {
     let cancelTimer = setTimeout(function () {
-      reject(new Error('Heartbeat getinfo timed out.'))
+      console.error(new Error('Heartbeat getinfo timed out.'))
     }, INFO_TIMEOUT)
     if(typeof RESOLVE_STATUS[challenge] == 'undefined') {
       RESOLVE_STATUS[challenge] = []

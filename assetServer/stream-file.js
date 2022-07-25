@@ -68,13 +68,13 @@ async function findAlt(filename) {
   //   similar to a generalized way that the engine does this
 
   // filter? if (pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', { sensitivity: 'base' })) {
-  for (let i = 0; i < pk3s.length; i++) {
-    let file = await fileKey(pk3s[i], pk3InnerPath)
+  for (let j = 0; j < pk3s.length; j++) {
+    let file = await fileKey(pk3s[j], pk3InnerPath)
 
     if (!(file) || unsupportedImage(pk3InnerPath)) {
       for (let i = 0; i < IMAGE_FORMATS.length; i++) {
         let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
-        let altFile = await fileKey(pk3s[i], altPath)
+        let altFile = await fileKey(pk3s[j], altPath)
         if (altFile) {
           return (CACHY_PATHY[filename.toLocaleLowerCase()] = altFile) // can be sent directly to convert
         }
@@ -84,7 +84,7 @@ async function findAlt(filename) {
     if (!(file) || unsupportedAudio(pk3InnerPath)) {
       for (let i = 0; i < AUDIO_FORMATS.length; i++) {
         let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), AUDIO_FORMATS[i])
-        let altFile = await fileKey(pk3s[i], altPath)
+        let altFile = await fileKey(pk3s[j], altPath)
         if (altFile) {
           return (CACHY_PATHY[filename.toLocaleLowerCase()] = altFile) // can be sent directly to convert
         }

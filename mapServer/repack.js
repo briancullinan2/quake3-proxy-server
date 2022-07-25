@@ -130,8 +130,8 @@ async function repackBasepack(modname) {
   let maxMtime = 0
 
   let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-
   for (let i = 0; i < pk3s.length; i++) {
+    let newTime = fs.statSync(pk3s[i]).mtime.getTime()
     let index = await getIndex(pk3s[i])
     for (let j = 0; j < index.length; j++) {
       let file = index[j]
@@ -175,7 +175,7 @@ async function repackBasepack(modname) {
         }
       }
 
-      if (!fs.existsSync(newFile)) {
+      if (!fs.existsSync(newFile) || fs.statSync(newFile).mtime.getTime() < file.time) {
         if(DEPLOY 
           || SUPPORTED_FORMATS.includes(ext)
           || (file.compressedSize < 36 * 36 * 4 // max image size
@@ -201,7 +201,7 @@ async function repackBasepack(modname) {
         || file.size < 68 * 68 * 4 // max image size
         || path.extname(file.name) == '.qvm') {
         if (typeof includedDates[newFile] == 'undefined') {
-          includedDates[newFile] = file.time
+          includedDates[newFile] = Math.max(newTime, file.time)
         }
       } else {
         excludedSizes[file.name.toLocaleLowerCase()] = file.size
@@ -235,6 +235,7 @@ async function repackBasepack(modname) {
       if(typeof includedDates[newFile] == 'undefined') {
         delete includedDates[newFile]
         filesToRemove.push(file)
+      // TODO: FIX THIS, repacking every time!!
       } else if(includedDates[newFile] > existingTime) {
         filesInIndex[newFile] = file
         // update the zip file
