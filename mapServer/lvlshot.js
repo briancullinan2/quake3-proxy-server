@@ -144,26 +144,46 @@ async function processQueue() {
 
 
       // switch the maps
-      if(serversAvailable[0].mapname != mapname 
-        && !mapNamesFiltered.includes(serversAvailable[0].mapname)
-        && !task.cmd.match('devmap')) {
-        console.log('Switching maps: ' + mapname)
-        // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
-        task = {
-          cmd: ` ; devmap ${mapname} ; wait 30 ; heartbeat ; `,
-          resolve: resolveSwitchmap,
-          outFile: void 0,
-          mapname: mapname,
-          // drag the time average down so this event is sure to stick when using listJobs() to sort
-          //   what events to execute next
-          created: Number.MIN_VALUE, 
-          subscribers: [],
+      if(serversAvailable[0].mapname != mapname) {
+        // this server is no longer needed by the mapserver
+        //   this prevents it from switching servers back and forth
+        //   continuously and not getting any work done
+        if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
+          // this prevents it from running devmap commands on 
+          //   more than one server at a time?
+          && (!task.started || !task.cmd.match('devmap'))
+        ) {
+          console.log('Switching maps: ' + mapname)
+          // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
+          task = {
+            // TODO: not going to risk trying to make this lower
+            //   rather just add more servers with com_affinityMask set
+            cmd: ` ; devmap ${mapname} ; wait 360 ; heartbeat ; `,
+            resolve: resolveSwitchmap,
+            outFile: void 0,
+            mapname: mapname,
+            // drag the time average down so this event is sure to stick when using listJobs() to sort
+            //   what events to execute next
+            created: Number.MIN_VALUE, 
+            subscribers: [],
+          }
+          // CODE REVIEW: LOL GODDAMNIT, 
+          //   interfering with the shift() above and below
+          //   this line should have been here when I put task = { ... } in
+          //   but I forgot about the shifting, this was causing image 
+          //   comands to always get skipped which was causing me to 
+          //   refresh the window multiple times.
+          EXECUTING_LVLSHOTS[mapname].unshift(task)
+          // so it doesn't try and change all servers, 
+          SERVER.working = true
+          // change this name here to fail the mapNamesFiltered condition
+          //   this will be updated by the time the server switches
+          SERVER.mapname = mapname
+        } else {
+          // CODE REVIEW: this was missing, this function is too complicated and leafy
+          // skip sending this maps commands to this server, it might be needed elsewhere
+          continue
         }
-        // so it doesn't try and change all servers, 
-        SERVER.working = true
-        // change this name here to fail the mapNamesFiltered condition
-        //   this will be updated by the time the server switches
-        //SERVER.mapname = mapname
       }
 
       // run the task
@@ -180,7 +200,6 @@ async function processQueue() {
           console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
         }
         SERVER.working = false
-        //sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat', serversAvailable[0])
       })
       // when we get a print response, let waiting clients know about it
       if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
@@ -259,6 +278,11 @@ async function serveLvlshot(mapname, waitFor) {
       mapname: mapname,
       logs: ''
     }
+    // TODO: manually set com_affinityMask to space out servers
+    //   sure the OS can do this, but we're trying to maximize
+    //   quantity, not performance or usability, we'll fill up
+    //   all CPUs 100% when the time comes so make sure they 
+    //   are evenly spread out.
     let ps = await dedicatedCmd([
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',

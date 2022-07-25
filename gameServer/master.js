@@ -49,7 +49,7 @@ async function heartbeat(socket, message, rinfo) {
     }
     RESOLVE_STATUS[challenge].push(function (info) {
       clearTimeout(cancelTimer)
-      if(typeof EXECUTING_MAPS[info.qps_serverId] != 'object') {
+      if(typeof EXECUTING_MAPS[info.qps_serverId] == 'object') {
         console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname,
           'Server is ', EXECUTING_MAPS[info.qps_serverId].working 
           ? 'working' : 'available')
