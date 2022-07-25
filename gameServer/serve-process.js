@@ -46,7 +46,7 @@ async function serveDedicated() {
       '+set', 'com_maxfps', '100',
       '+set', 'com_maxfpsUnfocused', '100',
       '+set', 'snaps', '60',
-      '+set', 'sv_fps', '100',      
+      '+set', 'sv_fps', '100',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+map', 'lsdm3_v1', 
       '+wait', '300', '+heartbeat',
@@ -101,6 +101,7 @@ async function serveProcess(request, response, next) {
     let pid = server.pid
     let serverInfo = Object.values(GAME_SERVERS)
         .filter(server => server.qps_serverId == challenge)[0]
+    console.log(EXECUTING_MAPS)
     if(!serverInfo) {
       return
     }
@@ -143,7 +144,7 @@ if (typeof node.mtime != 'undefined') {
   } else {
     result += `<span>&nbsp;</span>`
   }
-  result += `<span>${node.assignments}</span>`
+  result += `<span>${node.assignments ? node.assignments : '(unref)'}</span>`
   result += '</li>'
   return result
 }

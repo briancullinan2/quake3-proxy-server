@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 
-const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
+const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
 const { renderIndex, renderList, renderMenu, renderEngine } = require('../utilities/render.js')
@@ -25,6 +25,7 @@ async function gameInfo(serverInfo) {
   if (!serverInfo.mapname) {
     return
   }
+  await listMaps(getGame())
   let mapname = serverInfo.mapname.toLocaleLowerCase()
   let levelshot
   let pk3name = await sourcePk3Download(mapname)
@@ -34,13 +35,15 @@ async function gameInfo(serverInfo) {
     levelshot = '/unknownmap.jpg'
   }
   return {
-    title: serverInfo.hostname || serverInfo.sv_hostname,
+    title: (serverInfo.qps_renderer ? '(renderer) ' 
+        : (serverInfo.dedicated ? '(dedicated) ' : '')) 
+        + (serverInfo.hostname || serverInfo.sv_hostname),
     levelshot: levelshot,
     bsp: mapname,
-    pakname: MAP_DICTIONARY[mapname],
+    pakname: 'Download: ' + MAP_DICTIONARY[mapname],
     have: !!pk3name,
     mapname: mapname,
-    link: `games/${serverInfo.address}:${serverInfo.port}`,
+    link: serverInfo.qps_renderer ? void 0 : `games/${serverInfo.address}:${serverInfo.port}`,
   }
 }
 
@@ -70,7 +73,7 @@ async function serveGamesRange(request, response, next) {
 async function serveGamesReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
   let games = await Promise.all(Object.values(GAME_SERVERS)
-      .slice(start, end).map(game => gameInfo(game)))
+      .slice(start, end).map(gameInfo))
   if (isJson) {
     return response.json(games)
   }

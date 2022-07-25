@@ -209,6 +209,19 @@ async function filteredMaps(modname) {
 }
 
 
+function parseQuery(str) {
+  let startup = []
+	let search = /([^&=]+)/g
+	let query  = str
+	let match
+	while (match = search.exec(query)) {
+		let val = decodeURIComponent(match[1])
+		val = val.split(' ')
+		val[0] = (val[0][0] != '+' ? '+' : '') + val[0]
+		startup.push.apply(startup, val)
+	}
+  return startup
+}
 
 /*
 Theory: instead of trying to modify qcommon/files.c
@@ -257,6 +270,8 @@ async function serveVirtual(request, response, next) {
     modname = ''
   }
 
+  let queryArgs = Object.keys(request.query).map(k => k + ' ' + request.query[k]).join(' ')
+  let startArgs = parseQuery(queryArgs)
   // TODO: convert and redirect, then display the correct file in the index
   // TODO: combine with serve-repacked, fs.createReadStream
   if (filename.match('index.html')) {
@@ -271,9 +286,12 @@ async function serveVirtual(request, response, next) {
         title: 'Map Upload',
         link: 'maps/upload'
       }, {
+        title: 'Game Info',
+        link: 'games/' + (startArgs.includes('+connect') ? startArgs[startArgs.indexOf('+connect') + 1] : 'first')
+      }, {
         title: 'Create Game',
         link: 'games/new'
-      }], 'games-menu')))
+      }], 'home-menu')))
   }
 
   let regularFile

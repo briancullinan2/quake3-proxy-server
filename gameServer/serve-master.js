@@ -3,7 +3,7 @@ const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js
 const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
+const { EXECUTING_MAPS, RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
 
 
 const MASTER_SERVERS = [
@@ -51,7 +51,9 @@ async function createMasters(mirror) {
   // look for existing servers we might have left laying around from last session to commandeer
   setTimeout(function () {
     // don't hold up own local server on loading itself
-    if (Object.keys(RESOLVE_DEDICATED).length == 0) {
+    // let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+
+    if (Object.keys(EXECUTING_MAPS).length == 0) {
       serveDedicated()
     }
   }, 3000)

@@ -74,7 +74,7 @@ function pageBindings() {
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
 	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
 	if(connectAddr && typeof Cbuf_AddText != 'undefined') {
-    let reconnect = addressToString(Cvar_VariableString('cl_reconnectArgs'))
+    let reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
     if(!reconnect.includes(connectAddr[0])) {
       Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
     }
@@ -82,7 +82,7 @@ function pageBindings() {
   let MATCH_MAPNAME = /maps\/([^\/]+)$/gi
 	let mapname = MATCH_MAPNAME.exec(window.location.pathname + '')
 	if(mapname && typeof Cbuf_AddText != 'undefined') {
-    if(mapname != addressToString(Cvar_VariableString('mapname'))) {
+    if(mapname != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
       Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
     }
   }
@@ -374,7 +374,7 @@ function socketProxyControl(evt) {
         continue
       }
       if(evt.data.includes('viewport-frame') // since we won't be adding
-        && document.body.children[i].id == 'games-menu') {
+        && document.body.children[i].id == 'home-menu') {
         // preserve games menu
         hasGamesmenu = true
         continue
@@ -394,7 +394,7 @@ function socketProxyControl(evt) {
       if(hasViewport && current.id == 'viewport-frame') {
         continue
       }
-      if(hasGamesmenu && current.id == 'games-menu') {
+      if(hasGamesmenu && current.id == 'home-menu') {
         continue
       }
 

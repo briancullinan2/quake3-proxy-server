@@ -49,7 +49,8 @@ async function heartbeat(socket, message, rinfo) {
     }
     RESOLVE_STATUS[challenge].push(function (info) {
       clearTimeout(cancelTimer)
-      if(typeof EXECUTING_MAPS[info.qps_serverId] == 'object') {
+      if(typeof EXECUTING_MAPS[info.qps_serverId] == 'object'
+        && info.qps_renderer) {
         console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname,
           'Server is ', EXECUTING_MAPS[info.qps_serverId].working 
           ? 'working' : 'available')
@@ -98,11 +99,17 @@ async function statusResponse(socket, message, rinfo) {
     }
     if(typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId] = {
+        mapname: infos.mapname,
         renderer: !!infos.qps_renderer,
         logs: '',
         challenge: infos.qps_serverId,
       }
       console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started', EXECUTING_MAPS)
+    }
+    if(typeof infos.qps_pid == 'undefined' 
+      && EXECUTING_MAPS[infos.qps_serverId].pid) {
+      sendOOB(socket, 'rcon password1 sets qps_pid ' 
+        + EXECUTING_MAPS[infos.qps_serverId].pid + ' ; wait 1 ; heartbeat ; ')
     }
   }
 
