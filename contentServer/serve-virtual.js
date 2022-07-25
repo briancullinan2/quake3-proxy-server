@@ -2,17 +2,17 @@ const fs = require('fs')
 const path = require('path')
 
 const { streamFile } = require('../assetServer/stream-file.js')
-const { findFile, gameDirectories } = require('../assetServer/virtual.js')
+const { findFile } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { filteredPk3Directory } = require('../mapServer/list-filtered.js')
 const { renderIndex, renderEngine, renderMenu } = require('../utilities/render.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
-const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS,
-  MODS_NAMES, getGames } = require('../utilities/env.js')
+const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/async-size.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
+const { filteredGames } = require('../gameServer/list-games.js')
 
 
 const VIRTUAL_EXPLAINATION = `
@@ -163,37 +163,6 @@ async function listVirtual(pk3InnerPath, newFile, modname) {
 }
 
 
-async function filteredGames() {
-  let games = await Promise.all(Object.values(MODS_NAMES).concat(getGames())
-    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))
-    .filter((mod, i, arr) => arr.indexOf(mod) == i)
-    .reduce((list, game, i) => {
-      let devDirectories = gameDirectories(game)
-      let first = {
-        name: game,
-        link: `/${game}/`,
-        isDirectory: true,
-        absolute: '/.'
-      }
-      list.push(first)
-      for (let j = 0; j < devDirectories.length; j++) {
-        if (j == 0) {
-          first.absolute = devDirectories[j]
-          continue
-        }
-        list.push({
-          name: path.basename(path.dirname(devDirectories[j])) + '/' + path.basename(devDirectories[j]),
-          exists: false,
-          link: `/${game}/`,
-          isDirectory: true,
-          absolute: path.dirname(devDirectories[j])
-        })
-      }
-      return list
-    }, []))
-  return games
-}
-
 
 
 async function filteredMaps(modname) {
@@ -313,7 +282,8 @@ async function serveVirtual(request, response, next) {
   } else {
     regularFile = modname + '/' + pk3InnerPath
   }
-  if(isAlt && await streamFile(regularFile, response)) {
+
+  if(await streamFile(regularFile, response)) {
     return
   }
 

@@ -2,8 +2,23 @@
 // TODO: generate this code file automatically using input from serve-virtual and serve-repacked
 // CODE REVIEW: need at least 2 use-cases to refactor code into something cleaner, that's how you know
 //   the code is relevant instead of messy, it fits multiple purposes.
+const fs = require('fs')
+const path = require('path')
+const { PassThrough, Readable } = require('stream')
+
+const { fileKey, streamFileKey } = require('../utilities/zip.js')
+const { CACHY_PATHY, findFile } = require('../assetServer/virtual.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS, MODS_NAMES, getGames } = require('../utilities/env.js')
+const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
+const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
+const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
+const { listPk3s } = require('../assetServer/layered.js')
+const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
+const { listGameNames } = require('../gameServer/list-games.js')
+
 
 // TODO: replace about 300 lines of code with 50 LoC
+const CONVERTED_FILES = {}
 
 // TODO: CODE REVIEW, this is kind of like relinking when your functions aren't small enough
 //   because a single idea doesn't go far enough to prevent programmer from writing redundant
@@ -22,30 +37,45 @@
 //   4 other locations?
 
 async function findAlt(filename) {
-  let pk3File
+  let pk3InnerPath
+  if (filename.startsWith('/'))
+    filename = filename.substring(1)
 
-  let localName = filename
-  if (localName.startsWith('/'))
-    localName = localName.substring(1)
+  if(typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
+    return CACHY_PATHY[filename.toLocaleLowerCase()]
+  }
 
+  pk3InnerPath = filename
   // TODO: lookup modname like in serve-virtual
+  let pk3s = []
+  let modname = filename.split('/')[0]
+  if(modname) {
+    let gameNames = listGameNames()
+    if(gameNames.includes(modname.toLocaleLowerCase())) {
+      pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
+      pk3InnerPath = filename.substr(modname.length + 1)
+    }
+  }
+
+  let pk3File 
+  if(filename.match(/\.pk3/i)) {
+    pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
+    pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  }
 
   // TODO: takes a local / virtual path and traverses both base packs and alternate extensions
   //   similar to a generalized way that the engine does this
 
   // filter? if (pk3Name && pk3Name.localeCompare('pak0.pk3', 'en', { sensitivity: 'base' })) {
-  let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
   for (let i = 0; i < pk3s.length; i++) {
-    // TODO: filter pk3File?
-
-    let file = await fileKey(pk3File, pk3InnerPath)
+    let file = await fileKey(pk3s[i], pk3InnerPath)
 
     if (!(file) || unsupportedImage(pk3InnerPath)) {
       for (let i = 0; i < IMAGE_FORMATS.length; i++) {
         let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), IMAGE_FORMATS[i])
-        file = await fileKey(pk3File, altPath)
-        if (file) {
-          return file // can be sent directly to convert
+        let altFile = await fileKey(pk3s[i], altPath)
+        if (altFile) {
+          return (CACHY_PATHY[filename.toLocaleLowerCase()] = altFile) // can be sent directly to convert
         }
       }
     }
@@ -53,9 +83,9 @@ async function findAlt(filename) {
     if (!(file) || unsupportedAudio(pk3InnerPath)) {
       for (let i = 0; i < AUDIO_FORMATS.length; i++) {
         let altPath = pk3InnerPath.replace(path.extname(pk3InnerPath), AUDIO_FORMATS[i])
-        file = await fileKey(pk3File, altPath)
-        if (file) {
-          return file // can be sent directly to convert
+        let altFile = await fileKey(pk3s[i], altPath)
+        if (altFile) {
+          return (CACHY_PATHY[filename.toLocaleLowerCase()] = altFile) // can be sent directly to convert
         }
       }
     }
@@ -63,33 +93,33 @@ async function findAlt(filename) {
     // TODO: redirect models IQM and MD3 just like audio/image files
 
     if (file) {
-      return file
+      return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
     }
   }
 
-  if (unsupportedImage(pk3InnerPath)) {
+  if (IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
     for (let i = 0; i < IMAGE_FORMATS.length; i++) {
-      let altPath = findFile(pk3File.replace(path.extname(pk3File), IMAGE_FORMATS[i]))
+      let altPath = findFile(filename.replace(path.extname(filename), IMAGE_FORMATS[i]))
       if (altPath) {
-        return altPath // can be sent directly to convert
+        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
       }
     }
   }
 
-  if (unsupportedAudio(pk3InnerPath)) {
+  if (AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
     for (let i = 0; i < AUDIO_FORMATS.length; i++) {
-      let altPath = findFile(pk3File.replace(path.extname(pk3File), AUDIO_FORMATS[i]))
+      let altPath = findFile(filename.replace(path.extname(filename), AUDIO_FORMATS[i]))
       if (altPath) {
-        return altPath // can be sent directly to convert
+        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
       }
     }
   }
 
   // TODO: redirect models IQM and MD3 just like audio/image files
 
-  let altPath = findFile(pk3File)
-  if (altPath) {
-    return altPath
+  let file = findFile(filename)
+  if (file) {
+    return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
   }
 
   // TODO: extend this function singularly to handle all repackedCache() calls
@@ -100,21 +130,22 @@ async function findAlt(filename) {
 async function streamAudioFile(filename, response) {
   // findAlt()
   // streamAudioKey or pipe file
-  if (!AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
-    return false
-  }
-
-
   let pk3File
   if (typeof filename == 'object') {
     pk3File = filename
   } else
-    if (fs.existsSync(filename)) {
+    if (!fs.existsSync(filename)) {
       pk3File = await findAlt(filename)
+    } else {
+      pk3File = filename
     }
-  if (!pk3File) {
+
+  if (!pk3File
+    || !AUDIO_FORMATS.includes(path.extname(typeof pk3File == 'object' ? pk3File.name : pk3File))) {
     return false
   }
+
+
 
 
   let pk3Name
@@ -122,7 +153,9 @@ async function streamAudioFile(filename, response) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
   }
 
-  let pk3InnerPath = fullPath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  let pk3InnerPath = typeof filename == 'object'
+   ? filename.name 
+   : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3File.match(/\.pk3$/i)
@@ -130,7 +163,7 @@ async function streamAudioFile(filename, response) {
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
 
   if (typeof CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')] != 'undefined') {
-    if(typeof response.setHeader == 'function') {
+    if (typeof response.setHeader == 'function') {
       response.setHeader('content-type', 'audio/ogg')
       response.send(CONVERTED_SOUNDS[key.replace(path.extname(pk3InnerPath), '.ogg')])
     } else {
@@ -141,7 +174,7 @@ async function streamAudioFile(filename, response) {
     return true
   }
 
-  if(typeof response.setHeader == 'function') {
+  if (typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'audio/ogg')
   }
   // .pipe(response)
@@ -153,7 +186,7 @@ async function streamAudioFile(filename, response) {
 
 
 
-async function streamAndCache(key, cache, response) {
+function streamAndCache(key, cache, response) {
   let strippedKey = key.replace(path.extname(key), '')
   // TODO: store a piped stream in memory to save some bigger job we just did
   //   also, doesn't make sense to read from FS every time
@@ -168,6 +201,7 @@ async function streamAndCache(key, cache, response) {
   const readable = Readable.from(passThrough)
 
   // force async so other threads can answer page requests during conversion
+  let chunks = []
   Promise.resolve(new Promise(resolve => {
     readable.on('data', chunks.push.bind(chunks))
     readable.on('end', resolve.bind(null, chunks))
@@ -182,18 +216,19 @@ async function streamAndCache(key, cache, response) {
 
 
 async function streamImageFile(filename, response) {
-  if (!IMAGE_FORMATS.includes(path.extname(filename))) {
-    return false
-  }
 
   let pk3File
   if (typeof filename == 'object') {
     pk3File = filename
   } else
-    if (fs.existsSync(filename)) {
+    if (!fs.existsSync(filename)) {
       pk3File = await findAlt(filename)
+    } else {
+      pk3File = filename
     }
-  if (!pk3File) {
+
+  if (!pk3File
+    || !IMAGE_FORMATS.includes(path.extname(typeof pk3File == 'object' ? pk3File.name : pk3File))) {
     return false
   }
 
@@ -202,7 +237,9 @@ async function streamImageFile(filename, response) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
   }
 
-  let pk3InnerPath = fullPath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  let pk3InnerPath = typeof filename == 'object'
+   ? filename.name 
+   : filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3Name
@@ -210,7 +247,7 @@ async function streamImageFile(filename, response) {
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
 
   if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')] != 'undefined') {
-    if(typeof response.setHeader == 'function') {
+    if (typeof response.setHeader == 'function') {
       response.setHeader('content-type', 'image/jpg')
       response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.jpg')])
     } else {
@@ -221,7 +258,7 @@ async function streamImageFile(filename, response) {
     return true
   } else
     if (typeof CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')] != 'undefined') {
-      if(typeof response.setHeader == 'function') {
+      if (typeof response.setHeader == 'function') {
         response.setHeader('content-type', 'image/png')
         response.send(CONVERTED_IMAGES[key.replace(path.extname(pk3InnerPath), '.png')])
       } else {
@@ -235,7 +272,7 @@ async function streamImageFile(filename, response) {
   // TODO: call out to this somehow and result results
   isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
   let newExt = isOpaque ? '.jpg' : '.png'
-  if(typeof response.setHeader == 'function') {
+  if (typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'image/' + newExt.substring(1))
   }
   // .pipe(response)
@@ -255,7 +292,7 @@ async function streamFile(filename, stream) {
   if (typeof filename == 'object') {
     pk3File = filename
   } else
-    if (fs.existsSync(filename)) {
+    if (!fs.existsSync(filename)) {
       pk3File = await findAlt(filename)
     }
   if (!pk3File) {
@@ -267,18 +304,17 @@ async function streamFile(filename, stream) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
   }
 
-  let pk3InnerPath = fullPath.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3Name
       // not possible?
       ? path.join(pk3Name, pk3InnerPath) : pk3File)
 
-  let passThrough
-  if ((passThrough = streamAudioFile(pk3File, stream))) {
+  if ((passThrough = await streamAudioFile(pk3File, stream))) {
     return passThrough
   } else
-    if ((passThrough = streamImageFile(pk3File, stream))) {
+    if ((passThrough = await streamImageFile(pk3File, stream))) {
       return passThrough
     } else
       if (pk3Name && typeof pk3File == 'object' && !pk3File.isDirectory
@@ -286,15 +322,17 @@ async function streamFile(filename, stream) {
         return true
       }
 
-  if(!fs.statSync(pk3File).isDirectory()) {
+
+  if (fs.statSync(pk3File).isDirectory()) {
     return false
   }
 
   // TODO: cache read in CONVERTED_FILES?
   //passThrough.pipe(response)
   //passThrough.end(CONVERTED_FILES[strippedKey] || cache[key])
-  if(typeof response.setHeader == 'function') {
-    response.sendFile(pk3File)
+  if (typeof stream.setHeader == 'function') {
+    stream.sendFile(pk3File)
+    return true
   } else {
     passThrough = fs.createReadStream(pk3File)
     passThrough.pipe(stream)
@@ -303,6 +341,7 @@ async function streamFile(filename, stream) {
 }
 
 module.exports = {
+  CONVERTED_FILES,
   streamAudioFile,
   streamImageFile,
   streamFile,

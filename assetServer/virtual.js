@@ -6,9 +6,12 @@ const {
   ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
   getGames, MODS_NAMES,
 } = require('../utilities/env.js')
-
+const GAMEDIRS = {}
 
 function gameDirectories(basegame, unexisting) {
+  if(!unexisting && typeof GAMEDIRS[basegame] != 'undefined') {
+    return GAMEDIRS[basegame]
+  }
   const GAME_MODS = getGames()
   if(!GAME_MODS.includes(basegame)
     // CODE REVIEW: allow other detected directory names to
@@ -38,7 +41,8 @@ function gameDirectories(basegame, unexisting) {
   if(unexisting || fs.existsSync(path.join(STEAMPATH, basegame.toLocaleLowerCase()))) {
     GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame.toLocaleLowerCase()))
   }
-  return GAME_DIRECTORIES.filter((g, i, arr) => arr.indexOf(g) == i)
+  GAMEDIRS[basegame] = GAME_DIRECTORIES.filter((g, i, arr) => arr.indexOf(g) == i)
+  return GAMEDIRS[basegame]
 }
 
 // virtual file-system
@@ -63,16 +67,24 @@ function buildDirectories() {
 }
 
 
+// prevent lots of file-system checks by caching real file's paths here
+const CACHY_PATHY = {}
+
+
 function findFile(filename) {
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
+  }
+  // TODO: verify all these paths reset the FS-watcher
+  if(typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
+    return CACHY_PATHY[filename.toLocaleLowerCase()]
   }
 
   let BUILD_ORDER = buildDirectories()
   for(let i = 0; i < BUILD_ORDER.length; i++) {
     let newPath = path.join(BUILD_ORDER[i], filename)
     if(fs.existsSync(newPath)) {
-      return newPath
+      return (CACHY_PATHY[filename.toLocaleLowerCase()] = newPath)
     }
   }
 
@@ -86,10 +98,11 @@ function findFile(filename) {
     let newPath = path.join(GAME_ORDER[i], filename.substr(modname.length))
     //console.log(newPath)
     if(fs.existsSync(newPath)) {
-      return newPath
+      return (CACHY_PATHY[filename.toLocaleLowerCase()] = newPath)
     }
   }
 
+  // no cachy
   let pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
   if(pk3File.length < filename.length) {
     return findFile(pk3File)
@@ -99,6 +112,7 @@ function findFile(filename) {
 
 
 module.exports = {
+  CACHY_PATHY,
   findFile,
   buildDirectories,
   gameDirectories,

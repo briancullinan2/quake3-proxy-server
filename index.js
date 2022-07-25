@@ -129,11 +129,11 @@ const CLI_COMMANDS = {
     previousLog(GAME_SERVERS)
   },
   'maps': function () {
-    previousLog(EXECUTING_MAPS)
+    previousLog('Renderers:', EXECUTING_MAPS)
     let jobs = listJobs()
-    previousLog(jobs)
-    previousLog(Object.keys(EXECUTING_LVLSHOTS))
-    previousLog(jobs.map(mapname => EXECUTING_LVLSHOTS[mapname][0]))
+    previousLog('All keys', Object.keys(EXECUTING_LVLSHOTS))
+    previousLog('Map w/ Jobs:', jobs)
+    previousLog('Running:', jobs.map(mapname => EXECUTING_LVLSHOTS[mapname][0]))
   }
 }
 
@@ -222,7 +222,9 @@ function main() {
     process.on('unhandledRejection', exceptionHandler)
     process.on('uncaughtException', exceptionHandler)
 
-    return projectWatcher()
+    if(!START_SERVICES.includes('debug')) {
+      return projectWatcher()
+    }
   }
 
   parseAguments(process.argv)

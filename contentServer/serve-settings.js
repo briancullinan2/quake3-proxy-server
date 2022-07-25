@@ -1,10 +1,11 @@
 const fs = require('fs')
 const path = require('path')
+
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
-const { getGame, getGames, repackedCache, downloadCache } = require('../utilities/env.js')
-const { calculateSize } = require('../utilities/async-size.js')
+const { buildDirectories } = require('../assetServer/virtual.js')
+const { getGame, repackedCache, downloadCache } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
+const { listGames } = require('../gameServer/list-games.js')
 
 let ASSET_FEATURES = [{
   title: 'Shaders',
@@ -59,45 +60,6 @@ let ASSET_MENU = [{
   link: 'assets#games'
 }]
 
-
-
-// TODO: replace with filteredGames + formattedGames() 
-//   or something to add `size:` and promises
-async function listGames(unexisting) {
-  let zeroTimer = new Promise(resolve => setTimeout(
-    resolve.bind(null, '0B (Calculating)'), 200))
-  let promises = []
-  let GAME_MODS = getGames()
-  for(let j = 0; j < GAME_MODS.length; j++) {
-    let GAME_ORDER = gameDirectories(GAME_MODS[j], unexisting)
-    //let nonExistingGames = []
-    //let includedGames = []
-    for(let i = 0; i < GAME_ORDER.length; i++) {
-      let exists = fs.existsSync(GAME_ORDER[i])
-      // force the directory size calculations to queue in parallel
-      //   i.e. only wait for setTimeout(calculating, 100) to run 1
-      //   time overall, instead of 100ms every iteration.
-      // page will return MUCH faster this way 
-      async function returnPromise() {
-        return {
-          name: (exists === false ? '(unused) ' : '') 
-            + path.basename(path.dirname(GAME_ORDER[i])) 
-            + '/' + path.basename(GAME_ORDER[i]) + '/',
-          mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
-          absolute: path.dirname(GAME_ORDER[i]),
-          exists: exists,
-          size: exists 
-            // I had this idea, what if a page could take a specific amount of time,
-            //   and the server only tries to get done what it thinks it can in that.
-            ? await Promise.any([calculateSize(GAME_ORDER[i]), zeroTimer]) : void 0,
-          link: GAME_MODS[j] + '/',
-        }
-      }
-      promises.push(Promise.resolve(returnPromise()))
-    }
-  }
-  return await Promise.all(promises)
-}
 
 
 function renderFilelist(node) {

@@ -38,7 +38,8 @@ async function getIndex(pk3Path) {
       reject(new Error(err))
     })
   })
-
+  const lowercaseHashed = {}
+  zip.lowercaseHashed = lowercaseHashed
   for(var i = 0; i < index.length; i++) {
     var entry = index[i]
     entry.key = entry.name
@@ -46,6 +47,7 @@ async function getIndex(pk3Path) {
                            .replace(/\/$/, '')
     entry.zip = zip
     entry.file = pk3Path || zip.file
+    lowercaseHashed[entry.name.toLocaleLowerCase()] = entry
   }
   EXISTING_MTIME[pk3Path] = Date.now()
   return (EXISTING_ZIPS[pk3Path] = index)
@@ -84,14 +86,20 @@ async function streamFile(file, stream) {
 
 async function fileKey(pk3Path, fileKey) {
   let index = await getIndex(pk3Path)
-  for(let i = 0; i < index.length; i++) {
+  if(index.length == 0) {
+    return false
+  }
+  if(typeof index[0].zip.lowercaseHashed[fileKey.toLocaleLowerCase()] != 'undefined') {
+    return index[0].zip.lowercaseHashed[fileKey.toLocaleLowerCase()]
+  }
+  /* for(let i = 0; i < index.length; i++) {
     // match the converted filename
     if(index[i].isDirectory
         || index[i].name.localeCompare( fileKey, 'en', { sensitivity: 'base' } ) != 0) {
       continue
     }
     return index[i]
-  }
+  } */
 }
 
 

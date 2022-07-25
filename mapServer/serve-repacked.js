@@ -104,9 +104,9 @@ async function serveRepacked(request, response, next) {
 
   let newFile
   if(pk3File) {
-    newFile = findAlt(path.join(modname, pk3File, pk3InnerPath))
+    newFile = await findAlt(path.join(modname, pk3File, pk3InnerPath))
   } else {
-    newFile = findAlt(path.join(modname, filename))
+    newFile = await findAlt(path.join(modname, filename))
   }
 
   if (!isIndex && !newFile) {
