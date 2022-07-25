@@ -288,6 +288,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'dedicated', '0',
       '+set', 'developer', '1',
       '+set', 'r_headless', '1',
+      '+set', 's_initsound', '0',
       '+set', 'in_mouse', '0',
       '+set', 'sv_master2', '""',
       '+set', 'sv_master3', '""',
@@ -296,6 +297,7 @@ async function serveLvlshot(mapname, waitFor) {
       // snapshot server has low FPS
       '+set', 'com_yieldCPU', '16',
       '+set', 'com_maxfps', '3',
+      '+set', 'com_maxfpsUnfocused', '3',
       '+set', 'snaps', '10',
       '+set', 'sv_fps', '10',
       '+set', 'rconPassword2', 'password1',

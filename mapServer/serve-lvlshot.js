@@ -7,6 +7,7 @@ const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
 const { FS_GAMEHOME } = require('../utilities/env.js')
+const { updatePageViewers } = require('../contentServer/session.js')
 
 
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
@@ -129,7 +130,7 @@ async function execLevelshot(mapname, waitFor) {
         mapname: mapname,
         created: Date.now(),
         subscribers: [],
-        cmd: ' ; wait 16 ; ' + task.cmd
+        cmd: task.cmd
       })
     }
     if(existing.length == 0) {
@@ -153,19 +154,19 @@ async function execLevelshot(mapname, waitFor) {
 
   // figure out which images are missing and do it in one shot
   queueTask({
-    cmd: ' ; vstr setupLevelshot ; levelshot ; wait 6; screenshot levelshot ; ',
+    cmd: ' ; vstr setupLevelshot ; levelshot ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupLevelshot ; levelshot ; wait 6; screenshot ${mapname}_screenshot0001 ; `,
+    cmd: ` ; vstr setupLevelshot ; levelshot ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0001.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupBirdseye ; wait 6; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
+    cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0002.tga')
   })
@@ -192,22 +193,26 @@ async function execLevelshot(mapname, waitFor) {
     })
   }
 
+  // TODO: FIX THIS, by checking logs? only if I absolutely have to!
+
+
+
   // TODO: export / write entities / mapname.ents file
-  //queueTask({
+  queueTask({
     // special exception
-  //  cmd: ' ; saveents ; ',
-  //  resolve: resolveEnts,
-  //  outFile: path.join(basegame, 'maps', mapname + '.ent')
-  //})
+    cmd: ' ; saveents ; ',
+    resolve: resolveEnts,
+    outFile: path.join(basegame, 'maps', mapname + '.ent')
+  })
 
 
   // TODO: figure out how to resolve a client command
-  //queueTask({
+  queueTask({
     // special exception
-  //  cmd: ' ; imagelist ; ',
-  //  resolve: resolveImages,
-  //  outFile: path.join(basegame, 'maps', mapname + '-images.txt')
-  //})
+    cmd: ' ; imagelist ; ',
+    resolve: resolveImages,
+    outFile: path.join(basegame, 'maps', mapname + '-images.txt')
+  })
 
   /*
   let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')

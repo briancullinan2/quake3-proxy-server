@@ -63,6 +63,7 @@ async function getMapInfo(mapname) {
   // TODO: combine with BSP loop above
   let entities = ''
   let images = []
+  /*
   for(let i = 0; i < caches.length; i++) {
 
   // TODO: contribute to lvlshot database cached locally
@@ -78,6 +79,7 @@ async function getMapInfo(mapname) {
     }
 
   }
+  */
 
   // TODO: contribute to lvlshot database cached locally
   if(images.length == 0 || entities.length == 0) {

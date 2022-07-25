@@ -231,7 +231,7 @@ async function print(socket, message, rinfo) {
   }
   SERVER.timeUpdated = Date.now()
 
-  //console.log(lines)
+  console.log(lines)
 
   if(typeof SERVER.logs == 'undefined') {
     SERVER.logs = ''
