@@ -6,7 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const { PassThrough, Readable } = require('stream')
 
-const { fileKey, streamFileKey } = require('../utilities/zip.js')
+const { fileKey, streamKey } = require('../utilities/zip.js')
 const { CACHY_PATHY, findFile } = require('../assetServer/virtual.js')
 const { IMAGE_FORMATS, AUDIO_FORMATS, MODS_NAMES, getGames } = require('../utilities/env.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
@@ -92,7 +92,6 @@ async function findAlt(filename) {
     }
 
     // TODO: redirect models IQM and MD3 just like audio/image files
-
     if (file) {
       return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
     }
@@ -340,11 +339,15 @@ async function streamFile(filename, stream) {
   }
 
   let pk3Name
+  let pk3InnerPath
   if (typeof pk3File == 'string' && pk3File.match(/\.pk3$/i)) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
+    pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  } else
+  if(typeof pk3File == 'object') {
+    pk3Name = pk3File.file
+    pk3InnerPath = pk3File.name
   }
-
-  let pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
 
   let key = typeof pk3File == 'object'
     ? (pk3File.file + '/' + pk3File.name) : (pk3Name
@@ -357,8 +360,8 @@ async function streamFile(filename, stream) {
     if ((passThrough = await streamImageFile(pk3File, stream))) {
       return passThrough
     } else
-      if (pk3Name && typeof pk3File == 'object' && !pk3File.isDirectory
-        && await streamFileKey(pk3File, pk3InnerPath, stream)) {
+      if (pk3Name && typeof pk3File == 'object' && !pk3File.isDirectory) {
+        Promise.resolve(streamKey(pk3File, stream))
         return true
       }
 

@@ -4,7 +4,7 @@ const path = require('path')
 const { PassThrough } = require('stream')
 
 const { execCmd } = require('../utilities/exec.js')
-const { fileKey, streamFile } = require('../utilities/zip.js')
+const { fileKey, streamKey } = require('../utilities/zip.js')
 
 
 async function opaqueCmd(imagePath, unsupportedFormat, wait) {
@@ -17,7 +17,7 @@ async function opaqueCmd(imagePath, unsupportedFormat, wait) {
     if (file) {
       let passThrough = new PassThrough()
       isOpaque = (await Promise.all([
-        streamFile(file, passThrough),
+        streamKey(file, passThrough),
         execCmd('identify', ['-format', '\'%[opaque]\'',
           unsupportedExt.substring(1) + ':-'], { 
             wait: wait,

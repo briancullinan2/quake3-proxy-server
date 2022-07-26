@@ -5,7 +5,7 @@ const { PassThrough } = require('stream')
 
 const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
-const { streamFileKey, streamFile } = require('../utilities/zip.js')
+const { streamFileKey, streamKey } = require('../utilities/zip.js')
 
 const CONVERTED_IMAGES = {}
 
@@ -16,7 +16,7 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
     console.log('Converting: ', unsupportedFormat)
     let passThrough = new PassThrough()
     if(typeof imagePath == 'object') {
-      streamFile(imagePath, passThrough)
+      streamKey(imagePath, passThrough)
     } else {
       streamFileKey(imagePath, unsupportedFormat, passThrough)
     }

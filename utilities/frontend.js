@@ -78,22 +78,32 @@ function pageBindings() {
 
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
 	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
-	if((typeof SYS != 'undefined' && SYS.state < 2)
-      || (connectAddr && typeof Cbuf_AddText != 'undefined')) {
+	if(connectAddr 
+      && (typeof SYS != 'undefined'
+      && typeof Cbuf_AddText != 'undefined')) {
     let reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
-    if(!reconnect.includes(connectAddr[0])) {
+    if(SYS.state < 2 || !reconnect.includes(connectAddr[0])) {
       Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
     }
   }
   let MATCH_MAPNAME = /maps\/([^\/]+)$/gi
 	let mapname = MATCH_MAPNAME.exec(window.location.pathname + '')
-	if(typeof SYS != 'undefined' && SYS.state < 2
-      || (mapname && typeof Cbuf_AddText != 'undefined')) {
-    if(mapname != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
+	if(mapname 
+      && (typeof SYS != 'undefined'
+      && typeof Cbuf_AddText != 'undefined')) {
+    if(SYS.state < 2 
+      || mapname != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
       Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
     }
   }
 
+  // TODO: somehow match client awareness with server session ID to restore clients
+  //   maybe this is a planet_quake feature?
+  if(!mapname && !reconnect && SYS.state == 8
+    && !window.location.pathname.includes('index.html')) {
+    VM_Call( HEAPU32[uivm >> 2], 1, 7 /* UI_SET_ACTIVE_MENU */, 0 /* UIMENU_NONE */ );
+    Cbuf_AddText(stringToAddress('team s ;\n'))
+  }
 }
 
 window.addEventListener('load', (event) => {

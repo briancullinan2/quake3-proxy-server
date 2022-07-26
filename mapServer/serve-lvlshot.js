@@ -8,6 +8,7 @@ const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
 const { FS_GAMEHOME } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { streamFile } = require('../assetServer/stream-file.js')
 
 
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')

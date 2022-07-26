@@ -96,12 +96,15 @@ async function serveList(request, response, next) {
 
 
 async function serveRcon(request, response, next) {
-  let filename = path.basename(request.originalUrl)
+  let filename = request.originalUrl.replace(/\?.*$/, '')
   let modname = path.basename(filename).toLocaleLowerCase()
-  let serverInfo = GAME_SERVERS[filename]
+  if(!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
+    return next()
+  }
+  let serverInfo = GAME_SERVERS[modname]
   if(!serverInfo) { // try to lookup by domain name
-    let address = await lookupDNS(filename.split(':')[0])
-    serverInfo = GAME_SERVERS[address + ':' + filename.split(':')[1]]
+    let address = await lookupDNS(modname.split(':')[0])
+    serverInfo = GAME_SERVERS[address + ':' + modname.split(':')[1]]
   }
   if(!serverInfo) {
     return next(new Error('Game not found.'))
@@ -139,7 +142,7 @@ async function serveRcon(request, response, next) {
   let logs = serverInfo.logs || '(no logs to show)'
 
   return response.send(renderIndex(`
-    ${renderGamesMenu(filename)}
+    ${renderGamesMenu(modname)}
     <div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="rcon-info" class="info-layout">
     <h2>RCon: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
@@ -181,14 +184,18 @@ function renderGamesMenu(filename) {
 
 
 async function serveGameInfo(request, response, next) {
-  let filename = path.basename(request.originalUrl)
+  let filename = request.originalUrl.replace(/\?.*$/, '')
   let isJson = request.originalUrl.match(/\?json/)
   let modname = path.basename(filename).toLocaleLowerCase()
-  let serverInfo = GAME_SERVERS[filename]
-  if(!serverInfo) { // try to lookup by domain name
-    let address = await lookupDNS(filename.split(':')[0])
-    serverInfo = GAME_SERVERS[address + ':' + filename.split(':')[1]]
+  if(!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
+    return next()
   }
+  let serverInfo = GAME_SERVERS[modname]
+  if(!serverInfo) { // try to lookup by domain name
+    let address = await lookupDNS(modname.split(':')[0])
+    serverInfo = GAME_SERVERS[address + ':' + modname.split(':')[1]]
+  }
+  
   if(!serverInfo) {
     return next(new Error('Game not found.'))
   }
@@ -231,7 +238,7 @@ async function serveGameInfo(request, response, next) {
 
 
   return response.send(renderIndex(`
-    ${renderGamesMenu(filename)}
+    ${renderGamesMenu(modname)}
     ${renderEngine()}
     <div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">
@@ -245,7 +252,7 @@ async function serveGameInfo(request, response, next) {
     ${renderList('/menu/', [
       {
         title: 'Connect',
-        link: 'index.html?connect%20' + filename,
+        link: 'index.html?connect%20' + modname,
       },
       {
         title: 'Maps',

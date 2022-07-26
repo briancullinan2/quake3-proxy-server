@@ -59,7 +59,7 @@ const EXTRACTING_ZIPS = {}
 
 
 
-async function streamFile(file, stream) {
+async function streamKey(file, stream) {
   return await new Promise(function (resolve, reject) {
     let fullPath = file.file + '/' + file.key
     console.log('Extracting: ' + fullPath)
@@ -107,7 +107,7 @@ async function fileKey(pk3Path, fileKey) {
 async function streamFileKey(pk3Path, key, stream) {
   let file = await fileKey(pk3Path, key)
   if(file) {
-    await streamFile(file, stream)
+    await streamKey(file, stream)
     return true
   }
   return false
@@ -294,7 +294,7 @@ module.exports = {
   EXISTING_ZIPS,
   getIndex,
   streamFileKey,
-  streamFile,
+  streamKey,
   readFileKey,
   fileKey,
   filteredIndex,

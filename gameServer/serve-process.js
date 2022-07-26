@@ -6,8 +6,8 @@ const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
 const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { EXECUTING_MAPS, RESOLVE_DEDICATED, STATUS_MENU, 
-    GAME_SERVERS } = require('../gameServer/processes.js')
+const { EXECUTING_MAPS, RESOLVE_DEDICATED, STATUS_MENU,
+  GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 
 
@@ -16,13 +16,13 @@ const DEDICATED_TIMEOUT = 5000
 
 async function serveDedicated() {
   // only ever start 1 control server
-  if(Object.keys(RESOLVE_DEDICATED).length > 0) {
+  if (Object.keys(RESOLVE_DEDICATED).length > 0) {
     return
   }
 
   // only start one dedicated server at a time
   let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => list.length > 0)[0]
-  if(challenge) {
+  if (challenge) {
     return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
   }
 
@@ -35,7 +35,7 @@ async function serveDedicated() {
     })
 
     let ps = await dedicatedCmd([
-      '+set', 'sv_pure', '1', 
+      '+set', 'sv_pure', '1',
       '+set', 'dedicated', '2',
       '+set', 'developer', '1',
       '+set', 'sv_master2', '"207.246.91.235:27950"',
@@ -48,14 +48,14 @@ async function serveDedicated() {
       '+set', 'snaps', '60',
       '+set', 'sv_fps', '100',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
-      '+map', 'lsdm3_v1', 
+      '+map', 'lsdm3_v1',
       '+wait', '300', '+heartbeat',
     ], function (lines) {
       const SERVER = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
-      if(!SERVER) {
+      if (!SERVER) {
         //console.log(lines)
       } else {
-        if(typeof SERVER.logs == 'undefined') {
+        if (typeof SERVER.logs == 'undefined') {
           SERVER.logs = ''
         }
         SERVER.logs += lines + '\n'
@@ -96,22 +96,22 @@ async function serveProcess(request, response, next) {
     }
   })
   let engines = Object.keys(EXECUTING_MAPS)
-  .map(challenge => {
-    let server = EXECUTING_MAPS[challenge]
-    let pid = server.pid
-    let serverInfo = Object.values(GAME_SERVERS)
+    .map(challenge => {
+      let server = EXECUTING_MAPS[challenge]
+      let pid = server.pid
+      let serverInfo = Object.values(GAME_SERVERS)
         .filter(server => server.qps_serverId == challenge)[0]
-    console.log(EXECUTING_MAPS)
-    if(!serverInfo) {
-      return
-    }
-    return {
-      name: server.mapname,
-      assignments: pid,
-      link: path.join('/rcon/', serverInfo.address + ':' + serverInfo.port)
-    }
-  })
-  .filter(zip => zip)
+      console.log(EXECUTING_MAPS)
+      if (!serverInfo) {
+        return
+      }
+      return {
+        name: server.mapname,
+        assignments: pid,
+        link: path.join('/rcon/', serverInfo.address + ':' + serverInfo.port)
+      }
+    })
+    .filter(zip => zip)
 
   return response.send(renderIndex(
     renderMenu(STATUS_MENU, 'downloads-menu')
@@ -135,10 +135,14 @@ async function serveProcess(request, response, next) {
 
 function renderProcess(node) {
   let result = '<li>'
-  result += `<a href="${node.link}">${node.name}</a>`
-  result += `<span>${typeof node.size == 'undefined' 
+  if (node.link) {
+    result += `<a href="${node.link}">${node.name}</a>`
+  } else {
+    result += `<span>${node.name}</span>`
+  }
+  result += `<span>${typeof node.size == 'undefined'
     ? '&nbsp;' : formatSize(node.size)}</span>`
-if (typeof node.mtime != 'undefined') {
+  if (typeof node.mtime != 'undefined') {
     result += `<span>${node.mtime.getMonth() + 1}/${node.mtime.getDate()} `
     result += `${node.mtime.getHours()}:${node.mtime.getMinutes()}</span>`
   } else {

@@ -5,7 +5,7 @@ const path = require('path')
 const { PassThrough } = require('stream')
 
 const { execCmd } = require('../utilities/exec.js')
-const { fileKey, streamFile } = require('../utilities/zip.js')
+const { fileKey, streamKey } = require('../utilities/zip.js')
 
 const CONVERTED_SOUNDS = {}
 
@@ -58,7 +58,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
   let logs
   if(passThrough) {
     logs = (await Promise.all([
-      streamFile(file, passThrough),
+      streamKey(file, passThrough),
       execCmd(cmd, startArgs, {
         once: path.join(file.file, unsupportedFormat),
         write: typeof newPath == 'string' ? void 0 : newPath,

@@ -4,7 +4,7 @@ const path = require('path')
 const { PassThrough } = require('stream')
 
 
-const { streamFileKey, streamFile } = require('../utilities/zip.js')
+const { streamKey } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
@@ -24,7 +24,7 @@ async function paletteCmd(imagePath) {
   }
 
   if(passThrough) {
-    streamFile(imagePath, passThrough)
+    streamKey(imagePath, passThrough)
   } else {
     throw new Error('File not found: ' + imagePath)
   }

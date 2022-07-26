@@ -26,6 +26,10 @@ Reversing these two principals takes a lot of extra FS database lookup code.
 
 ## Components
 
+Resiliance is the most important quality here. No one likes a game server that
+crashes mid-match. I'm even planning a moderation function to restore match states
+from authenticated clients by combining single player features with specific server-side memory hacks.
+
 - contentServer - serve traditional HTTP content using a layered file-system
 similar to Quake 3's virtual file-system.
 
@@ -117,6 +121,9 @@ the average of the full (missing) image.
 * (IN PROGRESS) Game publishing services and engine menu overlay
 * Automated match-making and new in-game UX
 * Integrated development environment, map editor, code editor, self-hosted
+* Add .dm_68 demo conversion to video to renderer service
+* Add drag and drop entity location service on top of the birdeye map
+* Add heatmaps and player stats, planet_quake scope???
 
 
 <sup><sub>powered by [q3e](https://github.com/briancullinan/Quake3e)</sub></sup>

@@ -3,11 +3,10 @@ const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
 const { MAP_DICTIONARY } = require('../mapServer/serve-download.js')
-const { streamFileKey } = require('../utilities/zip.js')
 const { SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS, TEMP_DIR, getGame } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { listPk3s } = require('../assetServer/layered.js')
-const { streamFile, getIndex } = require('../utilities/zip.js')
+const { streamFileKey, streamKey, getIndex } = require('../utilities/zip.js')
 const { zipCmd } = require('../cmdServer/cmd-zip.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
@@ -97,7 +96,7 @@ async function processImage(file, newFile) {
       writeStream.close()
     } else {
       let writeStream = fs.createWriteStream(newFile)
-      await streamFile(file, writeStream)
+      await streamKey(file, writeStream)
       writeStream.close()
     }
   return newFile
