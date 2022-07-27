@@ -54,7 +54,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
     ])
   }
 
-  console.log('Transcoding: ', typeof audioPath == 'object' ? audioPath.name : audioPath, unsupportedFormat)
+  //console.log('Transcoding: ', typeof audioPath == 'object' ? audioPath.name : audioPath, unsupportedFormat)
   let logs
   if(passThrough) {
     logs = (await Promise.all([

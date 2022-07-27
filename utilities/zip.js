@@ -62,7 +62,7 @@ const EXTRACTING_ZIPS = {}
 async function streamKey(file, stream) {
   return await new Promise(function (resolve, reject) {
     let fullPath = file.file + '/' + file.key
-    console.log('Extracting: ' + fullPath)
+    //console.log('Extracting: ' + fullPath)
     EXTRACTING_ZIPS[fullPath] = new Date()
     updatePageViewers('/process')
     file.zip.stream(file.key, (err, stm) => {

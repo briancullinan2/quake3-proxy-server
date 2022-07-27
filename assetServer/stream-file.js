@@ -147,8 +147,6 @@ async function streamAudioFile(filename, response) {
   }
 
 
-
-
   let pk3Name
   if (typeof pk3File == 'string' && pk3File.match(/\.pk3$/i)) {
     pk3Name = filename.replace(/\.pk3.*/gi, '.pk3')
@@ -212,7 +210,9 @@ function streamAndCache(key, cache, response) {
   //   also, doesn't make sense to read from FS every time
   if (typeof CONVERTED_FILES[strippedKey] != 'undefined' || typeof cache[key] != 'undefined') {
     const passThrough = new PassThrough()
-    passThrough.pipe(response)
+    if(response) {
+      passThrough.pipe(response)
+    }
     passThrough.end(CONVERTED_FILES[strippedKey] || cache[key])
     return passThrough
   }
@@ -225,7 +225,9 @@ function streamAndCache(key, cache, response) {
   Promise.resolve(new Promise(resolve => {
     readable.on('data', chunks.push.bind(chunks))
     readable.on('end', resolve.bind(null, chunks))
-    passThrough.pipe(response)
+    if(response) {
+      passThrough.pipe(response)
+    }
   }).then(chunks => {
     cache[key] = CONVERTED_FILES[strippedKey] = Buffer.concat(chunks)
   }))
@@ -313,7 +315,6 @@ async function streamImageFile(filename, response) {
   if (typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'image/' + newExt.substring(1))
   }
-
   // .pipe(response)
   let passThrough = streamAndCache(newKey, CONVERTED_IMAGES, response)
   // force async so other threads can answer page requests during conversion
@@ -386,6 +387,7 @@ async function streamFile(filename, stream) {
 
 module.exports = {
   CONVERTED_FILES,
+  streamAndCache,
   streamAudioFile,
   streamImageFile,
   streamFile,

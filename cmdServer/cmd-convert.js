@@ -13,7 +13,7 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
 
   let unsupportedExt = path.extname(unsupportedFormat)
   if (typeof imagePath == 'object' || imagePath.match(/\.pk3$/i)) {
-    console.log('Converting: ', unsupportedFormat)
+    //console.log('Converting: ', unsupportedFormat)
     let passThrough = new PassThrough()
     if(typeof imagePath == 'object') {
       streamKey(imagePath, passThrough)
@@ -35,7 +35,7 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
       wait: wait,
     })
   } else {
-    console.log('Converting: ', imagePath)
+    //console.log('Converting: ', imagePath)
     return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
       quality ? quality : '20%', '-auto-orient', imagePath, 

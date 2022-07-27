@@ -94,6 +94,9 @@ async function resolveEnts(logs, task) {
 }
 
 
+const MATCH_FILELIST = /(Rcon from[^\n]*?command[0-9]+|name-------)\n([\s\S]*?)Total (models|images|resident)/gi
+
+
 async function resolveImages(logs, task) {
   if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
     // TODO: also check repackedCache() / tmp?
@@ -107,7 +110,8 @@ async function resolveImages(logs, task) {
   }
 
   let images = imageList[0].split('\n').slice(1, -3)
-    .map(line => (' ' + line).split(/\s+/ig).pop().trim()).join('\n')
+    .map(line => (' ' + line).split(/\s+/ig).pop().replace(/\^3/gi, '').trim())
+    .join('\n')
   CONVERTED_FILES[task.outFile] = images
   if (START_SERVICES.includes('cache')) {
     // save to repacked cache?
@@ -115,6 +119,64 @@ async function resolveImages(logs, task) {
   }
 }
 
+
+async function resolveModels(logs, task) {
+  if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
+    // TODO: also check repackedCache() / tmp?
+    return CONVERTED_FILES[task.outFile]
+  }
+
+  let search = MATCH_FILELIST
+  let match
+  let modelList
+  while (match = search.exec(logs)) {
+    if(match[0].includes('Total models')) {
+      modelList = match
+    }
+  }
+  if (!modelList) {
+    return false
+  }
+
+  let models = modelList[0].split('\n').slice(1, -3)
+    .map(line => (' ' + line).split(/\s+/ig).pop().replace(/\^3/gi, '').trim())
+    .join('\n')
+  CONVERTED_FILES[task.outFile] = models
+  if (START_SERVICES.includes('cache')) {
+    // save to repacked cache?
+    return CONVERTED_FILES[task.outFile]
+  }
+}
+
+
+async function resolveSounds(logs, task) {
+  if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
+    // TODO: also check repackedCache() / tmp?
+    return CONVERTED_FILES[task.outFile]
+  }
+
+  let search = MATCH_FILELIST
+  let match
+  let modelList
+  while (match = search.exec(logs)) {
+    if(match[0].includes('Total resident')) {
+      modelList = match
+    }
+  }
+  if (!modelList) {
+    return false
+  }
+
+  let sounds = modelList[0].split('\n').slice(1, -3)
+    .map(line => (' ' + line.replace('[resident ]', ''))
+    .split(/\s+/ig).pop().replace(/\^3/gi, '').trim())
+    .join('\n')
+  CONVERTED_FILES[task.outFile] = sounds
+  if (START_SERVICES.includes('cache')) {
+    // save to repacked cache?
+    return CONVERTED_FILES[task.outFile]
+  }
+}
 
 async function execLevelshot(mapname, waitFor) {
   let basegame = getGame()
@@ -220,13 +282,19 @@ async function execLevelshot(mapname, waitFor) {
     outFile: path.join(basegame, 'maps', mapname + '-images.txt')
   })
 
-  /*
-  let shaderFile = path.join(REPACKED_MAPS, mapname + '-shaders.txt')
-  if (!fs.existsSync(shaderFile)) {
-    newVstr += ' ; shaderlist ; '
-  }
-  */
-  //console.log(EXECUTING_LVLSHOTS[mapname])
+  queueTask({
+    // special exception
+    cmd: ' ; modellist ; ',
+    resolve: resolveModels,
+    outFile: path.join(basegame, 'maps', mapname + '-models.txt')
+  })
+
+  queueTask({
+    // special exception
+    cmd: ' ; s_list ; ',
+    resolve: resolveSounds,
+    outFile: path.join(basegame, 'maps', mapname + '-sounds.txt')
+  })
 
   // return promise wait on filtered tasks
   if (waitFor) {

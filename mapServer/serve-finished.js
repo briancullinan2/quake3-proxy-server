@@ -17,9 +17,9 @@ async function filterMappack(file) {
 }
 
 
-async function repackMappak(mapname) {
+async function repackMappak(modname, mapname) {
   // same thing except with additional individual pk3 assets
-  return await repackBasemap(mapname)
+  return await repackBasemap(modname, mapname)
 }
 
 
@@ -39,13 +39,13 @@ async function serveFinished(request, response, next) {
 
   let newZip
   if(path.basename(filename).match(/^pak0\.pk3$|^pak0$/i)) {
-    newZip = await repackBasepack()
+    newZip = await repackBasepack(modname)
   } else
   if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
     if(MAP_DICTIONARY[mapname].startsWith('pak')) {
-      newZip = await repackBasemap(mapname)
+      newZip = await repackBasemap(modname, mapname)
     } else {
-      newZip = await repackMappak(mapname)
+      newZip = await repackMappak(modname, mapname)
     }
   } 
   
