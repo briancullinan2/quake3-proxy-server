@@ -78,10 +78,11 @@ function pageBindings() {
 
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
 	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
+  let reconnect
 	if(connectAddr 
       && (typeof SYS != 'undefined'
       && typeof Cbuf_AddText != 'undefined')) {
-    let reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
+    reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
     if(SYS.state < 2 || !reconnect.includes(connectAddr[0])) {
       Cbuf_AddText(stringToAddress('connect ' + connectAddr[0] + ' ;\n'))
     }
@@ -99,7 +100,8 @@ function pageBindings() {
 
   // TODO: somehow match client awareness with server session ID to restore clients
   //   maybe this is a planet_quake feature?
-  if(!mapname && !reconnect && SYS.state == 8
+  if(!mapname && !reconnect 
+    && typeof SYS != 'undefined' && SYS.state == 8
     && !window.location.pathname.includes('index.html')) {
     VM_Call( HEAPU32[uivm >> 2], 1, 7 /* UI_SET_ACTIVE_MENU */, 0 /* UIMENU_NONE */ );
     Cbuf_AddText(stringToAddress('team s ;\n'))
@@ -369,6 +371,12 @@ function socketProxyControl(evt) {
 
     }
     // TODO: 
+    if(typeof json == 'string') {
+      debugger
+    } else
+    if(typeof json.length == 'undefined') {
+      debugger
+    } else
     if (typeof window.sessionCallback != 'undefined') {
       // replace contents of list instead of the entire dang DOM page
       for(let i = 0; i < json.length; i++) {

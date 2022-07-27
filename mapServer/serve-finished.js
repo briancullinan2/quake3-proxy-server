@@ -12,14 +12,25 @@ const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { findFile } = require('../assetServer/virtual.js')
 
 
+async function repackMappak(mapname) {
+  // same thing except with additional individual pk3 assets
+  return await repackBasemap(mapname)
+}
+
+
 async function serveFinished(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
   }
-  let modname = filename.split('/')[0]
+  // TODO: lookup modname like in stream-file
+  let modname = path.basename(path.dirname(filename))
+  if(modname == 'repacked') {
+    modname = getGame()
+  }
   let mapname = path.basename(filename).replace(path.extname(filename), '').toLocaleLowerCase()
-  let pk3s = await listMaps(modname || getGame())
+
+  await listMaps(modname)
 
   let newZip
   if(path.basename(filename).match(/^pak0\.pk3$|^pak0$/i)) {
@@ -27,9 +38,9 @@ async function serveFinished(request, response, next) {
   } else
   if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
     if(MAP_DICTIONARY[mapname].startsWith('pak')) {
-      newZip = await repackBasemap()
+      newZip = await repackBasemap(mapname)
     } else {
-      //newZip = await repackMappak()
+      newZip = await repackMappak(mapname)
     }
   } 
   

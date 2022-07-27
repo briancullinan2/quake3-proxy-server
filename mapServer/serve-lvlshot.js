@@ -4,12 +4,11 @@ const { PassThrough, Readable } = require('stream')
 
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
-const { FS_GAMEHOME } = require('../utilities/env.js')
+const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { streamFile } = require('../assetServer/stream-file.js')
-
+const { CONVERTED_FILES, streamFile } = require('../assetServer/stream-file.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 const LVLSHOTS = path.resolve(__dirname + '/../utilities/levelinfo.cfg')
 
@@ -37,7 +36,7 @@ async function serveLevelshot(request, response, next) {
     .replace(/_tracemap[0-9]+/gi, '')
   let localLevelshot = path.join(basegame, match, path.basename(filename))
   let matchName = (/screenshot[0-9]+|levelshot[0-9]+/).exec(filename)
-  if(!matchName) {
+  if (!matchName) {
     matchName = mapname
   } else {
     matchName = matchName[0]
@@ -46,7 +45,7 @@ async function serveLevelshot(request, response, next) {
   // still can't find a levelshot or screenshot, execute the engine to generate
   let timeout = new Promise(resolve => setTimeout(resolve, 200))
   let outFile = await Promise.any([execLevelshot(mapname, matchName), timeout])
-  if(outFile && outFile[0] && (await streamFile(outFile[0], response))) {
+  if (outFile && outFile[0] && (await streamFile(outFile[0], response))) {
     return
   }
 
@@ -68,14 +67,14 @@ async function resolveScreenshot(logs, task) {
   let WROTE_SCREENSHOT = /^Wrote\s+((levelshots\/|screenshots\/|maps\/).*?)$/gmi
   let screenName = task.outFile.replace(path.extname(task.outFile), '.tga')
   let newFile = findFile(screenName)
-  if(newFile && fs.existsSync(newFile)) {
+  if (newFile && fs.existsSync(newFile)) {
     return true
   }
   let match
   while (match = WROTE_SCREENSHOT.exec(logs)) {
     let outputEnts = path.join(FS_GAMEHOME, getGame(), match[1])
     if (!fs.existsSync(outputEnts)) {
-      if(START_SERVICES.includes('convert')) {
+      if (START_SERVICES.includes('convert')) {
         console.error(new Error('WARNING: output image not found ' + match[1]))
       }
       continue
@@ -96,26 +95,31 @@ async function resolveEnts(logs, task) {
 
 
 async function resolveImages(logs, task) {
+  if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
+    // TODO: also check repackedCache() / tmp?
+    return CONVERTED_FILES[task.outFile]
+  }
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
   if (!imageList) {
-    return
+    return false
   }
-  console.log(logs)
+
   let images = imageList[0].split('\n').slice(1, -3)
-    .map(line => (' ' + line).split(/\s+/ig).pop()).join('\n')
-  if(START_SERVICES.includes('cache')) {
-    return true
+    .map(line => (' ' + line).split(/\s+/ig).pop().trim()).join('\n')
+  CONVERTED_FILES[task.outFile] = images
+  if (START_SERVICES.includes('cache')) {
+    // save to repacked cache?
+    return CONVERTED_FILES[task.outFile]
   }
-  
 }
 
 
 async function execLevelshot(mapname, waitFor) {
   let basegame = getGame()
 
-  if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
+  if (typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
     EXECUTING_LVLSHOTS[mapname] = []
   }
 
@@ -124,7 +128,7 @@ async function execLevelshot(mapname, waitFor) {
   function queueTask(task) {
     let existing = EXECUTING_LVLSHOTS[mapname].filter(map => map.cmd == task.cmd)
     let newTask
-    if(existing.length > 0) {
+    if (existing.length > 0) {
       newTask = existing[0]
     } else {
       newTask = Object.assign({}, task, {
@@ -134,10 +138,11 @@ async function execLevelshot(mapname, waitFor) {
         cmd: task.cmd
       })
     }
-    if(existing.length == 0) {
+    if (existing.length == 0) {
       EXECUTING_LVLSHOTS[mapname].push(newTask)
     }
-    if(newTask.cmd.match(waitFor)) {
+    if (newTask.cmd.match(waitFor)
+      || newTask.outFile.match(waitFor)) {
       promises.push(newTask)
     }
     return newTask
@@ -145,7 +150,7 @@ async function execLevelshot(mapname, waitFor) {
 
   // TODO: this will need to be an API controllable by utilities/watch.js
   let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo.cfg')
-  if(!fs.existsSync(lvlconfig) || fs.statSync(lvlconfig).mtime > fs.statSync(LVLSHOTS).mtime) {
+  if (!fs.existsSync(lvlconfig) || fs.statSync(lvlconfig).mtime > fs.statSync(LVLSHOTS).mtime) {
     fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
     fs.writeFileSync(lvlconfig, fs.readFileSync(LVLSHOTS))
   }
@@ -185,7 +190,7 @@ async function execLevelshot(mapname, waitFor) {
     'skyboxvolume2',
     'skyboxvolume3',
   ]
-  for(let i = 0; i < TRACEMAPS.length; i++) {
+  for (let i = 0; i < TRACEMAPS.length; i++) {
     queueTask({
       // special exception
       cmd: ` ; minimap ${TRACEMAPS[i]} ${mapname}_tracemap${String(i + 1).padStart(4, '0')} ; `,
@@ -221,12 +226,12 @@ async function execLevelshot(mapname, waitFor) {
     newVstr += ' ; shaderlist ; '
   }
   */
- //console.log(EXECUTING_LVLSHOTS[mapname])
+  //console.log(EXECUTING_LVLSHOTS[mapname])
 
   // return promise wait on filtered tasks
-  if(waitFor) {
+  if (waitFor) {
     Promise.resolve(processQueue())
-    if(promises.length == 0) {
+    if (promises.length == 0) {
       return
     } else {
       return await Promise.all(promises.map(task => new Promise(resolve => {

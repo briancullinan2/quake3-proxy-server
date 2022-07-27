@@ -124,6 +124,8 @@ the average of the full (missing) image.
 * Add .dm_68 demo conversion to video to renderer service
 * Add drag and drop entity location service on top of the birdeye map
 * Add heatmaps and player stats, planet_quake scope???
+* Integrate https://caniuse.com/offscreencanvas for better front-end 
+   responsiveness and needed for studio-style video features.
 
 
 <sup><sub>powered by [q3e](https://github.com/briancullinan/Quake3e)</sub></sup>

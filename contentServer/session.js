@@ -76,7 +76,7 @@ async function updatePageViewers(route) {
 
         } else {
           */
-          updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route)
+        updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route)
         //}
       }
 

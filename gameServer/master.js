@@ -1,3 +1,5 @@
+// THIS IS MASTER PROTOCOL STUFF
+
 
 const { parseOOB } = require('../proxyServer/socks5.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
@@ -18,13 +20,13 @@ const RESOLVE_LOGS = {}
 
 function sendOOB(socket, message, rinfo) {
   let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(
-    message.split('').map(c => c.charCodeAt(0)))
+      message.split('').map(c => c.charCodeAt(0)))
   if (typeof socket._socket == 'object') {
     socket.send(Buffer.from(response), { binary: true })
   } else {
     socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
-    //socket.send(Buffer.from(response), 0, response.length, rinfo.port, rinfo.address)
   }
+  rinfo.timeSent = Date.now()
 }
 
 
@@ -33,6 +35,7 @@ async function heartbeat(socket, message, rinfo) {
   // wait for a successful infoResponse before confirming
   if(typeof SERVER == 'undefined') {
     SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    SERVER.timeAdded = Date.now()
   }
   if(typeof SERVER.challenge == 'undefined') {
     SERVER.challenge = buildChallenge()
@@ -108,8 +111,7 @@ async function statusResponse(socket, message, rinfo) {
     }
     if(typeof infos.qps_pid == 'undefined' 
       && EXECUTING_MAPS[infos.qps_serverId].pid) {
-      sendOOB(socket, 'rcon password1 sets qps_pid ' 
-        + EXECUTING_MAPS[infos.qps_serverId].pid + ' ; wait 1 ; heartbeat ; ')
+      sendOOB(socket, 'rcon password1 sets qps_pid ' + EXECUTING_MAPS[infos.qps_serverId].pid, infos)
     }
   }
 
@@ -132,7 +134,9 @@ async function infoResponse(socket, message, rinfo) {
   let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   if(typeof SERVER == 'undefined') {
     SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
+    SERVER.timeAdded = Date.now()
   }
+  SERVER.timeUpdated = Date.now()
 
   let infos = messageString.split(/\\/gi)
     .reduce(function (obj, item, i, arr) {

@@ -1,9 +1,16 @@
+// THIS IS MASTER SERVICE STUFF
+
 const { lookupDNS } = require('../utilities/dns.js')
 const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { EXECUTING_MAPS, RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
+
+
+const GAMESERVER_TIMEOUT = 60 * 1000 * 3
+const GAMEINFO_TIMEOUT = 60 * 1000
+let masterTimer
 
 
 const MASTER_SERVERS = [
@@ -48,24 +55,58 @@ async function createMasters(mirror) {
     }
   }
 
-  // look for existing servers we might have left laying around from last session to commandeer
-  setTimeout(function () {
-    // don't hold up own local server on loading itself
-    // let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+function updateGameServer(server) {
+  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ', server)
+  // so we can detect if the map has crashed but process is still running
+  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat ', server)
+}
 
-    if (Object.keys(EXECUTING_MAPS).length == 0) {
-      serveDedicated()
-    }
-  }, 3000)
+  // look for existing servers we might have left laying around from last session to commandeer
+  if(!masterTimer) {
+    masterTimer = setInterval(function () {
+      let now = Date.now()
+
+      // don't hold up own local server on loading itself
+      // let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+      if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length == 0) {
+        Promise.resolve(serveDedicated())
+      }
+      // remove master servers that haven't checked in, in a long time past their own 
+      //   maxrate so that we don't accidentally report non-existing servers to clients
+      let keys = Object.keys(GAME_SERVERS)
+      for(let i = 0; i < keys.length; i++) {
+        let updateTime = 0
+        if(GAME_SERVERS[keys[i]].sv_maxRate) {
+          updateTime = parseInt(GAME_SERVERS[keys[i]].sv_maxRate)
+        }
+        if(updateTime < GAMEINFO_TIMEOUT) {
+          updateTime = GAMEINFO_TIMEOUT
+        }
+        if(GAME_SERVERS[keys[i]].timeSent && now - GAME_SERVERS[keys[i]].timeSent > updateTime) {
+          updateGameServer(GAME_SERVERS[keys[i]])
+        }
+
+        let timeout = Math.max(updateTime * 3, GAMESERVER_TIMEOUT)
+        if((!GAME_SERVERS[keys[i]].timeUpdated
+          && Date.now() - GAME_SERVERS[keys[i]].timeAdded > timeout)
+          || (GAME_SERVERS[keys[i]].timeUpdated
+          && Date.now() - GAME_SERVERS[keys[i]].timeUpdated > timeout)) {
+          delete GAME_SERVERS[keys[i]]
+        }
+        updatePageViewers('\/games')
+      }
+    }, 3000)
+  }
   for (let i = 0; i < 10; i++) {
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');
     //UDP_SOCKETS[MASTER_PORTS[0]].addMembership('255.255.255.255', '127.0.0.1');
     GAME_SERVERS['127.0.0.1:' + (27960 + i)] = {
+      timeAdded: Date.now(),
       address: '127.0.0.1',
       port: 27960 + i,
     }
-    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ', GAME_SERVERS['127.0.0.1:' + (27960 + i)])
+    updateGameServer(GAME_SERVERS['127.0.0.1:' + (27960 + i)])
   }
 
   // I think it would be very fullfuling for our species

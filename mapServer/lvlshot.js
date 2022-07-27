@@ -1,9 +1,13 @@
+const fs = require('fs')
+const path = require('path')
+
 
 const { updatePageViewers } = require('../contentServer/session.js')
 const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
 const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
+const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -201,42 +205,64 @@ async function processQueue() {
         }
         SERVER.working = false
       })
+
       // when we get a print response, let waiting clients know about it
       if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
         RESOLVE_LOGS[serversAvailable[0].challenge] = []
       }
       RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
-        updateSubscribers(mapname, logs, task)
+        Promise.resolve(updateSubscribers(mapname, logs, task))
       })
 
       console.log('Starting renderer task: ', serversAvailable[0].address + ':' + serversAvailable[0].port, task.cmd)
       ++RUNCMD
-      setTimeout(function () {
-        // TODO: ; set developer 1 ; 
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
-        sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
-      }, 100)
+      // TODO: ; set developer 1 ; 
+      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
+      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
     }
   }
 
 
-  Object.values(EXECUTING_MAPS).forEach(map => {
-    if(typeof map.working != 'object') {
+  Object.values(EXECUTING_MAPS).forEach(task => {
+    if(typeof task.working != 'object') {
       return
     }
-    if(map.working.updated && Date.now() - map.working.updated < RESOLVE_INTERVAL) {
+    if(task.working.updated && Date.now() - task.working.updated < RESOLVE_INTERVAL) {
       return
     }
-    map.working.updated = Date.now()
-    let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
-    if(Date.now() - map.working.started > RENDERER_TIMEOUT) {
-      map.timedout = true
-      map.working.timedout = true
+    task.working.updated = Date.now()
+    let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == task.challenge)[0]
+    if(Date.now() - task.working.started > RENDERER_TIMEOUT) {
+      task.timedout = true
+      task.working.timedout = true
     }
+
+    // TODO: if the qconsole log file changes on disk, let clients know about it
+    // TODO: individual logs files for all client
+    // TODO: support for other log parsing mechanism like a game stats generator based on logs?
+    let consoleLog = path.join(FS_GAMEHOME, getGame(), 'qconsole.log')
+    if(fs.existsSync(consoleLog)) {
+      let stat = fs.statSync(consoleLog)
+      if(typeof task.logPosition == 'undefined') {
+        task.logPosition = stat.size
+      } else
+      if(stat.size > task.logPosition
+        || stat.mtime.getTime() > task.logTime) {
+        const fd = fs.openSync(consoleLog)
+        const buffer = Buffer.alloc(stat.size - task.logPosition)
+        fs.readSync(fd, buffer, { position: task.logPosition })
+        fs.close(fd)
+        SERVER.logs += buffer.toString('utf-8')
+        Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
+        task.logPosition = stat.size
+        task.logTime = stat.mtime.getTime()
+      }
+    }
+
     if(SERVER) {
-      updateSubscribers(map.mapname, SERVER.logs, map.working)
+      updateSubscribers(task.mapname, SERVER.logs, task.working)
     } else {
-      updateSubscribers(map.mapname, map.logs, map.working)
+      updateSubscribers(task.mapname, task.logs, task.working)
     }
   })
 }
@@ -337,7 +363,8 @@ async function updateSubscribers(mapname, logs, cmd) {
   if(cmd.done) {
     return true
   }
-  let isResolved = !!(await cmd.resolve(logs, cmd))
+  let result = await cmd.resolve(logs, cmd)
+  let isResolved = !!result
   if(!isResolved && !cmd.timedout) {
     return false
   }
@@ -350,7 +377,7 @@ async function updateSubscribers(mapname, logs, cmd) {
   }
   if(cmd.subscribers) {
     for(let j = 0; j < cmd.subscribers.length; ++j) {
-      cmd.subscribers[j](logs)
+      cmd.subscribers[j](result, logs, cmd)
     }
     cmd.subscribers.splice(0)
   } else {

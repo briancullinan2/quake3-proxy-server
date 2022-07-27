@@ -72,13 +72,20 @@ async function streamKey(file, stream) {
       }
       // TODO: result = await execCmd(command, stm)
       //stream.cork()
-      stm.pipe(stream);
+      if(stream) {
+        stm.pipe(stream);
+      }
       stm.on('end', function () {
         //stream.uncork()
         delete EXTRACTING_ZIPS[fullPath]
         updatePageViewers('/process')
-        resolve()
+        if(stream) {
+          resolve()
+        }
       })
+      if(!stream) {
+        resolve(stm)
+      }
     })
   })
 }

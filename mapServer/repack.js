@@ -2,7 +2,6 @@ const fs = require('fs')
 const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
-const { MAP_DICTIONARY } = require('../mapServer/serve-download.js')
 const { SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS, TEMP_DIR, getGame } = require('../utilities/env.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { listPk3s } = require('../assetServer/layered.js')
@@ -15,11 +14,39 @@ const { encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { makePalette } = require('../assetServer/make-palette.js')
 const { parsePalette } = require('../assetServer/list-palettes.js')
 const { START_SERVICES } = require('../contentServer/features.js')
+const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
+const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 
 
 
 async function repackPk3(directory, newZip) {
   //let first = true
+  let filesToRemove = []
+  let filesInIndex = {}
+  if (fs.existsSync(newZip)) {
+    let existingTime = fs.statSync(newZip).mtime.getTime()
+    let existingIndex = await getIndex(newZip)
+    // TODO: remove already up to date items here not to slow down process server
+    //   with redundant checks. stat everything as it's added and check if the time 
+    //   and size is the exact same
+    // TODO: diff / remove / update
+    for(let i = 0; i < existingIndex.length; i++) {
+      let file = existingIndex[i]
+      let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
+      let directoryIndex = directory.indexOf(newFile)
+      if(directoryIndex > -1) {
+        directory.splice(directoryIndex, 1)
+        filesToRemove.push(file)
+      }
+    }
+    for(let i = 0; i < filesToRemove.length; i++) {
+      console.log('Removing: ', filesToRemove[i].name)
+      await zipCmd(filesToRemove[i].file + '/' + filesToRemove[i].name, '-d', newZip)
+    }
+    //return newZip
+  }
+
+
   for (let i = 0; i < directory.length; i++) {
     if (await unsupportedImage(directory[i])) {
       continue
@@ -46,7 +73,7 @@ async function repackBasemap(mapname) {
   //   on server, and package into new converted / compressed zip
   let pk3name = MAP_DICTIONARY[mapname]
   let newFile = findFile(getGame() + '/' + pk3name)
-  let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
+  let bspFile = path.join(mapname + 'dir', `/maps/${mapname}.bsp`)
 
   // extract the BSP because we might change it anyways
   if (!fs.existsSync(bspFile)) {
@@ -59,8 +86,9 @@ async function repackBasemap(mapname) {
   }
 
   // TODO: get shader/sound/model information using RPC
+  let images = (await execLevelshot(mapname, '-images.txt')).split('\n')
 
-
+  console.log(images)
   //let mapInfo
   //try {
   //  mapInfo = await getMapInfo(mapname)
@@ -69,37 +97,10 @@ async function repackBasemap(mapname) {
   //}
 
   //let {paletteNeeded, existingPalette} = await parseExisting()
-  console.log(mapInfo.images)
   // TODO: include base files less than 512KB? and >= 128KB
   // TODO: include startup sounds?
   // TODO: include base models
 
-}
-
-
-async function processImage(file, newFile) {
-  let ext = path.extname(file.name.toLowerCase())
-  // convert all images, even jpg or png
-  if (IMAGE_FORMATS.includes(ext)) {
-    let isOpaque = await opaqueCmd(file, file.name, true)
-    let newExt = isOpaque ? '.jpg' : '.png'
-    newFile = newFile.replace(ext, newExt)
-    let writeStream = fs.createWriteStream(newFile.replace(ext, newExt))
-    await convertCmd(file, file.name, void 0, writeStream, newExt, true)
-    writeStream.close()
-  } else
-    if (AUDIO_FORMATS.includes(ext)) {
-      // TODO: if AUDIO_FORMATS
-      newFile = newFile.replace(ext, '.ogg')
-      let writeStream = fs.createWriteStream(newFile.replace(ext, '.ogg'))
-      await encodeCmd(file, file.name, void 0, writeStream, true)
-      writeStream.close()
-    } else {
-      let writeStream = fs.createWriteStream(newFile)
-      await streamKey(file, writeStream)
-      writeStream.close()
-    }
-  return newFile
 }
 
 
@@ -129,6 +130,7 @@ async function repackBasepack(modname) {
   let maxMtime = 0
 
   let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
+
   for (let i = 0; i < pk3s.length; i++) {
     let newTime = fs.statSync(pk3s[i]).mtime.getTime()
     let index = await getIndex(pk3s[i])
@@ -139,6 +141,8 @@ async function repackBasepack(modname) {
       if (file.isDirectory) {
         continue
       }
+      // only used to prevent adding an older version of a file that already exists
+      //   and is to big, so the client is forced to download over HTTP normally.
       if (typeof excludedSizes[file.name.toLocaleLowerCase()] != 'undefined') {
         continue
       }
@@ -159,27 +163,17 @@ async function repackBasepack(modname) {
       if (IMAGE_FORMATS.includes(ext)) {
         // TODO: palette file, combine with make-palette
         paletteNeeded.push(file)
-
-        if (fs.existsSync(newFile.replace(ext, '.jpg'))) {
-          newFile = newFile.replace(ext, '.jpg')
-        } else
-          if (fs.existsSync(newFile.replace(ext, '.png'))) {
-            newFile = newFile.replace(ext, '.png')
-          }
-      }
-      // TODO: if AUDIO_FORMATS
-      if (AUDIO_FORMATS.includes(ext)) {
-        if (fs.existsSync(newFile.replace(ext, '.ogg'))) {
-          newFile = newFile.replace(ext, '.ogg')
-        }
       }
 
-      if (!fs.existsSync(newFile) || fs.statSync(newFile).mtime.getTime() < file.time) {
+
+      // TODO: rewrite this to output files with new stream functions, saving on indexing
+      if (!fs.existsSync(newFile) 
+        || fs.statSync(newFile).mtime.getTime() < file.time) {
         if(DEPLOY 
           || SUPPORTED_FORMATS.includes(ext)
           || (file.compressedSize < 36 * 36 * 4 // max image size
           || file.size < 68 * 68 * 4))
-        allPromises.push(Promise.resolve(processImage(file, newFile)))
+        allPromises.push(file)
       } else {
         // TODO: statSync() for update checking
         let newTime = fs.statSync(newFile).mtime.getTime()
@@ -208,47 +202,35 @@ async function repackBasepack(modname) {
     }
   }
 
-  let newImages = await Promise.all(allPromises)
+  let newImages = await Promise.all(allPromises.map(new Promise(resolve => file => {
+    let passThrough = streamAudioFile(file, null)
+    if(!passThrough) {
+      passThrough = streamImageFile(file, null)
+    }
+    if(!passThrough) {
+      passThrough = streamKey(file, null)
+    }
+    if(passThrough) {
+      let writeStream = fs.createWriteStream(path.join(outputDir, file));
+      passThrough.pipe(writeStream)
+      writeStream.on('finish', resolve)
+    }
+    return passThrough
+  })))
   newImages.forEach(newFile => {
     includedDates[newFile] = maxMtime
   })
+
   // TODO: write current pak palette file
   // TODO: need to reload current palette to not duplicate work
   let newPalette = await makePalette(paletteNeeded, existingPalette)
   fs.writeFileSync(paletteFile, newPalette)
   includedDates[paletteFile] = maxMtime
 
+
+
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
-  let filesToRemove = []
-  let filesInIndex = {}
-  if (fs.existsSync(newZip)) {
-    let existingTime = fs.statSync(newZip).mtime.getTime()
-    let existingIndex = await getIndex(newZip)
-    // TODO: remove already up to date items here not to slow down process server
-    //   with redundant checks. stat everything as it's added and check if the time 
-    //   and size is the exact same
-    // TODO: diff / remove / update
-    for(let i = 0; i < existingIndex.length; i++) {
-      let file = existingIndex[i]
-      let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
-      if(typeof includedDates[newFile] == 'undefined') {
-        delete includedDates[newFile]
-        filesToRemove.push(file)
-      // TODO: FIX THIS, repacking every time!!
-      } else if(includedDates[newFile] > existingTime) {
-        filesInIndex[newFile] = file
-        // update the zip file
-      } else {
-        filesInIndex[newFile] = file
-        delete includedDates[newFile]
-      }
-    }
-    for(let i = 0; i < filesToRemove.length; i++) {
-      console.log('Removing: ', filesToRemove[i].name)
-      await zipCmd(filesToRemove[i].file + '/' + filesToRemove[i].name, '-d', newZip)
-    }
-    //return newZip
-  }
+
   await repackPk3(Object.keys(includedDates), newZip)
   return newZip
 }

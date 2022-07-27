@@ -15,13 +15,14 @@ const DEDICATED_TIMEOUT = 5000
 
 
 async function serveDedicated() {
-  // only ever start 1 control server
-  if (Object.keys(RESOLVE_DEDICATED).length > 0) {
+  // only ever start 1 dedicated server automatically
+  //console.log(Object.values(EXECUTING_MAPS).filter(map => !map.renderer))
+  if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length > 0) {
     return
   }
 
   // only start one dedicated server at a time
-  let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => list.length > 0)[0]
+  let challenge = Object.keys(RESOLVE_DEDICATED).filter(key => RESOLVE_DEDICATED[key].length > 0)[0]
   if (challenge) {
     return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
   }
