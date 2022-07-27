@@ -37,18 +37,26 @@ async function repackPk3(directory, newZip) {
       let file = existingIndex[i]
       let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
       let directoryIndex = directory.indexOf(newFile)
-      if (directoryIndex == -1) {
+      if (directoryIndex == -1
+        || await unsupportedImage(file.name)
+        || await unsupportedAudio(file.name)) {
         directory.splice(directoryIndex, 1)
         filesToRemove.push(file)
+      } else
+      if(directoryIndex == -1) {
+        // add 
+      } else { // TODO: update files on change
+        directory.splice(directoryIndex, 1)
       }
     }
     for (let i = 0; i < filesToRemove.length; i++) {
-      console.log('Removing: ', filesToRemove[i].name)
+      if(START_SERVICES.includes('debug')) {
+        console.log('Removing: ', filesToRemove[i].name)
+      }
       await zipCmd(filesToRemove[i].file + '/' + filesToRemove[i].name, '-d', newZip)
     }
     //return newZip
   }
-
 
   for (let i = 0; i < directory.length; i++) {
     if (await unsupportedImage(directory[i])) {
@@ -58,7 +66,9 @@ async function repackPk3(directory, newZip) {
       continue
     }
     try {
-      console.log('Adding: ', directory[i])
+      if(START_SERVICES.includes('debug')) {
+        console.log('Adding: ', directory[i])
+      }
       await zipCmd(directory[i], '-u' /* !first */, newZip)
     } catch (e) {
       if (!e.message.includes('up to date')) {
@@ -80,8 +90,7 @@ async function repackBasemap(modname, mapname) {
   console.log('Using temporary for map (' + mapname + '): ' + outputDir)
   // TODO: load the map in renderer, get list of loaded images / shaders available 
   //   on server, and package into new converted / compressed zip
-  let pk3name = MAP_DICTIONARY[mapname]
-  let newFile = findFile(getGame() + '/' + pk3name)
+  let pk3Name = findFile(getGame() + '/' + MAP_DICTIONARY[mapname])
   let bspFile = path.join(mapname + 'dir', `/maps/${mapname}.bsp`)
 
   // extract the BSP because we might change it anyways
@@ -116,6 +125,11 @@ async function repackBasemap(modname, mapname) {
   let excludedSizes = {}
   let pk3Files = await listGameFiles(modname)
   let allPromises = []
+
+  // TODO: add to pk3Files the mapname file specified, pk3name from MAP_DICTIONARY above
+  if(!pk3Files.includes(pk3Name)) {
+    pk3Files.push(pk3Name)
+  }
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newTime = fs.statSync(file.file).mtime.getTime()
@@ -124,10 +138,21 @@ async function repackBasemap(modname, mapname) {
     if (typeof excludedSizes[newStripped] != 'undefined') {
       continue
     }
-    if (!DEPLOY && !filterBasemap(file)) {
+
+    // TODO: check for files the came from a pak[0-9] directory
+    //   and switch pk3dir output paths to stay organized in case
+    //   the user puts lots of pk3s in one directory
+    if (!DEPLOY 
+      // allow larger files from base paks and map pack
+      && (!filterBasemap(file)
+      // but then also allow smaller files from map packs
+      || file.file.match(/\/pak[0-9]+\.pk3/) 
+      || !filterBasepack(file))) {
       excludedSizes[newStripped] = file.size
       continue
     }
+
+    // only include files required by the actual rendering; headless
     if(!images.includes(newStripped) 
       && !models.includes(newStripped) 
       && !sounds.includes(newStripped)
@@ -140,31 +165,24 @@ async function repackBasemap(modname, mapname) {
     allPromises.push(file)
     includedDates[newFile] = Math.max(newTime, file.time)
   }
+
   // new stream functions
   let newImages = await Promise.all(allPromises.map(file => {
-    // TODO: check for files the came from a pak[0-9] directory
-    //   and switch pk3dir output paths to stay organized in case
-    //   the user puts lots of pk3s in one directory
-    return exportFile(file, outputDir)
+    return Promise.resolve(exportFile(file, outputDir))
   }))
-  // TODO: add converted names to output list
+
+  // TODO: assert BSP file is included
 
   let newZip = path.join(TEMP_DIR, modname, mapname + '.pk3')
+  // TODO: add converted names to output list
   await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
   return newZip
-  //let mapInfo
-  //try {
-  //  mapInfo = await getMapInfo(mapname)
-  //} catch (e) {
-  //  console.error(e)
-  //}
-
-  //let {paletteNeeded, existingPalette} = await parseExisting()
   // TODO: include base files less than 512KB? and >= 128KB
   // TODO: include startup sounds?
   // TODO: include base models
-
 }
+
+
 
 function filterBasegame(file) {
 
@@ -218,30 +236,42 @@ function filterBasepack(file) {
 }
 
 
-function exportFile(file, outputDir) {
+async function exportFile(file, outputDir) {
   let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
   if (!fs.existsSync(path.dirname(newFile))) {
     fs.mkdirSync(path.dirname(newFile), { recursive: true })
   }
-  let passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
-  return Promise.resolve(streamFile(file, passThrough))
-  .then(() => {
-    if(unsupportedImage(file.name)) {
-      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.jpg')]) {
-        return newFile.replace(path.extname(newFile), '.jpg')
-      }
-      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.png')]) {
-        return newFile.replace(path.extname(newFile), '.png')
-      }
+  if(unsupportedImage(file.name)) {
+    if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.jpg')] != 'undefined') {
+      return newFile.replace(path.extname(newFile), '.jpg')
     }
-    if(unsupportedAudio(file.name)) {
-      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.ogg')]) {
-        return newFile.replace(path.extname(newFile), '.ogg')
-      }
+    if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.png')] != 'undefined') {
+      return newFile.replace(path.extname(newFile), '.png')
     }
+    if(fs.existsSync(newFile.replace(path.extname(newFile), '.jpg'))) {
+      return newFile.replace(path.extname(newFile), '.jpg')
+    }
+    if(fs.existsSync(newFile.replace(path.extname(newFile), '.png'))) {
+      return newFile.replace(path.extname(newFile), '.png')
+    }
+  }
+  if(unsupportedAudio(file.name)) {
+    if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.ogg')] != 'undefined') {
+      return newFile.replace(path.extname(newFile), '.ogg')
+    }
+    if(fs.existsSync(newFile.replace(path.extname(newFile), '.ogg'))) {
+      return newFile.replace(path.extname(newFile), '.ogg')
+    }
+  }
+  if(fs.existsSync(newFile)) {
     return newFile
-  })
-  .then(newFile => new Promise(resolve => {
+  }
+  let passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
+  let fileName = await streamFile(file, passThrough)
+  return await new Promise(resolve => {
+    newFile = typeof fileName == 'string' 
+    ? fileName.replace(/.*\.pk3.*?\//gi, outputDir + '/')
+    : newFile
     let writeStream = fs.createWriteStream(newFile)
     passThrough.pipe(writeStream)
     passThrough.on('end', function () {
@@ -249,7 +279,7 @@ function exportFile(file, outputDir) {
       resolve(newFile)
     })
     return newFile
-  }))
+  })
 }
 
 
@@ -304,6 +334,7 @@ async function repackBasepack(modname) {
   let pk3Files = await listGameFiles(modname)
 
   for (let i = 0; i < pk3Files.length; i++) {
+    let file = pk3Files[i]
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
     let ext = path.extname(newFile)
 
@@ -313,21 +344,26 @@ async function repackBasepack(modname) {
       paletteNeeded.push(file)
     }
 
-    if (typeof excludedSizes[file.name.toLocaleLowerCase()] != 'undefined') {
+    if (typeof excludedSizes[newFile] != 'undefined') {
       continue
     }
     if (!DEPLOY && !filterBasepack(file)) {
-      excludedSizes[file.name.toLocaleLowerCase()] = file.size
+      excludedSizes[newFile] = file.size
       continue
     }
 
 
     // still do conversions for images and audio because we will need it
     //   the deployment.
+    let newTime
     if (!fs.existsSync(newFile) 
         || fs.statSync(newFile).mtime.getTime() < file.time) {
       // output files with new stream functions, saving on indexing
-      allPromises.push(file)
+      //   only export the first occurance of a filename
+      if(typeof includedDates[newFile] == 'undefined') {
+        allPromises.push(file)
+      }
+      newTime = file.time
     } else {
       // TODO: statSync() for update checking
       let newTime = fs.statSync(newFile).mtime.getTime()
@@ -345,8 +381,9 @@ async function repackBasepack(modname) {
 
   // new stream functions
   let newImages = await Promise.all(allPromises.map(file => {
-    return exportFile(file, outputDir)
+    return Promise.resolve(exportFile(file, outputDir))
   }))
+  //console.log('Exporting:', newImages)
 
   // TODO: write current pak palette file
   // TODO: need to reload current palette to not duplicate work
@@ -355,8 +392,7 @@ async function repackBasepack(modname) {
   includedDates[paletteFile] = maxMtime
 
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
-
-  await repackPk3(Object.keys(includedDates), newZip)
+  await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
   return newZip
 }
 

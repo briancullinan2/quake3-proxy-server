@@ -15,7 +15,7 @@ async function zipCmd(fullPath, update, newZip) {
   ])
   let output = await execCmd(
     //process.env.SHELL, ['-c', 'pwd'
-    'zip', startArgs, { cwd: newDir, /* shell: true */ })
+    'zip', startArgs, { cwd: newDir, wait: true, /* shell: true */ })
   return output
 }
 

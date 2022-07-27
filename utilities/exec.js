@@ -15,16 +15,18 @@ async function execCmd(cmd, args, options) {
     let waitCounter = 0
     let waitInterval
     try {
-      waitInterval = await new Promise(
+      await new Promise(
         function (resolve, reject) {
-          setInterval(function () {
+          waitInterval = setInterval(function () {
             if (options && typeof options.wait == 'number'
               && waitCounter > options.wait / PROCESS_INTERVAL) {
+              clearInterval(waitInterval)
               reject(new Error('Too many running processes!'))
             } else
               if ((!options || !options.wait) // don't wait indefinitely
                 && waitCounter > PROCESS_TIMEOUT / PROCESS_INTERVAL) {
-                reject(new Error('Too many running processes!'))
+                  clearInterval(waitInterval)
+                  reject(new Error('Too many running processes!'))
               } else
                 if (RUNNING < PROCESS_LIMIT) {
                   clearInterval(waitInterval)
@@ -41,7 +43,7 @@ async function execCmd(cmd, args, options) {
   }
 
   LIMIT++
-  //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+  console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   let transform = async function (key, result) {
     return await Promise.resolve(result)
   }
@@ -58,7 +60,7 @@ async function execCmd(cmd, args, options) {
           return resolve('')
         }
         let ps = spawn(cmd, args, {
-          timeout: options && (options.detached || options.background) ? void 0 : 3600000,
+          timeout: options && (options.detached || options.background || options.wait) ? void 0 : 3600000,
           cwd: (options ? options.cwd : null) || process.cwd(),
           shell: (options ? options.shell : false) || false,
           detached: (options ? options.detached : false) || false,
@@ -73,6 +75,7 @@ async function execCmd(cmd, args, options) {
         let stderr = ''
         let stdout = ''
         ps.stderr.on('data', (data) => {
+          console.log(data.toString('utf-8'))
           stderr += data.toString('utf-8')
         })
         if (options && typeof options.write == 'object') {

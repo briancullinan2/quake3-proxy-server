@@ -186,7 +186,7 @@ async function streamAudioFile(filename, response) {
       passThrough.pipe(response)
       passThrough.end(CONVERTED_SOUNDS[newKey])
     }
-    return true
+    return newKey
   }
 
   if (typeof response.setHeader == 'function') {
@@ -198,8 +198,8 @@ async function streamAudioFile(filename, response) {
     CONVERTED_TIMES[newKey] = stat.mtime.getTime()
 
   // force async so other threads can answer page requests during conversion
-  Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, false))
-  return true
+  Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, true))
+  return newKey
 }
 
 
@@ -302,12 +302,12 @@ async function streamImageFile(filename, response) {
         passThrough.pipe(response)
         passThrough.end(CONVERTED_IMAGES[newKey])
       }
-      return true
+      return newKey
     }
 
 
   // TODO: call out to this somehow and result results
-  isOpaque = await opaqueCmd(pk3File, pk3InnerPath)
+  isOpaque = await opaqueCmd(pk3File, pk3InnerPath, true)
   let newExt = isOpaque ? '.jpg' : '.png'
   newKey = key.replace(path.extname(key), newExt)
   CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
@@ -318,8 +318,8 @@ async function streamImageFile(filename, response) {
   // .pipe(response)
   let passThrough = streamAndCache(newKey, CONVERTED_IMAGES, response)
   // force async so other threads can answer page requests during conversion
-  Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt))
-  return true
+  Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt, true))
+  return newKey
 }
 
 

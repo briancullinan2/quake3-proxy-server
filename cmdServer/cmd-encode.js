@@ -4,6 +4,7 @@
 const path = require('path')
 const { PassThrough } = require('stream')
 
+const { START_SERVICES } = require('../contentServer/features.js')
 const { execCmd } = require('../utilities/exec.js')
 const { fileKey, streamKey } = require('../utilities/zip.js')
 
@@ -41,7 +42,7 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
   } else {
     cmd = 'oggenc'
     startArgs = [
-      '-q', '7', '--downmix', '--resample',
+      '-q', '7', /* '--downmix', */ '--resample',
       '11025', '--quiet'
     ]
     if(passThrough) {
@@ -54,7 +55,9 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
     ])
   }
 
-  //console.log('Transcoding: ', typeof audioPath == 'object' ? audioPath.name : audioPath, unsupportedFormat)
+  if(START_SERVICES.includes('debug')) {
+    console.log('Transcoding: ', typeof audioPath == 'object' ? audioPath.name : audioPath, unsupportedFormat)
+  }
   let logs
   if(passThrough) {
     logs = (await Promise.all([

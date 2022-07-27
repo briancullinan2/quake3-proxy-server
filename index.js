@@ -158,6 +158,7 @@ isInside = false
 function exceptionHandler(ex) {
   debugger
   if (isInside) {
+    isInside = false
     REDIRECTED_ERRORS.push([ex])
     previousError(REDIRECTED_ERRORS.length, 'unhandled:',
       (ex + '').substring(0, 100))
