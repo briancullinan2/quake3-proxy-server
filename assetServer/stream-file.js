@@ -386,6 +386,7 @@ async function streamFile(filename, stream) {
 }
 
 module.exports = {
+  CONVERTED_TIMES,
   CONVERTED_FILES,
   streamAndCache,
   streamAudioFile,

@@ -142,12 +142,15 @@ async function repackBasemap(modname, mapname) {
   }
   // new stream functions
   let newImages = await Promise.all(allPromises.map(file => {
+    // TODO: check for files the came from a pak[0-9] directory
+    //   and switch pk3dir output paths to stay organized in case
+    //   the user puts lots of pk3s in one directory
     return exportFile(file, outputDir)
   }))
   // TODO: add converted names to output list
 
   let newZip = path.join(TEMP_DIR, modname, mapname + '.pk3')
-  await repackPk3(Object.keys(includedDates), newZip)
+  await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
   return newZip
   //let mapInfo
   //try {
@@ -216,20 +219,37 @@ function filterBasepack(file) {
 
 
 function exportFile(file, outputDir) {
-  return new Promise(resolve => {
-    let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
-    if (!fs.existsSync(path.dirname(newFile))) {
-      fs.mkdirSync(path.dirname(newFile), { recursive: true })
+  let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
+  if (!fs.existsSync(path.dirname(newFile))) {
+    fs.mkdirSync(path.dirname(newFile), { recursive: true })
+  }
+  let passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
+  return Promise.resolve(streamFile(file, passThrough))
+  .then(() => {
+    if(unsupportedImage(file.name)) {
+      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.jpg')]) {
+        return newFile.replace(path.extname(newFile), '.jpg')
+      }
+      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.png')]) {
+        return newFile.replace(path.extname(newFile), '.png')
+      }
     }
+    if(unsupportedAudio(file.name)) {
+      if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.ogg')]) {
+        return newFile.replace(path.extname(newFile), '.ogg')
+      }
+    }
+    return newFile
+  })
+  .then(newFile => new Promise(resolve => {
     let writeStream = fs.createWriteStream(newFile)
-    let passThrough = streamAndCache(newFile, CONVERTED_FILES, writeStream)
     passThrough.pipe(writeStream)
     passThrough.on('end', function () {
       writeStream.close()
-      resolve(file)
+      resolve(newFile)
     })
-    return streamFile(file, passThrough)
-  })
+    return newFile
+  }))
 }
 
 
