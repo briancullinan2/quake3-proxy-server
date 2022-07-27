@@ -123,13 +123,9 @@ async function repackBasemap(modname, mapname) {
 
   let includedDates = {}
   let excludedSizes = {}
-  let pk3Files = await listGameFiles(modname)
+  let pk3Files = await listGameFiles(modname, pk3Name)
   let allPromises = []
 
-  // TODO: add to pk3Files the mapname file specified, pk3name from MAP_DICTIONARY above
-  if(!pk3Files.includes(pk3Name)) {
-    pk3Files.push(pk3Name)
-  }
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newTime = fs.statSync(file.file).mtime.getTime()
@@ -140,14 +136,19 @@ async function repackBasemap(modname, mapname) {
     }
 
     // TODO: check for files the came from a pak[0-9] directory
+    let isBasepak = file.file.match(/\/pak[0-9]+\.pk3/)
+    if(isBasepak && filterBasepack(file)) {
+      // skip files included in pak0
+      continue
+    }
+
     //   and switch pk3dir output paths to stay organized in case
     //   the user puts lots of pk3s in one directory
     if (!DEPLOY 
       // allow larger files from base paks and map pack
-      && (!filterBasemap(file)
+      && !filterBasemap(file)
       // but then also allow smaller files from map packs
-      || file.file.match(/\/pak[0-9]+\.pk3/) 
-      || !filterBasepack(file))) {
+      && !isBasepak && !filterBasepack(file)) {
       excludedSizes[newStripped] = file.size
       continue
     }
@@ -285,14 +286,17 @@ async function exportFile(file, outputDir) {
 
 // TODO: smells like the 5th time I've written this, 
 //   probably can be combined with filteredPk3Directory?
-async function listGameFiles(modname) {
+async function listGameFiles(modname, pk3Name) {
   let directory = []
   if (!modname) {
     modname = getGame()
   }
 
   let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-
+  // TODO: add to pk3Files the mapname file specified, pk3name from MAP_DICTIONARY above
+  if(pk3Name && !pk3s.includes(pk3Name)) {
+    pk3s.push(pk3Name)
+  }
   for (let i = 0; i < pk3s.length; i++) {
     let index = await getIndex(pk3s[i])
     for (let j = 0; j < index.length; j++) {
@@ -332,7 +336,6 @@ async function repackBasepack(modname) {
   let maxMtime = 0
 
   let pk3Files = await listGameFiles(modname)
-
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
