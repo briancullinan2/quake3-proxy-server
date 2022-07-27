@@ -12,6 +12,11 @@ const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { findFile } = require('../assetServer/virtual.js')
 
 
+async function filterMappack(file) {
+  // specific folder?
+}
+
+
 async function repackMappak(mapname) {
   // same thing except with additional individual pk3 assets
   return await repackBasemap(mapname)

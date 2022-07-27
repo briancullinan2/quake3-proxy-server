@@ -30,16 +30,16 @@ async function repackPk3(directory, newZip) {
     //   with redundant checks. stat everything as it's added and check if the time 
     //   and size is the exact same
     // TODO: diff / remove / update
-    for(let i = 0; i < existingIndex.length; i++) {
+    for (let i = 0; i < existingIndex.length; i++) {
       let file = existingIndex[i]
       let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
       let directoryIndex = directory.indexOf(newFile)
-      if(directoryIndex > -1) {
+      if (directoryIndex > -1) {
         directory.splice(directoryIndex, 1)
         filesToRemove.push(file)
       }
     }
-    for(let i = 0; i < filesToRemove.length; i++) {
+    for (let i = 0; i < filesToRemove.length; i++) {
       console.log('Removing: ', filesToRemove[i].name)
       await zipCmd(filesToRemove[i].file + '/' + filesToRemove[i].name, '-d', newZip)
     }
@@ -103,6 +103,50 @@ async function repackBasemap(mapname) {
 
 }
 
+async function filterBasegame() {
+
+  if (file.isDirectory) {
+    return false
+  }
+  let ext = path.extname(file.name.toLowerCase())
+  if (!SUPPORTED_FORMATS.includes(ext)
+    && !IMAGE_FORMATS.includes(ext)
+    && !AUDIO_FORMATS.includes(ext)) {
+    return false
+  }
+
+  return true
+}
+
+
+async function filterBasemap(file) {
+  if (DEPLOY
+    || SUPPORTED_FORMATS.includes(ext)
+    || (file.compressedSize >= 36 * 36 * 4 // max image size
+      || file.size >= 68 * 68 * 4)
+    && (file.compressedSize < 128 * 1024 // max image size
+    || file.size < 256 * 1024))
+  return true
+}
+
+
+async function filterBasepack(file) {
+  // only used to prevent adding an older version of a file that already exists
+  //   and is to big, so the client is forced to download over HTTP normally.
+  if (typeof excludedSizes[file.name.toLocaleLowerCase()] != 'undefined') {
+    return false
+  }
+
+  if ((SUPPORTED_FORMATS.includes(ext) && (
+    file.compressedSize < 64 * 1024 // max image size
+    || file.size < 128 * 1024
+  ))
+    || file.compressedSize < 36 * 36 * 4 // max image size
+    || file.size < 68 * 68 * 4 // max image size
+    || path.extname(file.name) == '.qvm')
+  return true
+}
+
 
 
 // TODO: convert this function to work on any pack, basepack, basemap, or mappack
@@ -119,7 +163,7 @@ async function repackBasepack(modname) {
 
   let paletteFile = path.join(outputDir, 'scripts/palette.shader')
   let existingPalette = {}
-  if(fs.existsSync(paletteFile)) {
+  if (fs.existsSync(paletteFile)) {
     existingPalette = parsePalette(paletteFile)
   }
 
@@ -138,18 +182,7 @@ async function repackBasepack(modname) {
       let file = index[j]
       let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
 
-      if (file.isDirectory) {
-        continue
-      }
-      // only used to prevent adding an older version of a file that already exists
-      //   and is to big, so the client is forced to download over HTTP normally.
-      if (typeof excludedSizes[file.name.toLocaleLowerCase()] != 'undefined') {
-        continue
-      }
-      let ext = path.extname(file.name.toLowerCase())
-      if (!SUPPORTED_FORMATS.includes(ext)
-        && !IMAGE_FORMATS.includes(ext)
-        && !AUDIO_FORMATS.includes(ext)) {
+      if(!filterBasegame(file)) {
         continue
       }
 
@@ -157,66 +190,59 @@ async function repackBasepack(modname) {
       // big enough to include icons
       // still do conversions for images and audio because we will need it
       //   the deployment.
-      if (!fs.existsSync(path.dirname(newFile))) {
-        fs.mkdirSync(path.dirname(newFile), { recursive: true })
-      }
       if (IMAGE_FORMATS.includes(ext)) {
         // TODO: palette file, combine with make-palette
         paletteNeeded.push(file)
       }
 
+      if(!DEPLOY && !filterBasepack(file)) {
+        excludedSizes[file.name.toLocaleLowerCase()] = file.size
+        continue
+      }
 
-      // TODO: rewrite this to output files with new stream functions, saving on indexing
-      if (!fs.existsSync(newFile) 
+      if (!fs.existsSync(path.dirname(newFile))) {
+        fs.mkdirSync(path.dirname(newFile), { recursive: true })
+      }
+
+      // output files with new stream functions, saving on indexing
+      if (!fs.existsSync(newFile)
         || fs.statSync(newFile).mtime.getTime() < file.time) {
-        if(DEPLOY 
-          || SUPPORTED_FORMATS.includes(ext)
-          || (file.compressedSize < 36 * 36 * 4 // max image size
-          || file.size < 68 * 68 * 4))
-        allPromises.push(file)
+          allPromises.push(file)
       } else {
         // TODO: statSync() for update checking
         let newTime = fs.statSync(newFile).mtime.getTime()
-        if(newTime > file.time) {
+        if (newTime > file.time) {
           file.time = newTime
         }
       }
-
-      if(file.time > maxMtime) {
+      if (file.time > maxMtime) {
         maxMtime = file.time
       }
 
-      if ((SUPPORTED_FORMATS.includes(ext) && (
-        file.compressedSize < 64 * 1024 // max image size
-          || file.size < 128 * 1024
-      ))
-        || file.compressedSize < 36 * 36 * 4 // max image size
-        || file.size < 68 * 68 * 4 // max image size
-        || path.extname(file.name) == '.qvm') {
-        if (typeof includedDates[newFile] == 'undefined') {
-          includedDates[newFile] = Math.max(newTime, file.time)
-        }
-      } else {
-        excludedSizes[file.name.toLocaleLowerCase()] = file.size
+      if (typeof includedDates[newFile] == 'undefined') {
+        includedDates[newFile] = Math.max(newTime, file.time)
       }
     }
   }
 
-  let newImages = await Promise.all(allPromises.map(new Promise(resolve => file => {
-    let passThrough = streamAudioFile(file, null)
-    if(!passThrough) {
-      passThrough = streamImageFile(file, null)
-    }
-    if(!passThrough) {
-      passThrough = streamKey(file, null)
-    }
-    if(passThrough) {
-      let writeStream = fs.createWriteStream(path.join(outputDir, file));
-      passThrough.pipe(writeStream)
-      writeStream.on('finish', resolve)
-    }
-    return passThrough
-  })))
+  // new stream functions
+  let newImages = await Promise.all(allPromises
+    .map(new Promise(resolve => file => {
+      let passThrough = streamAudioFile(file, null)
+      if (!passThrough) {
+        passThrough = streamImageFile(file, null)
+      }
+      if (!passThrough) {
+        passThrough = streamKey(file, null)
+      }
+      if (passThrough) {
+        let writeStream = fs.createWriteStream(path.join(outputDir, file));
+        passThrough.pipe(writeStream)
+        writeStream.on('finish', resolve)
+      }
+      return passThrough
+    })))
+
   newImages.forEach(newFile => {
     includedDates[newFile] = maxMtime
   })
@@ -226,8 +252,6 @@ async function repackBasepack(modname) {
   let newPalette = await makePalette(paletteNeeded, existingPalette)
   fs.writeFileSync(paletteFile, newPalette)
   includedDates[paletteFile] = maxMtime
-
-
 
   let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
 
