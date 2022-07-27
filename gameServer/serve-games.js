@@ -141,9 +141,10 @@ async function serveRcon(request, response, next) {
 
   let logs = serverInfo.logs || '(no logs to show)'
 
-  return response.send(renderIndex(`
-    ${renderGamesMenu(modname)}
-    <div class="loading-blur"><img src="/${levelshot}" /></div>
+  return response.send(renderIndex(
+    renderGamesMenu(modname)
+    + renderEngine() 
+    + `<div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="rcon-info" class="info-layout">
     <h2>RCon: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
     <textarea id="rcon-output" readonly="readonly">${logs}</textarea>
@@ -237,10 +238,10 @@ async function serveGameInfo(request, response, next) {
   }
 
 
-  return response.send(renderIndex(`
-    ${renderGamesMenu(modname)}
-    ${renderEngine()}
-    <div class="loading-blur"><img src="/${levelshot}" /></div>
+  return response.send(renderIndex(
+    renderGamesMenu(modname)
+    + renderEngine()
+    + `<div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">
     <h2>Games: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
 

@@ -93,7 +93,7 @@ function pageBindings() {
       && (typeof SYS != 'undefined'
       && typeof Cbuf_AddText != 'undefined')) {
     if(SYS.state < 2 
-      || mapname != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
+      || mapname[1] != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
       Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
     }
   }
@@ -109,13 +109,10 @@ function pageBindings() {
 }
 
 window.addEventListener('load', (event) => {
-
   setTimeout(pageBindings, 300)
-
   if(typeof NET_OpenIP != 'undefind') {
     NET_OpenIP()
   }
-
   initEvents()
 })
 

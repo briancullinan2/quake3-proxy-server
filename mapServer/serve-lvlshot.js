@@ -178,6 +178,8 @@ async function resolveSounds(logs, task) {
   }
 }
 
+
+
 async function execLevelshot(mapname, waitFor) {
   let basegame = getGame()
 

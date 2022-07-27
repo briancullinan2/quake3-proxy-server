@@ -8,8 +8,8 @@ const { getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY, filteredMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
-const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { renderImages } = require('../mapServer/shaders.js')
+const { renderIndex, renderList, renderMenu, renderEngine } = require('../utilities/render.js')
 
 
 // display map info, desconstruct
@@ -77,9 +77,10 @@ async function serveMapInfo(request, response, next) {
     })
   }
 
-  let index = renderIndex(`
-    ${renderMenu(MAP_MENU, 'map-menu')}
-    <div class="loading-blur"><img src="${mapInfo.levelshot}" /></div>
+  let index = renderIndex(
+    renderMenu(MAP_MENU, 'map-menu')
+    + renderEngine()
+    + `<div class="loading-blur"><img src="${mapInfo.levelshot}" /></div>
     <div id="map-info">
     <h2>${mapInfo.title}</h2>
     <h3><a name="screenshots">Screenshots</a></h3>
@@ -156,6 +157,9 @@ async function serveMapInfo(request, response, next) {
     <li class="title"><span>Heatmaps</span></li>
     <li class="title"><span>Predator</span></li>
     </ol>
+    <script>window.preStart = [
+      '+set', 'bot_enable', '0', '+map', '${mapname}', '+wait', '30', '+team', 's',
+    ];</script>
     </div>`)
   return response.send(index)
   /*

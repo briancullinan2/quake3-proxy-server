@@ -91,17 +91,7 @@ async function repackBasemap(modname, mapname) {
   // TODO: load the map in renderer, get list of loaded images / shaders available 
   //   on server, and package into new converted / compressed zip
   let pk3Name = findFile(getGame() + '/' + MAP_DICTIONARY[mapname])
-  let bspFile = path.join(mapname + 'dir', `/maps/${mapname}.bsp`)
-
-  // extract the BSP because we might change it anyways
-  if (!fs.existsSync(bspFile)) {
-    fs.mkdirSync(path.dirname(bspFile), { recursive: true })
-    const file = fs.createWriteStream(bspFile)
-    if (!(await streamFileKey(newFile, `maps/${mapname}.bsp`, file))) {
-      throw new Error('File not found: ' + `${newFile}/maps/${mapname}.bsp`)
-    }
-    file.close()
-  }
+  //let bspFile = path.join(mapname + 'dir', `/maps/${mapname}.bsp`)
 
   // TODO: get shader/sound/model information using RPC
   let images = []

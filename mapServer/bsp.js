@@ -38,6 +38,7 @@ async function getMapInfo(mapname) {
     }
   }
   // extract the BSP because we might change it anyways
+  /*
   if (!foundBsp) {
     let bspFile = path.join(caches[0], path.basename(newFile) + 'dir', `/maps/${mapname}.bsp`)
     fs.mkdirSync(path.dirname(bspFile), { recursive: true })
@@ -45,6 +46,7 @@ async function getMapInfo(mapname) {
     await streamFileKey(newFile, `maps/${mapname}.bsp`, file)
     file.close()
   }
+  */
 
   let levelshotPath = path.join(pk3Path, '/levelshots/', mapname + '.jpg')
   let levelshot = findFile(levelshotPath)
@@ -84,7 +86,7 @@ async function getMapInfo(mapname) {
   // TODO: contribute to lvlshot database cached locally
   if(images.length == 0 || entities.length == 0) {
     Promise.resolve(execLevelshot(mapname, /saveents|imagelist/i))
-        .then(console.log).catch(console.error)
+        .catch(console.error)
   }
   if(images.length == 0) {
     // async
