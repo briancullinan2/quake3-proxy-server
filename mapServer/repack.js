@@ -53,7 +53,7 @@ async function repackPk3(directory, newZip) {
       if(START_SERVICES.includes('debug')) {
         console.log('Removing: ', filesToRemove[i].name)
       }
-      await zipCmd(filesToRemove[i].file + '/' + filesToRemove[i].name, '-d', newZip)
+      await zipCmd(outputDir + '/' + filesToRemove[i].key, '-d', newZip)
     }
     //return newZip
   }
@@ -148,9 +148,13 @@ async function repackBasemap(modname, mapname) {
       // allow larger files from base paks and map pack
       && !filterBasemap(file)
       // but then also allow smaller files from map packs
-      && !isBasepak && !filterBasepack(file)) {
+      && !filterBasepack(file)) {
       excludedSizes[newStripped] = file.size
       continue
+    }
+
+    if(path.extname(file.file) == '.bsp') {
+      console.log(file)
     }
 
     // only include files required by the actual rendering; headless
@@ -202,11 +206,10 @@ function filterBasegame(file) {
 
 
 function filterBasemap(file) {
-  let ext = path.extname(file.name)
+  let ext = path.extname(file.name.toLocaleLowerCase())
   if (
     // include map files
-    path.extname(file.name) == '.bsp'
-    || path.extname(file.name) == '.aas'
+    ext == '.bsp' || ext == '.aas'
     // don't include images included in base pack
     //|| SUPPORTED_FORMATS.includes(ext)
     || ((file.compressedSize >= 36 * 36 * 4 // max image size
@@ -363,9 +366,9 @@ async function repackBasepack(modname) {
         || fs.statSync(newFile).mtime.getTime() < file.time) {
       // output files with new stream functions, saving on indexing
       //   only export the first occurance of a filename
-      if(typeof includedDates[newFile] == 'undefined') {
+      //if(typeof includedDates[newFile] == 'undefined') {
         allPromises.push(file)
-      }
+      //}
       newTime = file.time
     } else {
       // TODO: statSync() for update checking

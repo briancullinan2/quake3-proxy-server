@@ -138,10 +138,10 @@ const SUPPORTED_FORMATS = [
   // these can be compiled in game to run bot AI
   '.c', '.h', '.scc', 
   // camera files
-  '.cam'
-  // can load async
-  // '.map', '.aas', '.md5', 
-  // '.bsp', '.md3',  '.iqm', '.mdr',
+  '.cam', 
+  // can load async, but new repacking system includes small ones
+  '.map', '.aas', '.md5', 
+  '.bsp', '.md3',  '.iqm', '.mdr',
 ]
 const WEB_FORMATS = ['.js', '.wasm', '.css', '.html', '.jpg', '.png', '.jpeg', '.gif', '.svg']
 const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
