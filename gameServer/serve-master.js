@@ -97,6 +97,7 @@ function updateGameServer(server) {
       }
     }, 3000)
   }
+  setInterval(function () {
   for (let i = 0; i < 10; i++) {
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');
@@ -108,6 +109,7 @@ function updateGameServer(server) {
     }
     updateGameServer(GAME_SERVERS['127.0.0.1:' + (27960 + i)])
   }
+  }, 1000)
 
   // I think it would be very fullfuling for our species
   //   if we could all simultaneously imagine the apacolypse

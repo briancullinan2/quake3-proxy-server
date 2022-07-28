@@ -115,7 +115,7 @@ async function repackBasemap(modname, mapname) {
   let excludedSizes = {}
   let pk3Files = await listGameFiles(modname, pk3Name)
   let allPromises = []
-
+console.log(pk3Files)
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newTime = fs.statSync(file.file).mtime.getTime()

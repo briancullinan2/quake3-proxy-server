@@ -252,8 +252,12 @@ async function processQueue() {
         const buffer = Buffer.alloc(stat.size - task.logPosition)
         fs.readSync(fd, buffer, { position: task.logPosition })
         fs.close(fd)
-        SERVER.logs += buffer.toString('utf-8')
-        Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
+        if(SERVER) {
+          SERVER.logs += buffer.toString('utf-8')
+        } else {
+          task.logs += buffer.toString('utf-8')
+        }
+        //Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
         task.logPosition = stat.size
         task.logTime = stat.mtime.getTime()
       }
@@ -303,6 +307,11 @@ async function serveLvlshot(mapname, waitFor) {
       challenge: challenge,
       mapname: mapname,
       logs: ''
+    }
+    let consoleLog = path.join(FS_GAMEHOME, getGame(), 'qconsole.log')
+    if(fs.existsSync(consoleLog)) {
+      let stat = fs.statSync(consoleLog)
+      EXECUTING_MAPS[challenge].logPosition = stat.size
     }
     // TODO: manually set com_affinityMask to space out servers
     //   sure the OS can do this, but we're trying to maximize

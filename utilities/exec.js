@@ -74,23 +74,25 @@ async function execCmd(cmd, args, options) {
         updatePageViewers('/process')
         let stderr = ''
         let stdout = ''
-        ps.stderr.on('data', (data) => {
-          console.log(data.toString('utf-8'))
-          stderr += data.toString('utf-8')
-        })
-        if (options && typeof options.write == 'object') {
-          //options.stdout.cork()
-          ps.stdout.pipe(options.write)
-        }
-        // TODO: somehow output this to console
-        if (options && typeof options.error == 'object') {
-          ps.stderr.pipe(options.error)
-        }
-        ps.stdout.on('data', (data) => {
-          stdout += data.toString('utf-8')
-        })
-        if (options && options.pipe) {
-          options.pipe.pipe(ps.stdin)
+        if(!options || !options.detached) {
+          ps.stderr.on('data', (data) => {
+            console.log(data.toString('utf-8'))
+            stderr += data.toString('utf-8')
+          })
+          if (options && typeof options.write == 'object') {
+            //options.stdout.cork()
+            ps.stdout.pipe(options.write)
+          }
+          // TODO: somehow output this to console
+          if (options && typeof options.error == 'object') {
+            ps.stderr.pipe(options.error)
+          }
+          ps.stdout.on('data', (data) => {
+            stdout += data.toString('utf-8')
+          })
+          if (options && options.pipe) {
+            options.pipe.pipe(ps.stdin)
+          }
         }
         ps.on('close', function (errCode) {
           if (options && typeof options.write == 'object') {

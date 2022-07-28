@@ -94,7 +94,7 @@ function pageBindings() {
       && typeof Cbuf_AddText != 'undefined')) {
     if(SYS.state < 2 
       || mapname[1] != addressToString(Cvar_VariableString(stringToAddress('mapname')))) {
-      Cbuf_AddText(stringToAddress('devmap ' + mapname[1] + ' ;\n'))
+      Cbuf_AddText(stringToAddress(' ; devmap ' + mapname[1] + ' ; \n'))
     }
   }
 
@@ -104,7 +104,7 @@ function pageBindings() {
     && typeof SYS != 'undefined' && SYS.state == 8
     && !window.location.pathname.includes('index.html')) {
     VM_Call( HEAPU32[uivm >> 2], 1, 7 /* UI_SET_ACTIVE_MENU */, 0 /* UIMENU_NONE */ );
-    Cbuf_AddText(stringToAddress('team s ;\n'))
+    Cbuf_AddText(stringToAddress(' ; team s ; set in_mouse 0 ; \n'))
   }
 }
 

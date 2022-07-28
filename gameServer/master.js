@@ -276,6 +276,8 @@ async function serveMaster(socket, message, rinfo) {
       continue;
     }
 
+    //console.log(request)
+
     buffer = buffer.slice(MASTER_SERVICE[i].length)
     if (i == 0) {
       await getserversResponse(socket, buffer, rinfo)

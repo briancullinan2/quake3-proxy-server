@@ -38,7 +38,7 @@ async function dedicatedCmd(startArgs, callback) {
     //   become relevant, and now I understand why.
     // https://stackoverflow.com/questions/12482166/creating-opengl-context-without-window
     '+set', 'bot_enable', '0',
-    '+set', 'logfile', '3',
+    '+set', 'logfile', '4',
     // TODO: fix and remove this
     '+set', 'cl_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
     '+set', 'sv_master1', `"127.0.0.1:${MASTER_PORTS[0]}"`,
