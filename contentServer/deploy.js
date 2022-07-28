@@ -24,7 +24,11 @@ async function exportGame(game) {
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
 
   // loop through every detectable route and export it to /docs/
-  let ROUTES = ['/index.css', '/', '/?alt', '/index.html']
+  let ROUTES = ['/index.css', '/', '/?alt', '/index.html',
+    '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js', 
+    '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js', 
+    '/sys_web.js', '/sys_snd.js', '/sys_wasm.js'
+  ]
   let features = Object.values(CONTENT_FEATURES)
   ROUTES = ROUTES.concat(features.filter(feature => 
       !feature.link.includes('://')).map(feature => '/' + feature.link))
