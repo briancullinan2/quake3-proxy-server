@@ -11,7 +11,7 @@ function renderFeature(map) {
   result += `<h3 ${map.palette 
     ? `style="background-color: rgba(${map.palette})"` : ''}>`
   if(map.link) {
-    result += `<a href="/${map.link}">`
+    result += `<a href="${map.link.includes('://') ? '' : '/'}${map.link}">`
   }
   result += `<span>${map.title}</span>`
   result += (map.bsp || map.subtitle) 
@@ -33,7 +33,8 @@ function renderFeature(map) {
 
 function renderMenu(jsonView, id) {
   let list = jsonView.map(game => {
-    return `<li><a href="/${game.link}"><span>${game.title}</span></a></li>`
+    return `<li><a href="${game.link.includes('://') ? '' : '/'}${game.link}">
+      <span>${game.title}</span></a></li>`
   }).join('')
   return `<ol ${id ? `id="${id}"` : ''} class="main-menu">${list}</ol>`
 }

@@ -1,6 +1,7 @@
 const path = require('path')
 const fs = require('fs')
 
+const { GAME_SERVERS } = require('../gameServer/processes.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
@@ -9,7 +10,6 @@ const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT,
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { GAME_SERVERS } = require('../gameServer/processes.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 
@@ -112,6 +112,7 @@ async function serveRcon(request, response, next) {
 
   if(request.method == 'POST') {
     sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command + '  \n', serverInfo)
+    response.setHeader('expires', Date.now())
     return response.json({})
   }
 

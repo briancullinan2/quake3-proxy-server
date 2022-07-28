@@ -36,7 +36,9 @@ async function filteredMaps() {
       // TODO: findAlt() and get the file time of the file that will be displayed
       // TODO: need some cache busting technique here
       levelshot: `/${basegame}/screenshots/` + mapname + '_screenshot0001.jpg?alt',
-      pakname: 'Download: ' + basename.replace('map-', '').replace('map_', ''),
+      pakname: basename.match(/pak[0-9]\.pk3/) 
+          ? void 0
+          : 'Download: ' + basename.replace('map-', '').replace('map_', ''),
       title: mapname,
       bsp: mapname,
       have: true,

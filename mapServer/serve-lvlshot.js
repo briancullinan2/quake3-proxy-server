@@ -183,6 +183,10 @@ async function resolveSounds(logs, task) {
 async function execLevelshot(mapname, waitFor) {
   let basegame = getGame()
 
+  if(mapname == 'nomap') {
+    return
+  }
+
   if (typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
     EXECUTING_LVLSHOTS[mapname] = []
   }

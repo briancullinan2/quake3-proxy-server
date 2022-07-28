@@ -7,7 +7,7 @@ const SUPPORTED_SERVICES = [
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 
   'assets', 'metadata', 'logs', 'users', 'sitemap',
-  'all', 'lvlshot',
+  'all', 'lvlshot', 'donate',
 ]
 
 const CONTENT_FEATURES = {
@@ -15,39 +15,44 @@ const CONTENT_FEATURES = {
     title: 'Site Map',
     subtitle: 'Feature List / Site map',
     link: 'sitemap',
-    levelshot: `/build/sitemap.svg`,
+    levelshot: '/build/sitemap.svg',
   },
   'maps': {
     title: 'Maps',
     subtitle: 'Pk3 Server / Map upload',
     link: 'maps',
-    levelshot: `/build/maps.svg`,
+    levelshot: '/build/maps.svg',
   },
   'games': {
     title: 'Games',
     subtitle: 'Game Server / Live spectate',
     link: 'games',
-    levelshot: `/build/games.svg`,
+    levelshot: '/build/games.svg',
   },
   'mods': {
     title: 'Mods',
     subtitle: 'Mods List / Supported games',
     link: 'mods',
-    levelshot: `/build/mods.svg`,
+    levelshot: '/build/mods.svg',
   },
   'assets': {
     title: 'Assets',
     subtitle: 'Asset Server / Virtual pk3s',
     link: 'assets',
-    levelshot: `/build/bundle.svg`,
+    levelshot: '/build/bundle.svg',
   },
   'process': {
     title: 'Status',
     subtitle: 'Server Status / Current tasks',
     link: 'process',
-    levelshot: `/build/tasks.svg`,
+    levelshot: '/build/tasks.svg',
   },
-
+  'donate': {
+    title: 'Donate',
+    subtitle: 'Keep the server running',
+    link: 'https://www.patreon.com/briancullinan',
+    levelshot: '/build/donate.svg',
+  },
 }
 
 // TODO: some sort of registration system?

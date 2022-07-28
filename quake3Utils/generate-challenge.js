@@ -12,7 +12,9 @@ function buildChallenge() {
 		let c
 		do {
 			c = Math.floor(Math.random() * (126 - 33 + 1) + 33); // -> 33 ... 126 (inclusive)
-		} while (c === '\\'.charCodeAt(0) || c === ';'.charCodeAt(0) || c === '"'.charCodeAt(0) || c === '%'.charCodeAt(0) || c === '/'.charCodeAt(0))
+		} while (c === '\\'.charCodeAt(0) || c === ';'.charCodeAt(0) 
+			|| c === '"'.charCodeAt(0) || c === '%'.charCodeAt(0) 
+			|| c === '/'.charCodeAt(0) || c === '~'.charCodeAt(0))
 
 		challenge += String.fromCharCode(c)
 	}

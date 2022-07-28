@@ -28,6 +28,9 @@ function pageBindings() {
   }
   */
 
+  previousLine = -1
+  refreshMaps()
+
   let waveForm = document.getElementById('waveform')
   if(waveForm) {
     var wavesurfer = WaveSurfer.create({
@@ -101,11 +104,14 @@ function pageBindings() {
   // TODO: somehow match client awareness with server session ID to restore clients
   //   maybe this is a planet_quake feature?
   if(!mapname && !reconnect 
+    && typeof Cbuf_AddText != 'undefined'
     && typeof SYS != 'undefined' && SYS.state == 8
     && !window.location.pathname.includes('index.html')) {
     VM_Call( HEAPU32[uivm >> 2], 1, 7 /* UI_SET_ACTIVE_MENU */, 0 /* UIMENU_NONE */ );
-    Cbuf_AddText(stringToAddress(' ; team s ; set in_mouse 0 ; \n'))
+    Cbuf_AddText(stringToAddress(' ; set in_mouse 0 ; wait 30 ; team s ; \n'))
   }
+  
+
 }
 
 window.addEventListener('load', (event) => {
@@ -327,9 +333,8 @@ async function loadNextPage(page, halfwareMark) {
   let json
   loading++
   try {
-    let response = await fetch( page
-        + (halfwareMark * 50 - 50) + '/' 
-        + (halfwareMark * 50 + 150) + '?json', {
+    let response = await fetch(page + (halfwareMark * 50 - 50)
+        + '/' + (halfwareMark * 50 + 150) + '?json', {
       mode: 'cors',
       responseType: 'json',
       credentials: 'omit',

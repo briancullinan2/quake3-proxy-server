@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="icon" href="/unknownmap.jpg">
+	<title>Quake3e-Web</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<link rel="stylesheet" href="index.css" />
+	<script type="text/javascript">
+		if(typeof window.preFS == 'undefined') window.preFS={};
+	</script>
+</head>
+
+<body  ><ol  class="main-menu"></ol>
+    <ol id="downloads-menu" class="main-menu"><li><a href="/downloads">
+      <span>Downloads</span></a></li><li><a href="/process">
+      <span>Tasks</span></a></li><li><a href="/proxy">
+      <span>Proxy</span></a></li><li><a href="/logs">
+      <span>Logs</span></a></li><li><a href="/users">
+      <span>Users</span></a></li></ol><div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+    <div class="info-layout">
+    <h2>Task List</h2>
+    <ol class="directory-list"><li><span>Watcher</span><span>&nbsp;</span><span>&nbsp;</span><span>62284</span></li>
+<li><span>Application</span><span>&nbsp;</span><span>&nbsp;</span><span>62284</span></li>
+    </ol>
+    <h3>Running Engines</h3>
+    <ol class="directory-list">
+    </ol>
+    <h3>Working ZIPs</h3>
+    <ol class="directory-list">
+    </ol>
+    <h3>Image Converter</h3>
+    <ol class="directory-list">
+    </ol>
+    </div>
+    
+</body>
+<script async defer src="/frontend.js"></script>
+<script async defer src="/sys_net.js"></script>
+<script async defer src="https://www.googletagmanager.com/gtag/js?id=UA-177284065-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-177284065-1');
+</script>
+</html>

@@ -3,8 +3,8 @@ const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')
 const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS } = require('../proxyServer/serve-udp.js')
-const { HTTP_PORTS, HTTP_LISTENERS, WEB_SOCKETS,
-  updatePageViewers, restoreSession, parseCookies } = require('../contentServer/session.js')
+const { HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS, updatePageViewers, restoreSession, 
+    parseCookies } = require('../contentServer/session.js')
 
 // < 100 LoC
 const express = require('express')
@@ -186,8 +186,6 @@ function createWebServers(services) {
 }
 
 module.exports = {
-  HTTP_PORTS,
-  HTTP_LISTENERS,
   createWebServers,
   createRedirect,
   createApplication,

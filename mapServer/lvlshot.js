@@ -40,7 +40,7 @@ function listJobs() {
     // oldest to newest
     return aSum / aTasks.length - bSum / bTasks.length
   }).slice(0, MAX_RENDERERS)
-  return mapNamesFiltered
+  return mapNamesFiltered.filter(map => EXECUTING_LVLSHOTS[map].length)
 }
 
 
@@ -50,6 +50,8 @@ async function resolveSwitchmap(logs, task) {
   let serverInfo = Object.values(GAME_SERVERS).filter(info => 
     info.qps_serverId == working)[0]
   if(!working || !serverInfo) {
+    // CODE REVIEW: this finally helped me get into a bug involving the processes list pid
+    return false
     throw new Error('Not working!')
   }
 
@@ -214,10 +216,12 @@ async function processQueue() {
         Promise.resolve(updateSubscribers(mapname, logs, task))
       })
 
-      console.log('Starting renderer task: ', serversAvailable[0].address + ':' + serversAvailable[0].port, task.cmd)
+      console.log('Starting renderer task: ', serversAvailable[0].address 
+          + ':' + serversAvailable[0].port, task.cmd)
       ++RUNCMD
       // TODO: ; set developer 1 ; 
-      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
+      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
+          + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
       sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
     }
   }
@@ -243,7 +247,8 @@ async function processQueue() {
     let consoleLog = path.join(FS_GAMEHOME, getGame(), 'qconsole.log')
     if(fs.existsSync(consoleLog)) {
       let stat = fs.statSync(consoleLog)
-      if(typeof task.logPosition == 'undefined') {
+      if(typeof task.logPosition == 'undefined'
+       || stat.size < task.logPosition) {
         task.logPosition = stat.size
       } else
       if(stat.size > task.logPosition
@@ -321,7 +326,7 @@ async function serveLvlshot(mapname, waitFor) {
     let ps = await dedicatedCmd([
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
-      '+set', 'developer', '1',
+      '+set', 'developer', '0',
       '+set', 'r_headless', '1',
       //'+set', 's_initsound', '0',
       '+set', 's_muteWhenUnfocused', '1',

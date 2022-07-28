@@ -2,13 +2,14 @@
 
 const { lookupDNS } = require('../utilities/dns.js')
 const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
-const { HTTP_LISTENERS, HTTP_PORTS, createRedirect } = require('../contentServer/express.js')
+const { createRedirect } = require('../contentServer/express.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
 const { updatePageViewers } = require('../contentServer/session.js')
-const { EXECUTING_MAPS, RESOLVE_DEDICATED, GAME_SERVERS } = require('../gameServer/processes.js')
+const { EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
+const { HTTP_LISTENERS, HTTP_PORTS } = require('../contentServer/session.js')
 
 
-const GAMESERVER_TIMEOUT = 60 * 1000 * 3
+const GAMESERVER_TIMEOUT = 60 * 1000 * 2
 const GAMEINFO_TIMEOUT = 60 * 1000
 let masterTimer
 
@@ -19,10 +20,62 @@ const MASTER_SERVERS = [
   'master.quake3arena.com',
 ]
 
+
+function updateGameServer(server) {
+  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ', server)
+  // so we can detect if the map has crashed but process is still running
+  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat ', server)
+}
+
+function forceCheckin() {
+  let now = Date.now()
+
+  // don't hold up own local server on loading itself
+  // let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+  if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length == 0) {
+    Promise.resolve(serveDedicated())
+  }
+  // remove master servers that haven't checked in, in a long time past their own 
+  //   maxrate so that we don't accidentally report non-existing servers to clients
+  let keys = Object.keys(GAME_SERVERS)
+  for (let i = 0; i < keys.length; i++) {
+    let updateTime = 0
+    if (GAME_SERVERS[keys[i]].sv_maxRate) {
+      updateTime = parseInt(GAME_SERVERS[keys[i]].sv_maxRate)
+    }
+    if (updateTime < GAMEINFO_TIMEOUT) {
+      updateTime = GAMEINFO_TIMEOUT
+    }
+    if (!GAME_SERVERS[keys[i]].timeSent
+        || now - GAME_SERVERS[keys[i]].timeSent > GAMEINFO_TIMEOUT) {
+      updateGameServer(GAME_SERVERS[keys[i]])
+    }
+
+    let timeout = Math.max(updateTime * 3, GAMESERVER_TIMEOUT)
+
+    if ((!GAME_SERVERS[keys[i]].timeUpdated
+      && Date.now() - GAME_SERVERS[keys[i]].timeAdded > timeout)
+      || (GAME_SERVERS[keys[i]].timeUpdated
+        && Date.now() - GAME_SERVERS[keys[i]].timeUpdated > timeout)) {
+      if (!GAME_SERVERS[keys[i]].broadcast) {
+        delete GAME_SERVERS[keys[i]]
+      } else {
+        GAME_SERVERS[keys[i]].timeUpdated = Date.now()
+      }
+      if (GAME_SERVERS[keys[i]].qps_serverId) {
+        delete EXECUTING_MAPS[GAME_SERVERS[keys[i]].qps_serverId]
+      }
+      console.log('Removing stale server: ' + keys[i])
+    }
+    updatePageViewers('\/games')
+  }
+}
+
+
 async function createMasters(mirror) {
   const { createServer } = require('http')
   const { createSocket } = require('dgram')
-  if(!MASTER_PORTS || !MASTER_PORTS.length) {
+  if (!MASTER_PORTS || !MASTER_PORTS.length) {
     return
   }
   let redirectApp
@@ -42,9 +95,10 @@ async function createMasters(mirror) {
           console.log(e)
         }
       })
-    UDP_SOCKETS[MASTER_PORTS[i]].on('error', function () {
-      console.log('MASTER:', arguments)
-    })
+    UDP_SOCKETS[MASTER_PORTS[i]].on('error',
+      function () {
+        console.log('MASTER:', arguments)
+      })
     await new Promise(resolve => UDP_SOCKETS[MASTER_PORTS[i]].once('listening', resolve))
 
     // since we have an http server to redirect to, if someone visits a service
@@ -55,49 +109,10 @@ async function createMasters(mirror) {
     }
   }
 
-function updateGameServer(server) {
-  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ', server)
-  // so we can detect if the map has crashed but process is still running
-  sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 heartbeat ', server)
-}
-
   // look for existing servers we might have left laying around from last session to commandeer
-  if(!masterTimer) {
-    masterTimer = setInterval(function () {
-      let now = Date.now()
-
-      // don't hold up own local server on loading itself
-      // let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
-      if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length == 0) {
-        Promise.resolve(serveDedicated())
-      }
-      // remove master servers that haven't checked in, in a long time past their own 
-      //   maxrate so that we don't accidentally report non-existing servers to clients
-      let keys = Object.keys(GAME_SERVERS)
-      for(let i = 0; i < keys.length; i++) {
-        let updateTime = 0
-        if(GAME_SERVERS[keys[i]].sv_maxRate) {
-          updateTime = parseInt(GAME_SERVERS[keys[i]].sv_maxRate)
-        }
-        if(updateTime < GAMEINFO_TIMEOUT) {
-          updateTime = GAMEINFO_TIMEOUT
-        }
-        if(GAME_SERVERS[keys[i]].timeSent && now - GAME_SERVERS[keys[i]].timeSent > updateTime) {
-          updateGameServer(GAME_SERVERS[keys[i]])
-        }
-
-        let timeout = Math.max(updateTime * 3, GAMESERVER_TIMEOUT)
-        if((!GAME_SERVERS[keys[i]].timeUpdated
-          && Date.now() - GAME_SERVERS[keys[i]].timeAdded > timeout)
-          || (GAME_SERVERS[keys[i]].timeUpdated
-          && Date.now() - GAME_SERVERS[keys[i]].timeUpdated > timeout)) {
-          delete GAME_SERVERS[keys[i]]
-        }
-        updatePageViewers('\/games')
-      }
-    }, 3000)
+  if (!masterTimer) {
+    masterTimer = setInterval(forceCheckin, 3000)
   }
-  setInterval(function () {
   for (let i = 0; i < 10; i++) {
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastTTL(128);
     //UDP_SOCKETS[MASTER_PORTS[0]].setMulticastInterface('127.0.0.1');
@@ -106,10 +121,10 @@ function updateGameServer(server) {
       timeAdded: Date.now(),
       address: '127.0.0.1',
       port: 27960 + i,
+      broadcast: true,
     }
     updateGameServer(GAME_SERVERS['127.0.0.1:' + (27960 + i)])
   }
-  }, 1000)
 
   // I think it would be very fullfuling for our species
   //   if we could all simultaneously imagine the apacolypse

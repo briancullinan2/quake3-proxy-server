@@ -39,6 +39,7 @@ async function serveDedicated() {
       '+set', 'sv_pure', '1',
       '+set', 'dedicated', '2',
       '+set', 'developer', '1',
+      '+set', 'r_headless', '1',
       '+set', 'sv_master2', '"207.246.91.235:27950"',
       '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
       '+sets', 'qps_serverId', '"' + challenge + '"',
@@ -102,7 +103,6 @@ async function serveProcess(request, response, next) {
       let pid = server.pid
       let serverInfo = Object.values(GAME_SERVERS)
         .filter(server => server.qps_serverId == challenge)[0]
-      console.log(EXECUTING_MAPS)
       if (!serverInfo) {
         return
       }

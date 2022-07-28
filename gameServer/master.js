@@ -20,7 +20,7 @@ const RESOLVE_LOGS = {}
 
 function sendOOB(socket, message, rinfo) {
   let response = [0xFF, 0xFF, 0xFF, 0xFF].concat(
-      message.split('').map(c => c.charCodeAt(0)))
+    message.split('').map(c => c.charCodeAt(0)))
   if (typeof socket._socket == 'object') {
     socket.send(Buffer.from(response), { binary: true })
   } else {
@@ -33,49 +33,39 @@ function sendOOB(socket, message, rinfo) {
 async function heartbeat(socket, message, rinfo) {
   let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
   // wait for a successful infoResponse before confirming
-  if(typeof SERVER == 'undefined') {
+  if (typeof SERVER == 'undefined') {
     SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
     SERVER.timeAdded = Date.now()
   }
-  if(typeof SERVER.challenge == 'undefined') {
+  if (typeof SERVER.challenge == 'undefined') {
     SERVER.challenge = buildChallenge()
   }
   let challenge = SERVER.challenge
   SERVER.timeUpdated = Date.now()
 
-  let infos = await new Promise(function (resolve, reject) {
-    let cancelTimer = setTimeout(function () {
-      console.error(new Error('Heartbeat getinfo timed out.'))
-    }, INFO_TIMEOUT)
-    if(typeof RESOLVE_STATUS[challenge] == 'undefined') {
-      RESOLVE_STATUS[challenge] = []
-    }
-    RESOLVE_STATUS[challenge].push(function (info) {
-      clearTimeout(cancelTimer)
-      if(typeof EXECUTING_MAPS[info.qps_serverId] == 'object'
-        && info.qps_renderer) {
-        console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname,
-          'Server is ', EXECUTING_MAPS[info.qps_serverId].working 
-          ? 'working' : 'available')
-      } else {
-        console.log('Heartbeat: ', info.address + ':' + info.port, info.mapname)
-      }
-      resolve(info)
-    })
-    sendOOB(socket, 'getinfo ' + challenge, rinfo)
-    sendOOB(socket, 'getstatus ' + challenge, rinfo)
-  })
+  sendOOB(socket, 'getstatus ' + challenge, rinfo)
+  sendOOB(socket, 'getinfo ' + challenge, rinfo)
+  if(typeof SERVER.logs == 'undefined') {
+    SERVER.logs = ''
+  }
+  SERVER.logs += 'Heartbeat: ' + rinfo.address + ':' 
+    + rinfo.port + ' ' + SERVER.mapname + ' '
+    + (typeof SERVER.qps_serverId != 'undefined'
+    ? ('Server is ' + EXECUTING_MAPS[SERVER.qps_serverId].working
+    ? 'working' : 'available') : '')
+    + '\n'
+  updatePageViewers('/rcon')
 
   // resolve awaiting `getServers` command for new local dedicated
-  if(typeof infos.qps_serverId != 'undefined') {
-    if(typeof EXECUTING_MAPS[infos.qps_serverId] != 'undefined') {
-      EXECUTING_MAPS[infos.qps_serverId].timedout = false
+  if (typeof SERVER.qps_serverId != 'undefined') {
+    if (typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
+      EXECUTING_MAPS[SERVER.qps_serverId].timedout = false
     }
-    if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
-      RESOLVE_DEDICATED[infos.qps_serverId] = []
+    if (typeof RESOLVE_DEDICATED[SERVER.qps_serverId] == 'undefined') {
+      RESOLVE_DEDICATED[SERVER.qps_serverId] = []
     }
     let res
-    while ((res = RESOLVE_DEDICATED[infos.qps_serverId].shift())) {
+    while ((res = RESOLVE_DEDICATED[SERVER.qps_serverId].shift())) {
       res()
     }
   }
@@ -95,23 +85,26 @@ async function statusResponse(socket, message, rinfo) {
     // TODO: parsePlayer()
   }
 
-  if(typeof infos.qps_serverId != 'undefined') {
+  if (typeof infos.qps_serverId != 'undefined') {
     // create the key just so we know not to create one in the future, we have control already
-    if(typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
+    if (typeof RESOLVE_DEDICATED[infos.qps_serverId] == 'undefined') {
       RESOLVE_DEDICATED[infos.qps_serverId] = []
     }
-    if(typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
+    if (typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId] = {
         mapname: infos.mapname,
         renderer: !!infos.qps_renderer,
-        logs: '',
         challenge: infos.qps_serverId,
+        pid: infos.qps_pid,
+        logs: '',
       }
-      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ': '') + 'already started', EXECUTING_MAPS)
+      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ' : '') 
+          + 'already started', EXECUTING_MAPS)
     }
-    if(typeof infos.qps_pid == 'undefined' 
-      && EXECUTING_MAPS[infos.qps_serverId].pid) {
-      sendOOB(socket, 'rcon password1 sets qps_pid ' + EXECUTING_MAPS[infos.qps_serverId].pid, infos)
+    if (typeof infos.qps_pid == 'undefined'
+      && typeof EXECUTING_MAPS[infos.qps_serverId].pid != 'undefined') {
+      sendOOB(socket, 'rcon password1 sets qps_pid ' 
+          + EXECUTING_MAPS[infos.qps_serverId].pid, infos)
     }
   }
 
@@ -132,7 +125,7 @@ async function infoResponse(socket, message, rinfo) {
     .map(c => String.fromCharCode(c)).join('').split('\n')[0]
 
   let SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
-  if(typeof SERVER == 'undefined') {
+  if (typeof SERVER == 'undefined') {
     SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
     SERVER.timeAdded = Date.now()
   }
@@ -149,9 +142,9 @@ async function infoResponse(socket, message, rinfo) {
   Object.assign(SERVER, infos)
 
   //console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
-  if(typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
+  if (typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
     EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
-    if(typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
+    if (typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
       EXECUTING_MAPS[SERVER.qps_serverId].working = false
     }
     //console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
@@ -160,7 +153,7 @@ async function infoResponse(socket, message, rinfo) {
 
   // TODO: store by address and port instead of challenge to prevent duplicates
   SERVER.timeUpdated = Date.now()
-  
+
   return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }
 
@@ -182,10 +175,10 @@ async function getserversResponse(socket, message, rinfo) {
       && buffer[2] == 'O'.charCodeAt(0)
       && buffer[3] == 'T'.charCodeAt(0))) {
     // validate server info
-    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
+    if (typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port] == 'undefined') {
       GAME_SERVERS[rinfo.address + ':' + rinfo.port] = rinfo
     }
-    if(typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
+    if (typeof GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge == 'undefined') {
       GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge = buildChallenge()
     }
     let challenge = GAME_SERVERS[rinfo.address + ':' + rinfo.port].challenge
@@ -236,18 +229,17 @@ async function print(socket, message, rinfo) {
   let lines = Array.from(message)
     .map(c => String.fromCharCode(c)).join('')
   const SERVER = GAME_SERVERS[rinfo.address + ':' + rinfo.port]
-  if(!SERVER) {
+  if (!SERVER) {
     // ignore?
     return
   }
   SERVER.timeUpdated = Date.now()
 
-  console.log(lines)
-
-  if(typeof SERVER.logs == 'undefined') {
+  if (typeof SERVER.logs == 'undefined') {
     SERVER.logs = ''
   }
   SERVER.logs += lines + '\n'
+  console.log(lines)
   if (typeof RESOLVE_LOGS[SERVER.challenge] != 'undefined') {
     let res
     while ((res = RESOLVE_LOGS[SERVER.challenge].shift())) {
@@ -314,7 +306,6 @@ module.exports = {
   MASTER_PORTS,
   INFO_TIMEOUT,
   RESOLVE_STATUS,
-  GAME_SERVERS,
   serveMaster,
   sendOOB,
 }
