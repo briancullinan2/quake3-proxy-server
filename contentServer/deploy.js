@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 
 const { getGame } = require('../utilities/env.js')
-const { CONTENT_FEATURES } = require('../contentServer/features.js')
+const { START_SERVICES, CONTENT_FEATURES } = require('../contentServer/features.js')
 const { createWebServers } = require('../contentServer/express.js')
 const { createMasters } = require('../gameServer/serve-master.js')
 const { UDP_SOCKETS } = require('../gameServer/master.js')
@@ -65,6 +65,7 @@ if(runDeploy) {
 
   Promise.resolve()
   .then(async () => {
+    START_SERVICES.push('all')
     //await createMasters(false)
     await createWebServers(['all'])
 
