@@ -35,7 +35,8 @@ async function exportGame(game) {
   for(let i = 0; i < ROUTES.length; i++) {
     try {
       let response = await fetch('http://localhost:' + HTTP_PORTS[0] + ROUTES[i])
-      if(response.headers.get('content-type').match(/\/html/i)) {
+      if(response.headers.get('content-type').match(/\/html/i)
+        && !ROUTES[i].match(/\.htm/i)) {
         ROUTES[i] += '.html'
       }
       let html = await response.text()
