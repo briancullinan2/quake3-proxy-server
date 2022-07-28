@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="icon" href="/unknownmap.jpg">
+	<title>Quake3e-Web</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<link rel="stylesheet" href="index.css" />
+	<script type="text/javascript">
+		if(typeof window.preFS == 'undefined') window.preFS={};
+	</script>
+</head>
+
+<body  ><ol  class="main-menu"><li><a href="/maps">
+      <span>Maps</span></a></li><li><a href="/games">
+      <span>Games</span></a></li><li><a href="/mods">
+      <span>Mods</span></a></li><li><a href="/process">
+      <span>Status</span></a></li><li><a href="/assets">
+      <span>Assets</span></a></li><li><a href="/sitemap">
+      <span>Site Map</span></a></li><li><a href="https://www.patreon.com/briancullinan">
+      <span>Donate</span></a></li></ol>
+    
+  <ol id="asset-menu" class="main-menu"><li><a href="/palette">
+      <span>Shaders</span></a></li><li><a href="/baseq3/pak0.pk3dir/?index">
+      <span>Virtual FS</span></a></li><li><a href="/repacked/baseq3/pak0.pk3dir/?index">
+      <span>Repacked Cache</span></a></li><li><a href="/build/?index">
+      <span>Live Dev</span></a></li><li><a href="/settings">
+      <span>Directories</span></a></li><li><a href="/downloads">
+      <span>Downloads</span></a></li><li><a href="/metadata">
+      <span>Metadata</span></a></li></ol>
+  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
+  <div class="info-layout">
+  <h2>Settings</h2>
+  <p>Various paths are checked for files. Each directory is combined into a layered virtual
+    directory with all the files combined. This is because each system has it's own configurable
+    paths for where pk3 and games files are stored.</p>
+  <h3>Combined Paths</h3>
+  <ol class="directory-list">
+  <li >
+  <div><a target="_self" href="/build/release-wasm-js?alt">build/release-wasm-js</a></div>
+  <div>&nbsp;</div>
+  <div>07/28/22 
+      10:17</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/build/release-darwin-x86_64?alt">build/release-darwin-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>07/28/22 
+      10:19</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/Quake3e/docs?alt">Quake3e/docs</a></div>
+  <div>&nbsp;</div>
+  <div>07/27/22 
+      22:56</div>
+  <div>/Users/briancullinan</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/quake3-proxy-server/utilities?alt">quake3-proxy-server/utilities</a></div>
+  <div>&nbsp;</div>
+  <div>07/28/22 
+      9:1</div>
+  <div>/Users/briancullinan</div>
+  </li>
+  </ol>
+  <h3>Game Directories</h3>
+  <p>Various game directories can be added, and accessed in game using the directory name 
+  as thegame setting. These paths can be modified to support multiple games on the same 
+  system, at the same time; through this web interface. Game directories are generally not added automatically, and must be configured. Built VMs from building the game files are  automatically included, for your convenience.
+  <ol class="directory-list">
+  <li class="unused-path">
+  <div><a  href="baseq3/?index">(unused) build/linux/</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/baseq3</div>
+  </li>
+
+  <li class="unused-path">
+  <div><a  href="baseq3/?index">(unused) build/win32-qvm/</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/baseq3</div>
+  </li>
+
+  <li class="unused-path">
+  <div><a  href="baseq3/?index">(unused) baseq3/assets/</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan</div>
+  </li>
+
+  <li >
+  <div><a  href="baseq3/?index">briancullinan/baseq3/</a></div>
+  <div>0B (Calculating)</div>
+  <div>07/15/22 
+      13:18</div>
+  <div>/Users</div>
+  </li>
+
+  <li >
+  <div><a  href="baseq3/?index">.q3a/baseq3/</a></div>
+  <div>0B (Calculating)</div>
+  <div>07/24/22 
+      23:58</div>
+  <div>/Users/briancullinan</div>
+  </li>
+
+  <li >
+  <div><a  href="baseq3/?index">ioquake3/baseq3/</a></div>
+  <div>0B (Calculating)</div>
+  <div>07/27/22 
+      22:55</div>
+  <div>/Applications</div>
+  </li>
+
+  <li class="unused-path">
+  <div><a  href="baseq3/?index">(unused) Quake III Arena/baseq3/</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Library/Application Support/Steam/steamapps/common</div>
+  </li>
+  </ol>
+  <h3>Content Caching</h3>
+  <p>Some files require conversion in order to use on the web. If caching is turned on, 
+  the converted files can be stored for repeat use. These paths are checked for already
+  downloaded content based on filename. They are only checked when accessed directly,
+  but using this tool, you can browse the converted / cached files in memory and on
+  disk.</p>
+  <ol class="directory-list">
+  <li class="unused-path">
+  <div><a target="_self" href="/(missing) /Users/briancullinan/Quake3e/build/baseq3-converted?alt">(missing) /Users/briancullinan/Quake3e/build/baseq3-converted</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e/build</div>
+  </li>
+  </ol>
+  <h3>Downloaded Content</h3>
+  <p>Content can be downloaded from multiple sources and managed from the Downloads page.
+  These paths are currently being checked for downloaded .pk3 files. Combined with the 
+  content caching directories above, all downloaded, cached, and developing content
+  is included in the Virtual Directory.</p>
+  <ol class="directory-list">
+  <li >
+  <div><a target="_self" href="//Users/briancullinan/Quake3e/build?alt">/Users/briancullinan/Quake3e/build</a></div>
+  <div>&nbsp;</div>
+  <div>07/27/22 
+      23:10</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+  </ol>
+  <h3>File-system Watchers</h3>
+  <p>File watchers can run events when a file change is detected. Instead of waiting for 
+  user input, the page can refresh automatically if .pk3 files are added. The parent 
+  directory and glob matching are listed on the left and the event that it triggers
+  is listed on the right.
+  <ol class="directory-list">
+  <li >
+  <div><a target="_self" href="/(implied) Proxy Code Watcher?alt">(implied) Proxy Code Watcher</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>reload/proxy</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(implied) Game Code Watcher?alt">(implied) Game Code Watcher</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>reload/qvms</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(implied) Engine Code Watcher?alt">(implied) Engine Code Watcher</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>reload/engine</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(implied) Content Watcher?alt">(implied) Content Watcher</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>reload/mounts</div>
+  </li>
+  </ol>
+  <h3>Unused Paths</h3>
+  <ol id="unused-paths" class="directory-list">
+  <li >
+  <div><a target="_self" href="/(unused) build/release-linux-x86_64?alt">(unused) build/release-linux-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/release-mingw-x86_64?alt">(unused) build/release-mingw-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/release-msys-x86_64?alt">(unused) build/release-msys-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/release-qvms-x86_64?alt">(unused) build/release-qvms-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/release-qvms-bytecode?alt">(unused) build/release-qvms-bytecode</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-wasm-js?alt">(unused) build/debug-wasm-js</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-darwin-x86_64?alt">(unused) build/debug-darwin-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-linux-x86_64?alt">(unused) build/debug-linux-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-mingw-x86_64?alt">(unused) build/debug-mingw-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-msys-x86_64?alt">(unused) build/debug-msys-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-qvms-x86_64?alt">(unused) build/debug-qvms-x86_64</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+
+  <li >
+  <div><a target="_self" href="/(unused) build/debug-qvms-bytecode?alt">(unused) build/debug-qvms-bytecode</a></div>
+  <div>&nbsp;</div>
+  <div>&nbsp;</div>
+  <div>/Users/briancullinan/Quake3e</div>
+  </li>
+  </ol>
+  <h3>Automatic Upgrade</h3>
+  <ol id="upgrade-menu" class="main-menu"><li><a href="/upgrade">
+      <span>Git Pull</span></a></li></ol>
+
+  </div>
+  
+</body>
+<script async defer src="/frontend.js"></script>
+<script async defer src="/sys_net.js"></script>
+<script async defer src="https://www.googletagmanager.com/gtag/js?id=UA-177284065-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-177284065-1');
+</script>
+</html>

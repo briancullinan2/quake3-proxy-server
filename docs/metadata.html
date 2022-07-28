@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="icon" href="/unknownmap.jpg">
+	<title>Quake3e-Web</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<link rel="stylesheet" href="index.css" />
+	<script type="text/javascript">
+		if(typeof window.preFS == 'undefined') window.preFS={};
+	</script>
+</head>
+
+<body  ><ol  class="main-menu"><li><a href="/maps">
+      <span>Maps</span></a></li><li><a href="/games">
+      <span>Games</span></a></li><li><a href="/mods">
+      <span>Mods</span></a></li><li><a href="/process">
+      <span>Status</span></a></li><li><a href="/assets">
+      <span>Assets</span></a></li><li><a href="/sitemap">
+      <span>Site Map</span></a></li><li><a href="https://www.patreon.com/briancullinan">
+      <span>Donate</span></a></li></ol>
+    
+    <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
+    </div><ol id="asset-menu" class="main-menu"><li><a href="/palette">
+      <span>Shaders</span></a></li><li><a href="/baseq3/pak0.pk3dir/?index">
+      <span>Virtual FS</span></a></li><li><a href="/repacked/baseq3/pak0.pk3dir/?index">
+      <span>Repacked Cache</span></a></li><li><a href="/build/?index">
+      <span>Live Dev</span></a></li><li><a href="/settings">
+      <span>Directories</span></a></li><li><a href="/downloads">
+      <span>Downloads</span></a></li><li><a href="/metadata">
+      <span>Metadata</span></a></li></ol><ol id="metadata-menu" class="main-menu"><li><a href="/metadata#skins">
+      <span>Skins</span></a></li><li><a href="/metadata#arenas">
+      <span>Arenas</span></a></li><li><a href="/metadata#matches">
+      <span>Matches</span></a></li><li><a href="/metadata#games">
+      <span>Games</span></a></li></ol><div class="info-layout">
+  <h2>Metadata</h2>
+  <p>Each of the following pages demonstrates pulling data from multiple sources
+  to make a coherant display. Otherwise, it would be simpler just to go out and
+  find the information somewhere else. By combining the information here, this 
+  makes the tool more useful, as well as demonstrates each piece of the game's 
+  architecture.</p>
+
+  <ol id="metadatas-list" class="stream-list"><li style="background-image: url('/unknownmap.jpg')"><h3 ><a href="/metadata#skins"><span>Skins</span><small>Asset streaming / Indexing</small></a></h3><img class="unknownmap" src="/unknownmap.jpg" /><li style="background-image: url('/unknownmap.jpg')"><h3 ><a href="/metadata#arenas"><span>Arenas</span><small>Map Validation / Parsing</small></a></h3><img class="unknownmap" src="/unknownmap.jpg" /><li style="background-image: url('/unknownmap.jpg')"><h3 ><a href="/metadata#matches"><span>Matches</span><small>Server Mocking / Recording</small></a></h3><img class="unknownmap" src="/unknownmap.jpg" /><li style="background-image: url('/unknownmap.jpg')"><h3 ><a href="/metadata#games"><span>Games</span><small>Master Servers / Mods</small></a></h3><img class="unknownmap" src="/unknownmap.jpg" /></ol>
+
+  <h2><a name="skins">Skins</a></h2>
+  <p>Most popular player skins and character classes.</p>
+  <h2><a name="arenas">Arenas</a></h2>
+  <p>Maps with matching game-types and bots configured. TODO: all of them.</p>
+  <h2><a name="matches">Matches</a></h2>
+  <p>Recent games played with player rankings.</p>
+  <h2><a name="games">Games</a></h2>
+  <p>Playable games (Mods!) hosted on running servers.</p>
+
+  <h3>Sample data</h3>
+<pre>
+/games/?json
+[{
+  bsp: "q3ctf2"
+  have: false
+  levelshot: "/unknownmap.jpg"
+  link: "games/198.46.223.132:28408"
+  mapname: "q3ctf2"
+  title: "Lightning CTF"
+}]
+</pre>
+  <p>This data is a small view of the data collected from querying servers for 
+  detailed information. This view is built based on this full server data:
+  </p>
+<pre>
+/servers/?json
+[{
+  address: "185.239.238.118"
+  challenge: "!&814c)sQ"
+  clients: "5"
+  g_humanplayers: "0"
+  g_needpass: "0"
+  game: "TIGER-X"
+  gamename: "Quake3Arena"
+  gametype: "0"
+  hostname: "ThunderCats-Fury"
+  mapname: "q3dm5"
+  port: 27888
+  protocol: "68"
+  pure: "0"
+  sv_maxclients: "15"
+  voip: "opus"
+}]
+</pre>
+  </div>
+  
+</body>
+<script async defer src="/frontend.js"></script>
+<script async defer src="/sys_net.js"></script>
+<script async defer src="https://www.googletagmanager.com/gtag/js?id=UA-177284065-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-177284065-1');
+</script>
+</html>

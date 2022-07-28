@@ -8,6 +8,8 @@ const { createWebServers } = require('../contentServer/express.js')
 const { createMasters } = require('../gameServer/serve-master.js')
 const { UDP_SOCKETS } = require('../gameServer/master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS } = require('../contentServer/session.js')
+const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
+const { STATUS_MENU } = require('../gameServer/processes.js')
 
 
 const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
@@ -29,12 +31,23 @@ async function exportGame(game) {
     '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js', 
     '/sys_web.js', '/sys_snd.js', '/sys_wasm.js'
   ]
-  let features = Object.values(CONTENT_FEATURES)
-  ROUTES = ROUTES.concat(features.filter(feature => 
+  ROUTES = ROUTES.concat(Object.values(CONTENT_FEATURES).filter(feature => 
       !feature.link.includes('://')).map(feature => '/' + feature.link))
+  ROUTES = ROUTES.concat(Object.values(ASSET_FEATURES).filter(feature => 
+    !feature.link.includes('://')).map(feature => '/' + feature.link))
+  ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
+    !feature.link.includes('://')).map(feature => '/' + feature.link))
+
   for(let i = 0; i < ROUTES.length; i++) {
     try {
       let response = await fetch('http://localhost:' + HTTP_PORTS[0] + ROUTES[i])
+      if(ROUTES[i].match(/\?index/i)) {
+        ROUTES[i] = ROUTES[i].replace(/\?index/i, '')
+      }
+      if(path.basename(ROUTES[i]).length < 1
+        || ROUTES[i].endsWith('/')) {
+        ROUTES[i] += 'index'
+      }
       if(response.headers.get('content-type').match(/\/html/i)
         && !ROUTES[i].match(/\.htm/i)) {
         ROUTES[i] += '.html'
