@@ -114,16 +114,17 @@ the average of the full (missing) image.
 ## TODO
 
 * (DONE) Fix engine page transitions using History API
-* Logs history tracker using [Vis.js](https://visjs.github.io/vis-timeline/docs/timeline/#Example)
-* Engine cmd server and discord integration
-* Finish links and extra pages, image list HTML display in (virtual) mode
+* (DONE) Engine cmd server and discord integration
+* (IN PROGRESS) Finish links and extra pages, image list HTML display in (virtual) mode
 * 100,000+ world / map compatibility
-* (IN PROGRESS) Game publishing services and engine menu overlay
+* (DONE) Game publishing services and engine menu overlay
 * Automated match-making and new in-game UX
 * Integrated development environment, map editor, code editor, self-hosted
 * Add .dm_68 demo conversion to video to renderer service
 * Add drag and drop entity location service on top of the birdeye map
 * Add heatmaps and player stats, planet_quake scope???
+* Logs history tracker using 
+   [Vis.js](https://visjs.github.io/vis-timeline/docs/timeline/#Example)
 * Integrate https://caniuse.com/offscreencanvas for better front-end 
    responsiveness and needed for studio-style video features.
 
