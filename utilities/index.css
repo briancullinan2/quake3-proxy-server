@@ -830,3 +830,15 @@ body.captured .main-menu {
 .joysticks #right-joystick, .joysticks #left-joystick {
   display:block;
 }
+
+.cache-notify {
+  position: absolute;
+  top:0;
+  width:100%;
+  right:0;
+  left:0;
+  padding: 10px;
+  background:#107f2f;
+  z-index: 950;
+}
+

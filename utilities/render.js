@@ -1,5 +1,6 @@
 const { getFeatureFilter } = require('../contentServer/features.js')
 const { INDEX } = require('../utilities/env.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 
 function renderFeature(map) {
@@ -57,10 +58,14 @@ function renderIndex(body, bodyClass) {
   let bodyTag = INDEX.match(/<body[\n\r.^>]*?>/i)
   let offset = bodyTag.index + bodyTag[0].length
   let index = INDEX.substring(0, offset).replace('<body', `<body ${bodyClass ? bodyClass : ''} `)
-    + renderFeatureMenu() + `
-    ${!body.includes('loading-blur') ? `
-    <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
-    </div>` : ''}`
+    + renderFeatureMenu() 
+    + (START_SERVICES.includes('deploy') 
+    ? `<div class="cache-notify">This page was loaded from cache. 
+        Reconnecting to proxy server...</div>` : '')
+    + (!body.includes('loading-blur') 
+    ? `<div class="loading-blur">
+      <img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
+    </div>` : '')
     + body + INDEX.substring(offset, INDEX.length)
   return index
 }

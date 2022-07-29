@@ -779,7 +779,7 @@ ol li.unused-path a,
   display: flex;
   /* padding-top:22px; */
   flex-direction: row;
-  user-select: none;
+  /* user-select: none; */
 }
 
 #viewport-frame canvas {
@@ -798,5 +798,47 @@ ol li.unused-path a,
 
 body.captured .main-menu {
   display:none;
+}
+
+
+.nipple {
+  pointer-events: none;
+}
+
+@-webkit-keyframes rotatequake {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(180deg); }
+}
+
+#right-joystick, #left-joystick {
+  position:absolute;
+  top:0;
+  left:0;
+  bottom:0;
+  right:0;
+  max-width:50%;
+  height:100%;
+  width:100%;
+  display:none;
+  z-index:1000;
+}
+
+#right-joystick {
+  left:50%;
+}
+
+.joysticks #right-joystick, .joysticks #left-joystick {
+  display:block;
+}
+
+.cache-notify {
+  position: absolute;
+  top:0;
+  width:100%;
+  right:0;
+  left:0;
+  padding: 10px;
+  background:#107f2f;
+  z-index: 950;
 }
 
