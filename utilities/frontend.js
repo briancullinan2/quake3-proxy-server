@@ -110,7 +110,12 @@ function pageBindings() {
     VM_Call( HEAPU32[uivm >> 2], 1, 7 /* UI_SET_ACTIVE_MENU */, 0 /* UIMENU_NONE */ );
     Cbuf_AddText(stringToAddress(' ; set in_mouse 0 ; wait 30 ; team s ; \n'))
   }
-  
+
+  if(typeof SYS != 'undefined' && SYS.state == 8
+    && (window.location.pathname.includes('index.html')
+    || window.location.pathname.length <= 1)) {
+    Cbuf_AddText(stringToAddress(' ; set in_mouse 1 ; \n'))
+  }
 
 }
 
@@ -208,7 +213,7 @@ async function refreshMaps() {
   let count = mapList.children.length
   let itemsPerLine = 0
   for(let i = 0; i < mapList.children.length; i++) {
-    if(mapList.children[i].offsetTop < lineHeight / 2) {
+    if(mapList.children[i].clientTop < lineHeight / 2) {
       itemsPerLine++
     } else {
       break

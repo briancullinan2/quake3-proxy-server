@@ -239,7 +239,7 @@ async function print(socket, message, rinfo) {
     SERVER.logs = ''
   }
   SERVER.logs += lines + '\n'
-  console.log(lines)
+  console.log('Message from:', rinfo.address + ':' + rinfo.port, lines)
   if (typeof RESOLVE_LOGS[SERVER.challenge] != 'undefined') {
     let res
     while ((res = RESOLVE_LOGS[SERVER.challenge].shift())) {

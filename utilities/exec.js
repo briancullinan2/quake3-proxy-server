@@ -76,7 +76,6 @@ async function execCmd(cmd, args, options) {
         let stdout = ''
         if(!options || !options.detached) {
           ps.stderr.on('data', (data) => {
-            console.log(data.toString('utf-8'))
             stderr += data.toString('utf-8')
           })
           if (options && typeof options.write == 'object') {

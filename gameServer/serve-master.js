@@ -57,11 +57,7 @@ function forceCheckin() {
       && Date.now() - GAME_SERVERS[keys[i]].timeAdded > timeout)
       || (GAME_SERVERS[keys[i]].timeUpdated
         && Date.now() - GAME_SERVERS[keys[i]].timeUpdated > timeout)) {
-      if (!GAME_SERVERS[keys[i]].broadcast) {
-        delete GAME_SERVERS[keys[i]]
-      } else {
-        GAME_SERVERS[keys[i]].timeUpdated = Date.now()
-      }
+      delete GAME_SERVERS[keys[i]]
       if (GAME_SERVERS[keys[i]].qps_serverId) {
         delete EXECUTING_MAPS[GAME_SERVERS[keys[i]].qps_serverId]
       }

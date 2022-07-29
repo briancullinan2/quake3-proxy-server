@@ -116,8 +116,7 @@ async function serveProcess(request, response, next) {
 
   return response.send(renderIndex(
     renderMenu(STATUS_MENU, 'downloads-menu')
-    + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-    <div class="info-layout">
+    + `<div class="info-layout">
     <h2>Task List</h2>
     <ol class="directory-list">${processes.map(renderProcess).join('\n')}
     </ol>

@@ -90,10 +90,10 @@ async function getMapInfo(mapname) {
   }
   if(images.length == 0) {
     // async
-    console.error('WARNING: images not found: ' + mapname)
+    //console.error('WARNING: images not found: ' + mapname)
   }
   if(entities.length == 0) {
-    console.error('WARNING: entities not found: ' + mapname)
+    //console.error('WARNING: entities not found: ' + mapname)
   }
 
 

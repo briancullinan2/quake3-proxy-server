@@ -73,6 +73,7 @@ async function serveGamesRange(request, response, next) {
 async function serveGamesReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
   let games = await Promise.all(Object.values(GAME_SERVERS)
+      .filter(game => !game.removed)
       .slice(start, end).map(gameInfo))
   if (isJson) {
     return response.json(games)
