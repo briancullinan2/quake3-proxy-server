@@ -57,10 +57,10 @@ function forceCheckin() {
       && Date.now() - GAME_SERVERS[keys[i]].timeAdded > timeout)
       || (GAME_SERVERS[keys[i]].timeUpdated
         && Date.now() - GAME_SERVERS[keys[i]].timeUpdated > timeout)) {
-      delete GAME_SERVERS[keys[i]]
       if (GAME_SERVERS[keys[i]].qps_serverId) {
         delete EXECUTING_MAPS[GAME_SERVERS[keys[i]].qps_serverId]
       }
+      delete GAME_SERVERS[keys[i]]
       console.log('Removing stale server: ' + keys[i])
     }
     updatePageViewers('\/games')

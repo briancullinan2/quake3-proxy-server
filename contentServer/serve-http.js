@@ -26,8 +26,7 @@ function serveFeatures(features, response) {
   let index = renderIndex(
     `<div class="info-layout">
     <h2>Site Map</h2>
-    <ol id="feature-list" class="stream-list">${featureList
-      .map(renderFeature).join('')}</ol>
+    <ol id="feature-list" class="menu-list">${featureList.map(renderFeature).join('')}</ol>
     </div>`)
   response.setHeader('content-type', 'text/html')
   return response.send(index)

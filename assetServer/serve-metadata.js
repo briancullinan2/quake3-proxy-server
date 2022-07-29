@@ -35,8 +35,7 @@ async function serveMetadata(request, response, next) {
   makes the tool more useful, as well as demonstrates each piece of the game's 
   architecture.</p>
 
-  <ol id="metadatas-list" class="stream-list">${METADATA_FEATURES
-      .map(renderFeature).join('')}</ol>
+  <ol id="metadatas-list" class="menu-list">${METADATA_FEATURES.map(renderFeature).join('')}</ol>
 
   <h2><a name="skins">Skins</a></h2>
   <p>Most popular player skins and character classes.</p>

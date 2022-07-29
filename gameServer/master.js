@@ -116,6 +116,9 @@ async function statusResponse(socket, message, rinfo) {
     }
   }
 
+  updatePageViewers('/games')
+  updatePageViewers('/rcon')
+
   return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }
 
@@ -141,7 +144,7 @@ async function infoResponse(socket, message, rinfo) {
 
   Object.assign(SERVER, infos)
 
-  //console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
+  console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
   if (typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
     EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
     if (typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
@@ -268,7 +271,7 @@ async function serveMaster(socket, message, rinfo) {
       continue;
     }
 
-    //console.log(request)
+    console.log(request)
 
     buffer = buffer.slice(MASTER_SERVICE[i].length)
     if (i == 0) {

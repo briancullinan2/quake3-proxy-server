@@ -128,6 +128,7 @@ async function repackBasemap(modname, mapname) {
   let excludedSizes = {}
   let pk3Files = await listGameFiles(modname, pk3Name)
   let allPromises = []
+  let allExports = []
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newTime = fs.statSync(file.file).mtime.getTime()
@@ -154,6 +155,13 @@ async function repackBasemap(modname, mapname) {
       excludedSizes[newStripped] = file.size
       continue
     }
+    // export and convert the file but don't include the results in the pk3
+    if(!filterBasemap(file) && !filterBasepack(file)) {
+      if(unsupportedAudio(file.name) || unsupportedImage(file.name)) {
+        allExports.push(file)
+      }
+      continue
+    }
 
     if(path.extname(file.file) == '.bsp') {
       console.log(file)
@@ -170,6 +178,7 @@ async function repackBasemap(modname, mapname) {
     //  fs.mkdirSync(path.dirname(newFile), { recursive: true })
     //}
     allPromises.push(file)
+    // but then also allow smaller files from map packs
     includedDates[newFile] = Math.max(newTime, file.time)
   }
 
@@ -338,6 +347,7 @@ async function repackBasepack(modname) {
   let includedDates = {}
   let paletteNeeded = []
   let allPromises = []
+  let allExports = []
   let maxMtime = 0
 
   let pk3Files = await listGameFiles(modname)
@@ -357,6 +367,12 @@ async function repackBasepack(modname) {
     }
     if (!DEPLOY && !filterBasepack(file)) {
       excludedSizes[newFile] = file.size
+      continue
+    }
+    if(!filterBasepack(file)) {
+      if((unsupportedAudio(file.name) || unsupportedImage(file.name))) {
+        allExports.push(file)
+      }
       continue
     }
 
@@ -382,6 +398,7 @@ async function repackBasepack(modname) {
     if (file.time > maxMtime) {
       maxMtime = file.time
     }
+
     if (typeof includedDates[newFile] == 'undefined') {
       includedDates[newFile] = Math.max(newTime, file.time)
     }

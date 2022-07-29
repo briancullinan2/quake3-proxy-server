@@ -2,7 +2,7 @@
 const path = require('path')
 const fs = require('fs')
 
-const { getGame } = require('../utilities/env.js')
+const { getGame, setGame } = require('../utilities/env.js')
 const { START_SERVICES, CONTENT_FEATURES } = require('../contentServer/features.js')
 const { createWebServers } = require('../contentServer/express.js')
 const { createMasters } = require('../gameServer/serve-master.js')
@@ -21,6 +21,8 @@ const DEPLOY_GAMES = [getGame()]
 async function exportGame(game) {
   if(!game) {
     game = getGame()
+  } else {
+    setGame(game)
   }
 
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
@@ -39,7 +41,7 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
 
-    // export HTML content with a cache banner message
+  // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
     try {
       let response = await fetch('http://localhost:' + HTTP_PORTS[0] + ROUTES[i])
@@ -63,7 +65,11 @@ async function exportGame(game) {
     }
   }
 
+  // TODO: export all images and maps from TRIAL DEMO ONLY
+  const TRIAL_MAPS = []
 
+  // TODO: include the other BSPs for background display but no PLAY and no copyrighted content
+  //   generated images will be okay, TODO: replace BSP files with voxel tracemaps
 
 }
 

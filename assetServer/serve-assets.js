@@ -18,8 +18,7 @@ async function serveAssets(request, response, next) {
   show the menu. At any time, the \`X\` button can be pressed to get a plain
   HTML directory list.</p>
 
-  <ol id="assets-list" class="stream-list">${ASSET_FEATURES
-    .map(renderFeature).join('')}</ol>
+  <ol id="assets-list" class="menu-list">${ASSET_FEATURES.map(renderFeature).join('')}</ol>
 
   <p>Each of these datas are associated with a number of source or endpoints
   those raw sources are made available at each endpoint by adding \`?json\`

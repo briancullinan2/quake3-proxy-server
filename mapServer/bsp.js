@@ -2,7 +2,7 @@ const path = require('path')
 const fs = require('fs')
 
 const { findFile } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
 const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackedCache } = require('../utilities/env.js')
@@ -65,14 +65,15 @@ async function getMapInfo(mapname) {
   // TODO: combine with BSP loop above
   let entities = ''
   let images = []
+  let entityFile = path.join(FS_GAMEHOME, basegame, 'maps', mapname + '.ent')
+  if (fs.existsSync(entityFile)) {
+    entities = fs.readFileSync(entityFile).toString('utf-8')
+  }
   /*
   for(let i = 0; i < caches.length; i++) {
 
   // TODO: contribute to lvlshot database cached locally
-  let entityFile = path.join(caches[i], '/maps/', mapname + '.ent')
-    if (fs.existsSync(entityFile)) {
-      entities = fs.readFileSync(entityFile).toString('utf-8')
-    }
+  
 
 
     let imagesFile = path.join(caches[i], '/maps/', mapname + '-images.txt')

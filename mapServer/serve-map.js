@@ -9,7 +9,8 @@ const { MAP_DICTIONARY, filteredMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { renderImages } = require('../mapServer/shaders.js')
-const { renderIndex, renderList, renderMenu, renderEngine } = require('../utilities/render.js')
+const { renderIndex, renderMenu, renderEngine } = require('../utilities/render.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 
 // display map info, desconstruct
@@ -37,14 +38,25 @@ async function serveMapInfo(request, response, next) {
     return next(e)
   }
 
+  let DEPLOY = START_SERVICES.includes('deploy')
+  let MAP_MENU = []
+  if (DEPLOY && MAP_DICTIONARY[mapname].match(/pak[0-9]\.pk3/i)) {
+    MAP_MENU.push({
+      title: 'Buy Now',
+      link: 'https://store.steampowered.com/app/2200/Quake_III_Arena/',
+    })
+  } else {
+    MAP_MENU.push({
+      title: 'Play Now',
+      link: 'index.html?map%20' + mapname,
+    })
+    MAP_MENU.push({
+      title: 'Download',
+      link: 'maps/download/' + mapname,
+    })
+  }
 
-  let MAP_MENU = [{
-    title: 'Play Now',
-    link: 'index.html?map%20' + mapname,
-  }, {
-    title: 'Download',
-    link: 'maps/download/' + mapname,
-  }, {
+  MAP_MENU.push.apply(MAP_MENU, [{
     title: 'Screenshots',
     link: 'maps/' + mapname + '#screenshots',
   }, {
@@ -62,7 +74,7 @@ async function serveMapInfo(request, response, next) {
   }, {
     title: 'Entities',
     link: 'maps/' + mapname + '#entities',
-  }]
+  }])
 
   if (previousMap) {
     MAP_MENU.push({

@@ -5,8 +5,9 @@ const { GAME_SERVERS } = require('../gameServer/processes.js')
 const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
-const { renderIndex, renderList, renderMenu, renderEngine } = require('../utilities/render.js')
-const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT, 
+const { renderIndex, renderList, renderMenu, renderEngine,
+  renderFeature } = require('../utilities/render.js')
+const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT,
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
@@ -35,9 +36,9 @@ async function gameInfo(serverInfo) {
     levelshot = '/unknownmap.jpg'
   }
   return {
-    title: (serverInfo.qps_renderer ? '(renderer) ' 
-        : (serverInfo.dedicated ? '(dedicated) ' : '')) 
-        + (serverInfo.hostname || serverInfo.sv_hostname),
+    title: (serverInfo.qps_renderer ? '(renderer) '
+      : (serverInfo.dedicated ? '(dedicated) ' : ''))
+      + (serverInfo.hostname || serverInfo.sv_hostname),
     levelshot: levelshot,
     bsp: mapname,
     pakname: 'Download: ' + MAP_DICTIONARY[mapname],
@@ -73,8 +74,8 @@ async function serveGamesRange(request, response, next) {
 async function serveGamesReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
   let games = await Promise.all(Object.values(GAME_SERVERS)
-      .filter(game => !game.removed)
-      .slice(start, end).map(gameInfo))
+    .filter(game => !game.removed)
+    .slice(start, end).map(gameInfo))
   if (isJson) {
     return response.json(games)
   }
@@ -99,19 +100,19 @@ async function serveList(request, response, next) {
 async function serveRcon(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let modname = path.basename(filename).toLocaleLowerCase()
-  if(!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
+  if (!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
     return next()
   }
   let serverInfo = GAME_SERVERS[modname]
-  if(!serverInfo) { // try to lookup by domain name
+  if (!serverInfo) { // try to lookup by domain name
     let address = await lookupDNS(modname.split(':')[0])
     serverInfo = GAME_SERVERS[address + ':' + modname.split(':')[1]]
   }
-  if(!serverInfo) {
+  if (!serverInfo) {
     return next(new Error('Game not found.'))
   }
 
-  if(request.method == 'POST') {
+  if (request.method == 'POST') {
     sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command + '  \n', serverInfo)
     response.setHeader('expires', Date.now())
     return response.json({})
@@ -121,7 +122,7 @@ async function serveRcon(request, response, next) {
   let basegame = getGame()
   let mapname
   let levelshot
-  if(serverInfo.mapname) {
+  if (serverInfo.mapname) {
     mapname = serverInfo.mapname.toLocaleLowerCase()
     levelshot = path.join(basegame, 'pak0.pk3dir/levelshots/', mapname + '.jpg')
   } else {
@@ -130,14 +131,14 @@ async function serveRcon(request, response, next) {
 
   // update the server with a status once every 60 seconds to make sure we are still alive
   let updateTime = 0
-  if(serverInfo.sv_maxRate) {
+  if (serverInfo.sv_maxRate) {
     updateTime = parseInt(serverInfo.sv_maxRate)
   }
-  if(updateTime < GAMEINFO_TIMEOUT) {
+  if (updateTime < GAMEINFO_TIMEOUT) {
     updateTime = GAMEINFO_TIMEOUT
   }
 
-  if(!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime) {
+  if (!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime) {
     sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'getstatus ' + serverInfo.challenge, serverInfo)
   }
 
@@ -145,7 +146,7 @@ async function serveRcon(request, response, next) {
 
   return response.send(renderIndex(
     renderGamesMenu(modname)
-    + renderEngine() 
+    + renderEngine()
     + `<div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="rcon-info" class="info-layout">
     <h2>RCon: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
@@ -190,22 +191,22 @@ async function serveGameInfo(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let isJson = request.originalUrl.match(/\?json/)
   let modname = path.basename(filename).toLocaleLowerCase()
-  if(!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
+  if (!modname.match(/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/)) {
     return next()
   }
   let serverInfo = GAME_SERVERS[modname]
-  if(!serverInfo) { // try to lookup by domain name
+  if (!serverInfo) { // try to lookup by domain name
     let address = await lookupDNS(modname.split(':')[0])
     serverInfo = GAME_SERVERS[address + ':' + modname.split(':')[1]]
   }
-  
-  if(!serverInfo) {
+
+  if (!serverInfo) {
     return next(new Error('Game not found.'))
   }
   let basegame = getGame()
   let mapname
   let levelshot
-  if(serverInfo.mapname) {
+  if (serverInfo.mapname) {
     mapname = serverInfo.mapname.toLocaleLowerCase()
     levelshot = path.join(basegame, 'pak0.pk3dir/levelshots/', mapname + '.jpg')
   } else {
@@ -213,21 +214,21 @@ async function serveGameInfo(request, response, next) {
   }
 
   let updateTime = 0
-  if(serverInfo.sv_maxRate) {
+  if (serverInfo.sv_maxRate) {
     updateTime = parseInt(serverInfo.sv_maxRate)
   }
-  if(updateTime < GAMEINFO_TIMEOUT) {
+  if (updateTime < GAMEINFO_TIMEOUT) {
     updateTime = GAMEINFO_TIMEOUT
   }
 
-  if(MASTER_PORTS.length > 0
+  if (MASTER_PORTS.length > 0
     && serverInfo.challenge
     && (!serverInfo.timeUpdated || Date.now() - serverInfo.timeUpdated > updateTime)) {
     Promise.resolve(new Promise((resolve, reject) => {
       let cancelTimer = setTimeout(function () {
         console.error(new Error('Game status timed out.'))
       }, INFO_TIMEOUT)
-      if(typeof RESOLVE_STATUS[serverInfo.challenge] == 'undefined') {
+      if (typeof RESOLVE_STATUS[serverInfo.challenge] == 'undefined') {
         RESOLVE_STATUS[serverInfo.challenge] = []
       }
       RESOLVE_STATUS[serverInfo.challenge].push(function (info) {
@@ -252,24 +253,20 @@ async function serveGameInfo(request, response, next) {
     <h3><a name="info">Server Info</a></h3>
 
     <h3><a name="links">Links</a></h3>
-    ${renderList('/menu/', [
-      {
-        title: 'Connect',
-        link: 'index.html?connect%20' + modname,
-      },
-      {
-        title: 'Maps',
-        link: modname + '/?index',
-      },
-      {
-        title: 'Stats',
-        link: modname + '/?index',
-      },
-      {
-        title: 'Assets',
-        link: modname + '/?index',
-      },
-    ], 3)}
+    <ol class="menu-list">
+    ${[{
+      title: 'Connect',
+      link: 'index.html?connect%20' + modname,
+    }, {
+      title: 'Maps',
+      link: modname + '/?index',
+    }, {
+      title: 'Stats',
+      link: modname + '/?index',
+    }, {
+      title: 'Assets',
+      link: modname + '/?index',
+    }].map(renderFeature).join('\n')}</ol>
     <h3><a name="screenshots">Screenshots</a></h3>
     <ol class="screenshots">
       <li class="title"><span>Levelshot</span></li>

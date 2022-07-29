@@ -51,7 +51,7 @@ async function serveDedicated() {
       '+set', 'sv_fps', '100',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+map', 'lsdm3_v1',
-      '+wait', '300', '+heartbeat',
+      '+wait', '30', '+heartbeat',
     ], function (lines) {
       const SERVER = Object.values(GAME_SERVERS).filter(s => s.qps_serverId == challenge)[0]
       if (!SERVER) {

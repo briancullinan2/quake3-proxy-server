@@ -472,6 +472,10 @@ ol.directory-list li {
   background-color: rgb(21, 169, 130);
 }
 
+#home-menu li {
+  background-color: rgb(21, 120, 169);
+}
+
 #games-menu li {
   background-color: #107f2f;
 }
@@ -532,6 +536,7 @@ ol.directory-list li {
 
 #map-list,
 #game-list,
+.menu-list,
 .stream-list {
   list-style: none;
   padding: 0;
@@ -547,6 +552,7 @@ ol.directory-list li {
 
 #map-list li,
 #game-list li,
+.menu-list li,
 .stream-list li {
   width: 300px;
   white-space: normal;
@@ -567,6 +573,7 @@ ol.directory-list li {
 
 #map-list li::before,
 #game-list li::before,
+.menu-list li::before,
 .stream-list li::before {
   content: "";
   height: 100%;
@@ -586,6 +593,7 @@ ol.directory-list li {
 
 #map-list li::after,
 #game-list li::after,
+.menu-list li::after,
 .stream-list li::after {
   content: "";
   height: 100%;
@@ -601,6 +609,7 @@ ol.directory-list li {
 
 #map-list img,
 #game-list img,
+.menu-list img,
 .stream-list img {
   display:
     block;
@@ -617,6 +626,7 @@ ol.directory-list li {
 
 #map-list img.unknownmap,
 #game-list img.unknownmap,
+.menu-list img.unknownmap,
 .stream-list img.unknownmap {
   height: 120px;
   width: 180px;
@@ -624,6 +634,7 @@ ol.directory-list li {
 
 #map-list h3,
 #game-list h3,
+.menu-list h3,
 .stream-list h3 {
   background-color: rgb(68 21 169);
   border-radius: 10px 10px 0 0;
@@ -675,6 +686,7 @@ ol.directory-list li {
 .shaders li a,
 #map-list h3 span,
 #game-list h3 span,
+.menu-list h3 span,
 .stream-list h3 span {
   white-space: nowrap;
   transform: translateX(0);
@@ -716,6 +728,7 @@ ol.directory-list li {
 
 #map-list a:hover span,
 #game-list a:hover span,
+.menu-list a:hover span,
 .stream-list a:hover span {
   width: auto;
   transform: translateX(calc(300px - 100%));
@@ -728,6 +741,7 @@ ol.directory-list li {
 
 #map-list li a,
 #game-list li a,
+.menu-list li a,
 .stream-list li a {
   color: #FFF;
   text-decoration: none;
@@ -739,6 +753,7 @@ ol.directory-list li {
 
 #map-list li>a,
 #game-list li>a,
+.menu-list li>a,
 .stream-list li>a {
   transition: text-shadow 0.3s ease-in-out;
   text-shadow: 0px 1px 2px rgba(0, 0, 0, 1), 0px 1px 2px rgba(255, 255, 255, 1);
@@ -746,6 +761,7 @@ ol.directory-list li {
 
 #map-list li>a:hover,
 #game-list li>a:hover,
+.menu-list li>a:hover,
 .stream-list li>a:hover {
   text-shadow: 2px 3px 4px rgba(0, 0, 0, 1), 0px 2px 6px rgba(255, 255, 255, 1);
 }

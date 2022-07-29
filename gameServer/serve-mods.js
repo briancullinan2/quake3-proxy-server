@@ -1,7 +1,7 @@
 const path = require('path')
 
 const { MODS_NAMES, getGames } = require('../utilities/env.js')
-const { renderIndex, renderList } = require('../utilities/render.js')
+const { renderIndex, renderList, renderFeature } = require('../utilities/render.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 
 /*
@@ -37,8 +37,8 @@ async function serveModsRange(request, response, next) {
 
 async function serveModsReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
-  let games 
-  if(START_SERVICES.includes('deploy')) {
+  let games
+  if (START_SERVICES.includes('deploy')) {
     games = getGames()
   } else {
     games = Object.values(MODS_NAMES).concat(getGames())
@@ -54,7 +54,7 @@ async function serveModsReal(start, end, isJson, response, next) {
         link: `mods/${game}`,
       }
     })
-    gamesFiltered.sort((a, b) => a.title.localeCompare(b.title, 'en', {sensitivity: 'base'}))
+  gamesFiltered.sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }))
   if (isJson) {
     return response.json(gamesFiltered)
   }
@@ -73,17 +73,15 @@ async function serveModInfo(request, response, next) {
     `<div id="mod-info" class="info-layout">
     <h2>${modname}</h2>
     <h3>Screenshots</h3>
-    <h3>Links</h3>`
-    + renderList('/menu/', [
-      {
-        title: 'Play',
-        link: 'index.html?set%20fs_game%20' + modname,
-      },
-      {
-        title: 'Assets',
-        link: modname + '/?index',
-      },
-    ], 3)))
+    <h3>Links</h3>
+    <ol class="menu-list">
+    ${[{
+      title: 'Play',
+      link: 'index.html?set%20fs_game%20' + modname,
+    }, {
+      title: 'Assets',
+      link: modname + '/?index',
+    }].map(renderFeature).join('\n')}</ol>`))
 }
 
 module.exports = {

@@ -195,7 +195,7 @@ let previousHalf = 0
 let loading = 0
 
 async function refreshMaps() {
-  mapList = document.getElementById('map-list')
+  mapList = document.getElementsByClassName('stream-list')[0]
 
   if(!mapList || !mapList.children[0]) {
     return
@@ -246,8 +246,8 @@ async function refreshMaps() {
   let scrollback = Math.ceil(count / itemsPerLine / 5)
   let startLine = Math.floor(window.scrollY / (scrollback * lineHeight))
   let maxLine = Math.floor((lineCount - halfway * 2) / scrollback)
-  if(maxLine < 1) {
-    maxLine = 1
+  if(maxLine < 0) {
+    maxLine = 0
   }
   if(startLine > maxLine) {
     startLine = maxLine
@@ -255,7 +255,7 @@ async function refreshMaps() {
 
   let updateVisibility = previousLine == -1
 
-  if(startLine == previousLine) {
+  if(!updateVisibility && startLine == previousLine) {
     return
   }
   previousLine = startLine
@@ -386,8 +386,15 @@ function socketProxyControl(evt) {
     } else
     if (typeof window.sessionCallback != 'undefined') {
       // replace contents of list instead of the entire dang DOM page
-      for(let i = 0; i < json.length; i++) {
-        window.sessionLines[json[i].index || i] = json[i]
+      let keys = Object.keys(json)
+      window.sessionLength = json.length
+      for(let i = 0; i < keys.length; i++) {
+        // CODE REVIEW: OKAY THIS IS GETTING PRETTY NUANCED, in C#?  
+        //  window.sessionLines[json[keys[i] ?? i].index ?? keys[i] ?? i] = json
+        // At least the default operator version covers more bases and has a flow
+        //  it could probably be as short as this and still work:
+        // window.sessionLines[json[i].index ?? i]
+        window.sessionLines[((json[keys[i]] || {}).index || keys[i])] = json[keys[i]]
       }
       previousLine = -1
       refreshMaps()
