@@ -24,8 +24,7 @@ async function serveConnections(request, response, next) {
   }).flat(1)
   return response.send(renderIndex(
     renderMenu(STATUS_MENU, 'downloads-menu')
-    + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-    <div class="info-layout">
+    + `<div class="info-layout">
     <h2>Proxy Clients</h2>
     <ol class="directory-list">${proxyConnections.map(renderConnection).join('\n')}
     </ol>

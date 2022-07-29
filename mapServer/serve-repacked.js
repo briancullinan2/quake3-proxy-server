@@ -139,9 +139,7 @@ async function renderImages(pk3InnerPath, pk3File, modname) {
   let directoryFiltered = directory.filter(img => IMAGE_FORMATS.includes(path.extname(img.name)))
   let imgIndex = directoryFiltered.map(img => path.basename(img.link)).indexOf(path.basename(pk3InnerPath))
   // TODO: render image scroller view like Apple album shuffle
-  let index = renderIndex(`
-  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
-  <div id="album-view" class="album-view">
+  let index = renderIndex(`<div id="album-view" class="album-view">
   <h2>Images: 
   <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/')
       ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">
@@ -190,9 +188,7 @@ async function renderSounds(pk3InnerPath, pk3File, modname) {
   let directory = await filterRepacked(path.dirname(pk3InnerPath), pk3File, modname)
   let directoryFiltered = directory.filter(img => AUDIO_FORMATS.includes(path.extname(img.name)))
   let imgIndex = directoryFiltered.map(img => path.basename(img.link)).indexOf(path.basename(pk3InnerPath))
-  let index = renderIndex(`
-  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg" /></div>
-  <div id="wave-view" class="album-view">
+  let index = renderIndex(`<div id="wave-view" class="album-view">
   <h2>Sounds: 
   <a href="/repacked/${modname}/${pk3File}dir/${path.dirname(pk3InnerPath).includes('/')
       ? path.dirname(path.dirname(pk3InnerPath)) : path.dirname(pk3InnerPath)}/?index">

@@ -23,7 +23,7 @@ async function sourcePk3Download(filename) {
     if (cached) {
       source = cached
     } else
-      if ((cached = findFile('baseq3/' + pk3name))) {
+      if ((cached = findFile(getGame() + '/' + pk3name))) {
         source = cached
       } else {
         let caches = downloadCache()

@@ -32,7 +32,6 @@ async function filteredMaps() {
     let basename = MAP_DICTIONARY[mapname]
     return {
       link: `maps/${mapname}`,
-      // /baseq3/screenshots/smc06_qubit_screenshot0001.jpg?alt
       // TODO: findAlt() and get the file time of the file that will be displayed
       // TODO: need some cache busting technique here
       levelshot: `/${basegame}/screenshots/` + mapname + '_screenshot0001.jpg?alt',

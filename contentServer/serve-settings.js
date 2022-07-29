@@ -156,10 +156,9 @@ async function serveSettings(request, response, next) {
   let allGames = await listGames(true)
 
 
-  return response.send(renderIndex(`
-  ${renderMenu(ASSET_FEATURES, 'asset-menu')}
-  <div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-  <div class="info-layout">
+  return response.send(renderIndex(
+  renderMenu(ASSET_FEATURES, 'asset-menu')
+  + `<div class="info-layout">
   <h2>Settings</h2>
   <p>Various paths are checked for files. Each directory is combined into a layered virtual
     directory with all the files combined. This is because each system has it's own configurable

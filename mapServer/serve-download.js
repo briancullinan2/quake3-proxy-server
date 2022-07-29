@@ -215,8 +215,7 @@ async function serveDownloadList(request, response, next) {
 
   return response.send(renderIndex(
   renderMenu(DOWNLOADS_MENU, 'downloads-menu')
-  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-  <div class="info-layout">
+  + `<div class="info-layout">
   <h2>${filename.match(/missing/i) ? 'Missing' : 'Downloads'}</h2>
   <ol class="directory-list">${pk3sFiltered.map(renderFilelist).join('\n')}
   </ol>

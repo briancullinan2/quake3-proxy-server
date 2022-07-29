@@ -29,7 +29,8 @@ async function exportGame(game) {
   let ROUTES = ['/index.css', '/', '/?alt', '/index.html',
     '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js', 
     '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js', 
-    '/sys_web.js', '/sys_snd.js', '/sys_wasm.js'
+    '/sys_web.js', '/sys_snd.js', '/sys_wasm.js',
+    '/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg'
   ]
   ROUTES = ROUTES.concat(Object.values(CONTENT_FEATURES).filter(feature => 
       !feature.link.includes('://')).map(feature => '/' + feature.link))
@@ -52,10 +53,10 @@ async function exportGame(game) {
         && !ROUTES[i].match(/\.htm/i)) {
         ROUTES[i] += '.html'
       }
-      let html = await response.text()
+      let html = await response.arrayBuffer()
       fs.mkdirSync(path.join(EXPORT_DIRECTORY, path.dirname(ROUTES[i])), { recursive: true })
       let outFile = path.join(EXPORT_DIRECTORY, ROUTES[i])
-      fs.writeFileSync(outFile, html)
+      fs.writeFileSync(outFile, Buffer.from(html))
     } catch (e) {
       console.error(e)
     }

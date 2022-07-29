@@ -6,13 +6,11 @@ const { ASSET_FEATURES, ASSET_MENU } = require('../contentServer/serve-settings.
 
 async function serveAssets(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  
 
   response.setHeader('content-type', 'text/html')
   return response.send(renderIndex(
   renderMenu(ASSET_MENU, 'metadata-menu')
-  + `<div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg"></div>
-  <div class="info-layout">
+  + `<div class="info-layout">
   <h2><a name="assets">Asset server</a></h2>
   <p>By default, the server responds with a plain HTML page with links for the
   directory listing. For your convenience, and for the sake of navigation,
