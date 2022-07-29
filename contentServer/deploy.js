@@ -81,6 +81,7 @@ if(runDeploy) {
   Promise.resolve()
   .then(async () => {
     START_SERVICES.push('all')
+    START_SERVICES.push('deploy')
     //await createMasters(false)
     await createWebServers(['all'])
 
