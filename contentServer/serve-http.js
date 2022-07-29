@@ -55,7 +55,6 @@ function setupExtensions(features, app) {
     app.use('/maps/reload', downloadAllMeta)
   }
 
-
   if (features.includes('all')
     || features.includes('mods')) {
     app.use(/\/mods\/[0-9]+\/[0-9]+/i, serveModsRange)

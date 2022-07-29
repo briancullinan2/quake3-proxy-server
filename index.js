@@ -223,7 +223,10 @@ function main() {
     process.on('unhandledRejection', exceptionHandler)
     process.on('uncaughtException', exceptionHandler)
 
-    if(!START_SERVICES.includes('debug')) {
+    if(!START_SERVICES.includes('debug')
+      && (!START_SERVICES.includes('deploy')
+      || START_SERVICES.includes('live'))
+    ) {
       return projectWatcher()
     }
   }

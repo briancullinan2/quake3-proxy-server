@@ -17,6 +17,17 @@ const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 
 
+let REPACKED_OUTPUT = path.join(TEMP_DIR, getGame(), 'pak0.pk3dir')
+
+function setOutput(out) {
+  REPACKED_OUTPUT = out
+}
+
+
+function getOutput() {
+  return REPACKED_OUTPUT
+}
+
 
 async function repackPk3(directory, newZip) {
   //let first = true
@@ -85,8 +96,10 @@ async function repackBasemap(modname, mapname) {
   const DEPLOY = START_SERVICES.includes('deploy')
   if (!modname) {
     modname = getGame()
+  } else {
+    
   }
-  let outputDir = path.join(TEMP_DIR, modname, 'pak0.pk3dir')
+  let outputDir = getOutput()
   console.log('Using temporary for map (' + mapname + '): ' + outputDir)
   // TODO: load the map in renderer, get list of loaded images / shaders available 
   //   on server, and package into new converted / compressed zip
@@ -309,7 +322,7 @@ async function repackBasepack(modname) {
   if (!modname) {
     modname = getGame()
   }
-  let outputDir = path.join(TEMP_DIR, modname, 'pak0.pk3dir')
+  let outputDir = getOutput()
   console.log('Using temporary: ' + outputDir)
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true })
@@ -397,4 +410,6 @@ module.exports = {
   repackBasepack,
   repackBasemap,
   repackPk3,
+  setOutput,
+  getOutput,
 }

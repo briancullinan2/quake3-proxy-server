@@ -2,7 +2,7 @@
 const START_SERVICES = []
 
 const SUPPORTED_SERVICES = [
-  'downloads', 'holdup', 'debug',
+  'downloads', 'holdup', 'debug', 'deploy',
   'proxy', 'maps', 'master', 'mirror', 'dedicated',
   'redirect', 'games', 'content', 'repack', 'discord',
   'virtual', 'live', 'mods', 'palette', 'process', 

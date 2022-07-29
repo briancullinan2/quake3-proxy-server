@@ -20,7 +20,7 @@ let ASSET_FEATURES = [{
 }, {
   title: 'Repacked Cache',
   subtitle: 'On Demand Transcoding',
-  link: 'repacked/baseq3/pak0.pk3dir/?index',
+  link: `repacked/${getGame()}/pak0.pk3dir/?index`,
   levelshot: '/build/repack.svg'
 }, {
   title: 'Live Dev',

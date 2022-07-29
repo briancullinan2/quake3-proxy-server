@@ -1,5 +1,5 @@
 const { getFeatureFilter } = require('../contentServer/features.js')
-const { INDEX } = require('../utilities/env.js')
+const { INDEX, getGame } = require('../utilities/env.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 
 
@@ -64,7 +64,7 @@ function renderIndex(body, bodyClass) {
         Reconnecting to proxy server...</div>` : '')
     + (!body.includes('loading-blur') 
     ? `<div class="loading-blur">
-      <img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
+      <img src="/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg">
     </div>` : '')
     + body + INDEX.substring(offset, INDEX.length)
   return index

@@ -30,15 +30,16 @@ async function exportGame(game) {
     '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js', 
     '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js', 
     '/sys_web.js', '/sys_snd.js', '/sys_wasm.js',
-    '/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg'
+    `/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg`
   ]
   ROUTES = ROUTES.concat(Object.values(CONTENT_FEATURES).filter(feature => 
-      !feature.link.includes('://')).map(feature => '/' + feature.link))
+    !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.values(ASSET_FEATURES).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
 
+    // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
     try {
       let response = await fetch('http://localhost:' + HTTP_PORTS[0] + ROUTES[i])
@@ -61,6 +62,9 @@ async function exportGame(game) {
       console.error(e)
     }
   }
+
+
+
 }
 
 
@@ -83,7 +87,7 @@ if(runDeploy) {
     START_SERVICES.push('all')
     START_SERVICES.push('deploy')
     //await createMasters(false)
-    await createWebServers(['all'])
+    await createWebServers(START_SERVICES)
 
     for(let i = 0; i < DEPLOY_GAMES.length; i++) {
       await exportGame(DEPLOY_GAMES[i])
