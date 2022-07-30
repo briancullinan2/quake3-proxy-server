@@ -8,6 +8,7 @@ const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServ
 const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
 const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -218,6 +219,9 @@ async function processQueue() {
 
       console.log('Starting renderer task: ', serversAvailable[0].address 
           + ':' + serversAvailable[0].port, task.cmd)
+      if(START_SERVICES.includes('deploy')) {
+        console.log(EXECUTING_MAPS)
+      }
       ++RUNCMD
       // TODO: ; set developer 1 ; 
       sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 

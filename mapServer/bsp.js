@@ -72,13 +72,19 @@ async function getMapInfo(mapname) {
   } else
   // TODO: contribute to lvlshot database cached locally
   if(START_SERVICES.includes('deploy')) {
-    await execLevelshot(mapname, /saveents/)
+    let fileResults = await execLevelshot(mapname, /saveents/)
+    if(fileResults.length && fileResults[0]) {
+      entities = fileResults[0]
+    }
   }
 
   // TODO: contribute to lvlshot database cached locally
   if(images.length == 0 || entities.length == 0) {
-    let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
-    images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase().replace(path.extname(img), ''))
+    //let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
+    //if(fileResults.length) {
+    //  images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase()
+    //      .replace(path.extname(img), ''))
+    //}
   }
   if(images.length == 0) {
     // async

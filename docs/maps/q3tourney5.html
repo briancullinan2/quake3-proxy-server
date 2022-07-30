@@ -43,7 +43,7 @@
 		<canvas></canvas>
 	</div><div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3tourney5.jpg" /></div>
     <div id="map-info">
-    <h2>q3tourney5</h2>
+    <h2>Fatal Instinct</h2>
     <h3><a name="screenshots">Screenshots</a></h3>
     <ol class="screenshots">
       <li class="title"><span>Levelshot</span></li>
@@ -76,7 +76,396 @@
     <h3>Voxelized</h3>
     <p>Coming soon. Reconstructed maps using only X/Y image data.</p>
     <h3><a name="entities">Entities</a></h3>
-    <pre contenteditable="true" class="code">
+    <pre contenteditable="true" class="code">{
+"music" "music\fla22k_05.wav"
+"_color" ".29 .25 .29"
+"ambient" "20"
+"classname" "worldspawn"
+"message" "Fatal Instinct"
+}
+{
+"origin" "2528 2008 16"
+"target" "t225"
+"targetname" "t224"
+"randon" "1"
+"wait" "3"
+"classname" "target_delay"
+}
+{
+"origin" "2528 2032 16"
+"noise" "sound/world/1shot_droneboys_01.wav"
+"spawnflags" "4"
+"targetname" "t225"
+"classname" "target_speaker"
+}
+{
+"model" "*1"
+"target" "t224"
+"wait" "-1"
+"classname" "trigger_multiple"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/skel/skel02mid.md3"
+"angle" "225"
+"origin" "2589 2656 -31"
+}
+{
+"classname" "item_armor_shard"
+"origin" "1504 1820 -16"
+}
+{
+"classname" "target_position"
+"targetname" "t223"
+"origin" "2602 1862 68"
+}
+{
+"angle" "225"
+"classname" "info_player_intermission"
+"target" "t223"
+"origin" "2728 2040 56"
+}
+{
+"origin" "2464 1632 -16"
+"classname" "ammo_cells"
+}
+{
+"origin" "2144 1536 -16"
+"classname" "item_health_large"
+}
+{
+"origin" "1724 2560 152"
+"classname" "item_quad"
+"wait" "180"
+}
+{
+"origin" "1696 2464 -16"
+"classname" "ammo_bullets"
+}
+{
+"origin" "2176 2464 -16"
+"classname" "item_armor_combat"
+}
+{
+"origin" "1568 2216 152"
+"classname" "ammo_cells"
+}
+{
+"origin" "2496 2624 -16"
+"classname" "weapon_shotgun"
+}
+{
+"origin" "2144 1536 152"
+"classname" "ammo_rockets"
+}
+{
+"spawnflags" "4"
+"origin" "2272 1404 -8"
+"angle" "180"
+"target" "t222"
+"classname" "info_player_deathmatch"
+}
+{
+"origin" "1968 2544 -16"
+"targetname" "t46"
+"classname" "ammo_bullets"
+}
+{
+"origin" "1920 2548 -16"
+"targetname" "t46"
+"classname" "ammo_bullets"
+}
+{
+"origin" "1964 2588 -16"
+"targetname" "t46"
+"classname" "ammo_shells"
+}
+{
+"origin" "1920 2588 -16"
+"targetname" "t46"
+"classname" "ammo_cells"
+}
+{
+"origin" "1876 2588 -16"
+"targetname" "t46"
+"classname" "item_armor_combat"
+}
+{
+"origin" "2008 2524 -24"
+"targetname" "t222"
+"target" "t46"
+"classname" "target_give"
+}
+{
+"origin" "1600 1404 -16"
+"classname" "weapon_plasmagun"
+}
+{
+"origin" "2140 2016 16"
+"classname" "weapon_rocketlauncher"
+}
+{
+"target" "t222"
+"origin" "1600 1536 160"
+"spawnflags" "4"
+"angle" "90"
+"classname" "info_player_deathmatch"
+}
+{
+"spawnflags" "4"
+"target" "t222"
+"origin" "2688 2072 -8"
+"angle" "270"
+"classname" "info_player_deathmatch"
+}
+{
+"target" "t222"
+"origin" "2540 2552 -8"
+"spawnflags" "4"
+"angle" "180"
+"classname" "info_player_deathmatch"
+}
+{
+"target" "t222"
+"origin" "1470 2104 -8"
+"spawnflags" "4"
+"angle" "270"
+"classname" "info_player_deathmatch"
+}
+{
+"target" "t222"
+"origin" "1820 2556 -8"
+"spawnflags" "4"
+"angle" "0"
+"classname" "info_player_deathmatch"
+}
+{
+"target" "t222"
+"origin" "1436 1408 -8"
+"spawnflags" "4"
+"angle" "0"
+"classname" "info_player_deathmatch"
+}
+{
+"target" "t222"
+"classname" "info_player_deathmatch"
+"angle" "45"
+"spawnflags" "5"
+"origin" "1976 1848 24"
+}
+{
+"target" "t222"
+"classname" "info_player_deathmatch"
+"angle" "135"
+"spawnflags" "4"
+"origin" "2632 1646 -8"
+}
+{
+"origin" "2016 2144 16"
+"classname" "item_health_large"
+}
+{
+"classname" "item_health_large"
+"origin" "2724 1540 72"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/storch/storch2.md3"
+"angle" "270"
+"origin" "2496 2660 52"
+}
+{
+"classname" "light"
+"light" "20"
+"_color" "1.000000 0.501961 0.250980"
+"origin" "2495 2611 45"
+}
+{
+"classname" "light"
+"_color" "0.101820 0.063337 0.015798"
+"origin" "2496 2652 104"
+}
+{
+"origin" "2240 2466 52"
+"angle" "180"
+"model" "models/mapobjects/storch/storch2.md3"
+"classname" "misc_model"
+}
+{
+"origin" "2191 2467 45"
+"_color" "1.000000 0.501961 0.250980"
+"light" "20"
+"classname" "light"
+}
+{
+"origin" "2232 2466 104"
+"_color" "0.101820 0.063337 0.015798"
+"classname" "light"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/storch/storch_mid.md3"
+"angle" "315"
+"origin" "1424 2168 76"
+}
+{
+"classname" "light"
+"spawnflags" "0"
+"light" "100"
+"_color" "0.101820 0.063337 0.015798"
+"origin" "1424 2168 73"
+}
+{
+"classname" "light"
+"light" "10"
+"_color" "1.000000 0.501961 0.250980"
+"origin" "1442 2148 38"
+}
+{
+"origin" "1442 2148 2"
+"_color" "1.000000 0.501961 0.250980"
+"light" "5"
+"classname" "light"
+}
+{
+"origin" "2332 1404 52"
+"angle" "180"
+"model" "models/mapobjects/storch/storch2.md3"
+"classname" "misc_model"
+}
+{
+"origin" "2283 1405 45"
+"_color" "1.000000 0.501961 0.250980"
+"light" "20"
+"classname" "light"
+}
+{
+"origin" "2324 1404 104"
+"_color" "0.101820 0.063337 0.015798"
+"classname" "light"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/storch/storch2.md3"
+"angle" "180"
+"origin" "2800 2048 44"
+}
+{
+"classname" "light"
+"light" "20"
+"_color" "1.000000 0.501961 0.250980"
+"origin" "2751 2049 37"
+}
+{
+"classname" "light"
+"_color" "0.101820 0.063337 0.015798"
+"origin" "2792 2048 96"
+}
+{
+"origin" "1936 2224 108"
+"angle" "315"
+"model" "models/mapobjects/storch/storch_mid.md3"
+"classname" "misc_model"
+}
+{
+"origin" "1936 2224 105"
+"_color" "0.101820 0.063337 0.015798"
+"light" "100"
+"spawnflags" "0"
+"classname" "light"
+}
+{
+"origin" "1954 2204 70"
+"_color" "1.000000 0.501961 0.250980"
+"light" "10"
+"classname" "light"
+}
+{
+"classname" "light"
+"light" "5"
+"_color" "1.000000 0.501961 0.250980"
+"origin" "1954 2204 34"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/storch/storch_mid.md3"
+"angle" "135"
+"origin" "2352 1808 108"
+}
+{
+"classname" "light"
+"spawnflags" "0"
+"light" "100"
+"_color" "0.101820 0.063337 0.015798"
+"origin" "2352 1808 105"
+}
+{
+"classname" "light"
+"light" "10"
+"_color" "1.000000 0.501961 0.250980"
+"origin" "2334 1828 70"
+}
+{
+"origin" "2334 1828 34"
+"_color" "1.000000 0.501961 0.250980"
+"light" "5"
+"classname" "light"
+}
+{
+"origin" "1504 1776 -16"
+"classname" "item_armor_shard"
+}
+{
+"classname" "item_armor_shard"
+"origin" "1504 1728 -16"
+}
+{
+"origin" "1504 1680 -16"
+"classname" "item_armor_shard"
+}
+{
+"classname" "target_speaker"
+"noise" "sound/world/fire1.wav"
+"origin" "2276 1404 112"
+"spawnflags" "1"
+}
+{
+"spawnflags" "1"
+"origin" "2316 1836 112"
+"noise" "sound/world/fire1.wav"
+"classname" "target_speaker"
+}
+{
+"classname" "target_speaker"
+"noise" "sound/world/fire1.wav"
+"origin" "1956 2204 112"
+"spawnflags" "1"
+}
+{
+"spawnflags" "1"
+"origin" "1452 2132 72"
+"noise" "sound/world/fire1.wav"
+"classname" "target_speaker"
+}
+{
+"classname" "target_speaker"
+"noise" "sound/world/fire1.wav"
+"origin" "2204 2460 72"
+"spawnflags" "1"
+}
+{
+"spawnflags" "1"
+"origin" "2484 2628 72"
+"noise" "sound/world/fire1.wav"
+"classname" "target_speaker"
+}
+{
+"classname" "target_speaker"
+"noise" "sound/world/fire1.wav"
+"origin" "2748 2044 72"
+"spawnflags" "1"
+}
+ 
 </pre>
     <h3>Trace-maps</h3>
     <ol class="tracemaps">

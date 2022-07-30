@@ -43,7 +43,7 @@
 		<canvas></canvas>
 	</div><div class="loading-blur"><img src="/baseq3/pak0.pk3dir/levelshots/q3dm19.jpg" /></div>
     <div id="map-info">
-    <h2>q3dm19</h2>
+    <h2>Apocalypse Void</h2>
     <h3><a name="screenshots">Screenshots</a></h3>
     <ol class="screenshots">
       <li class="title"><span>Levelshot</span></li>
@@ -76,7 +76,482 @@
     <h3>Voxelized</h3>
     <p>Coming soon. Reconstructed maps using only X/Y image data.</p>
     <h3><a name="entities">Entities</a></h3>
-    <pre contenteditable="true" class="code">
+    <pre contenteditable="true" class="code">{
+"_color" "0.2 0.2 0.3"
+"ambient" "10"
+"message" "Apocalypse Void"
+"music" "music/fla22k_05.wav"
+"classname" "worldspawn"
+}
+{
+"model" "*1"
+"origin" "428 -192 -508"
+"model2" "models/mapobjects/jets/jets01.md3"
+"speed" "8"
+"phase" "0.5"
+"height" "670"
+"classname" "func_bobbing"
+}
+{
+"model" "*2"
+"origin" "572 656 -436"
+"height" "640"
+"phase" "0"
+"speed" "8"
+"classname" "func_bobbing"
+"model2" "models/mapobjects/jets/jets01.md3"
+}
+{
+"model" "*3"
+"origin" "-476 -448 -700"
+"speed" "6"
+"phase" "0.99"
+"height" "300"
+"classname" "func_bobbing"
+"model2" "models/mapobjects/jets/jets01.md3"
+}
+{
+"model" "*4"
+"origin" "-128 -192 -116"
+"height" "437"
+"speed" "6"
+"phase" "0.99"
+"classname" "func_bobbing"
+"model2" "models/mapobjects/jets/jets01.md3"
+}
+{
+"model" "*5"
+"origin" "-128 448 -20"
+"phase" "0.33"
+"height" "405"
+"speed" "6"
+"classname" "func_bobbing"
+"model2" "models/mapobjects/jets/jets01.md3"
+}
+{
+"model" "*6"
+"origin" "-888 384 -712"
+"speed" "6"
+"phase" "0.1"
+"height" "320"
+"classname" "func_bobbing"
+"model2" "models/mapobjects/jets/jets01.md3"
+}
+{
+"model" "*7"
+"classname" "func_bobbing"
+"noise" "sound/world/x_bobber.wav"
+"height" "640"
+"phase" "0"
+"speed" "8"
+}
+{
+"model" "*8"
+"classname" "func_bobbing"
+"speed" "6"
+"phase" "0.1"
+"height" "320"
+"noise" "sound/world/x_bobber.wav"
+}
+{
+"model" "*9"
+"classname" "func_bobbing"
+"noise" "sound/world/x_bobber.wav"
+"height" "405"
+"phase" "0.33"
+"speed" "6"
+}
+{
+"model" "*10"
+"classname" "func_bobbing"
+"speed" "6"
+"phase" "0.99"
+"height" "437"
+"noise" "sound/world/x_bobber.wav"
+}
+{
+"model" "*11"
+"classname" "func_bobbing"
+"noise" "sound/world/x_bobber.wav"
+"height" "300"
+"phase" "0.99"
+"speed" "6"
+}
+{
+"model" "*12"
+"classname" "func_bobbing"
+"speed" "8"
+"phase" "0.5"
+"height" "670"
+"noise" "sound/world/x_bobber.wav"
+}
+{
+"origin" "888 -600 680"
+"classname" "light"
+}
+{
+"classname" "light"
+"_color" "0.556603 0.106879 0.085800"
+"light" "60"
+"origin" "-128 184 -896"
+}
+{
+"origin" "864 416 16"
+"random" "10"
+"wait" "30"
+"classname" "holdable_teleporter"
+}
+{
+"classname" "light"
+"light" "2000"
+"origin" "192 128 144"
+}
+{
+"origin" "1536 -768 512"
+"targetname" "t110"
+"classname" "info_notnull"
+}
+{
+"origin" "192 128 584"
+"light" "200"
+"_color" "1.000000 0.983696 0.918478"
+"classname" "light"
+}
+{
+"origin" "2744 -776 64"
+"light" "400"
+"_color" "0.103565 0.080507 0.085664"
+"classname" "light"
+}
+{
+"origin" "2816 -776 96"
+"angle" "180"
+"model" "models/mapobjects/lamps/bot_lamp2.md3"
+"classname" "misc_model"
+}
+{
+"classname" "item_health_large"
+"origin" "668 164 -688"
+}
+{
+"targetname" "t96"
+"origin" "1216 -768 512"
+"classname" "info_notnull"
+}
+{
+"classname" "info_notnull"
+"targetname" "t93"
+"origin" "532 -300 300"
+}
+{
+"classname" "info_player_intermission"
+"target" "t93"
+"origin" "952 -656 696"
+}
+{
+"origin" "384 64 16"
+"classname" "item_health_large"
+}
+{
+"origin" "-608 -992 -624"
+"classname" "item_health_large"
+}
+{
+"origin" "-672 128 -112"
+"classname" "item_health_large"
+}
+{
+"origin" "-256 -768 -112"
+"classname" "item_health_large"
+}
+{
+"origin" "-384 320 -112"
+"classname" "ammo_shells"
+}
+{
+"origin" "-384 384 -112"
+"classname" "weapon_shotgun"
+}
+{
+"origin" "128 704 16"
+"classname" "ammo_rockets"
+}
+{
+"model" "*13"
+"target" "t92"
+"classname" "trigger_multiple"
+}
+{
+"targetname" "t92"
+"origin" "2352 960 -728"
+"classname" "target_remove_powerups"
+}
+{
+"classname" "info_player_deathmatch"
+"angle" "180"
+"spawnflags" "4"
+"origin" "832 128 24"
+}
+{
+"classname" "weapon_shotgun"
+"origin" "-892 612 -624"
+}
+{
+"classname" "info_player_deathmatch"
+"angle" "315"
+"spawnflags" "4"
+"origin" "-576 640 -616"
+}
+{
+"classname" "item_flight"
+"team" "powerupstuff"
+"origin" "-128 640 -624"
+"count" "30"
+"notsingle" "1"
+}
+{
+"classname" "info_player_deathmatch"
+"angle" "90"
+"spawnflags" "4"
+"origin" "64 -768 -616"
+}
+{
+"classname" "info_player_deathmatch"
+"spawnflags" "4"
+"angle" "360"
+"origin" "-896 -128 -360"
+}
+{
+"classname" "info_player_deathmatch"
+"angle" "180"
+"spawnflags" "4"
+"origin" "576 384 408"
+}
+{
+"classname" "weapon_shotgun"
+"origin" "-192 -688 -624"
+}
+{
+"classname" "item_armor_combat"
+"origin" "-896 128 -368"
+}
+{
+"classname" "item_armor_combat"
+"origin" "384 128 16"
+}
+{
+"classname" "item_armor_body"
+"origin" "-320 -768 -112"
+}
+{
+"model" "*14"
+"dmg" "666"
+"spawnflags" "12"
+"classname" "trigger_hurt"
+}
+{
+"origin" "192 64 400"
+"classname" "weapon_railgun"
+}
+{
+"origin" "-384 -96 -368"
+"classname" "weapon_plasmagun"
+}
+{
+"origin" "128 640 16"
+"classname" "weapon_rocketlauncher"
+}
+{
+"spawnflags" "4"
+"origin" "-632 640 -104"
+"angle" "315"
+"classname" "info_player_deathmatch"
+}
+{
+"classname" "ammo_cells"
+"origin" "-384 -160 -368"
+}
+{
+"spawnflags" "8"
+"noise" "*falling1.wav"
+"classname" "target_speaker"
+"origin" "320 -1472 -720"
+"targetname" "t92"
+}
+{
+"origin" "864 352 16"
+"classname" "ammo_cells"
+}
+{
+"origin" "800 352 16"
+"classname" "ammo_slugs"
+}
+{
+"origin" "800 416 16"
+"classname" "ammo_rockets"
+}
+{
+"model" "*15"
+"target" "t97"
+"classname" "trigger_push"
+}
+{
+"classname" "weapon_rocketlauncher"
+"origin" "2432 -768 -112"
+}
+{
+"classname" "item_health"
+"origin" "2688 -640 -112"
+}
+{
+"classname" "item_quad"
+"count" "30"
+"origin" "2560 -768 -112"
+"wait" "60"
+"random" "15"
+}
+{
+"origin" "2688 -896 -112"
+"classname" "item_health"
+}
+{
+"origin" "2432 -832 -112"
+"classname" "ammo_rockets"
+}
+{
+"model" "*16"
+"target" "t96"
+"classname" "trigger_push"
+}
+{
+"targetname" "t97"
+"classname" "info_notnull"
+"origin" "960 -768 512"
+}
+{
+"classname" "ammo_cells"
+"origin" "-384 256 -112"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/lamps/bot_lampx.md3"
+"origin" "192 128 728"
+}
+{
+"origin" "576 384 728"
+"model" "models/mapobjects/lamps/bot_lampx.md3"
+"classname" "misc_model"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/lamps/bot_lampx.md3"
+"origin" "192 640 728"
+}
+{
+"origin" "-336 -1008 120"
+"angle" "90"
+"model" "models/mapobjects/lamps/bot_lamp2.md3"
+"classname" "misc_model"
+}
+{
+"classname" "misc_model"
+"model" "models/mapobjects/lamps/bot_lamp2.md3"
+"angle" "360"
+"origin" "-1160 28 16"
+}
+{
+"classname" "light"
+"_color" "0.103565 0.080507 0.085664"
+"light" "200"
+"origin" "-336 -944 64"
+}
+{
+"origin" "-1096 24 -8"
+"light" "200"
+"_color" "0.103565 0.080507 0.085664"
+"classname" "light"
+}
+{
+"classname" "light"
+"_color" "1.000000 0.983696 0.918478"
+"light" "200"
+"origin" "192 640 584"
+}
+{
+"origin" "576 384 584"
+"light" "200"
+"_color" "1.000000 0.983696 0.918478"
+"classname" "light"
+}
+{
+"classname" "light"
+"_color" "1.000000 0.983696 0.918478"
+"light" "100"
+"origin" "576 384 872"
+}
+{
+"origin" "192 640 872"
+"light" "100"
+"_color" "1.000000 0.983696 0.918478"
+"classname" "light"
+}
+{
+"classname" "light"
+"_color" "1.000000 0.983696 0.918478"
+"light" "100"
+"origin" "192 128 872"
+}
+{
+"model" "*17"
+"target" "t110"
+"classname" "trigger_push"
+}
+{
+"origin" "688 384 30"
+"targetname" "t101"
+"classname" "target_position"
+}
+{
+"origin" "568 384 144"
+"light" "2000"
+"classname" "light"
+}
+{
+"origin" "192 384 144"
+"light" "2000"
+"classname" "light"
+}
+{
+"origin" "104 40 416"
+"classname" "info_camp"
+"weight" "10"
+}
+{
+"classname" "info_camp"
+"origin" "288 40 416"
+}
+{
+"origin" "-352 -680 -96"
+"classname" "info_camp"
+}
+{
+"classname" "info_camp"
+"origin" "88 536 32"
+"weight" "5"
+}
+{
+"classname" "light"
+"origin" "1040 -600 680"
+}
+{
+"origin" "1032 -720 680"
+"classname" "light"
+}
+{
+"classname" "light"
+"origin" "872 -728 680"
+}
+ 
 </pre>
     <h3>Trace-maps</h3>
     <ol class="tracemaps">
