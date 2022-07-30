@@ -75,10 +75,17 @@ async function exportGame(game) {
   setOutput(path.join(EXPORT_DIRECTORY, 'demoq3/pak0.pk3dir'))
 
   //await repackBasepack('demoq3')
+  //fs.renameSync(
+  //  path.join(EXPORT_DIRECTORY, 'demoq3/pak0.pk3'), 
+  //  path.join(EXPORT_DIRECTORY, 'maps/repacked/pak0.pk3'))
+
   // TODO: include the other BSPs for background display but no PLAY NOW 
   //   button and no copyrighted content generated images will be okay, 
   for(let i = 0; i < TRIAL_MAPS.length; i++) {
     //await repackBasemap('demoq3', TRIAL_MAPS[i].toLocaleLowerCase())
+    //fs.renameSync(
+    //  path.join(EXPORT_DIRECTORY, 'demoq3/' + TRIAL_MAPS[i] + '.pk3'), 
+    //  path.join(EXPORT_DIRECTORY, 'maps/repacked/' + TRIAL_MAPS[i] + '.pk3'))
   }
 
   // TODO: replace BSP files with voxel tracemaps, remove lightmaps here
