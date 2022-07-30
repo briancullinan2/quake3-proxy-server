@@ -3,7 +3,6 @@ const fs = require('fs')
 
 const { findFile } = require('../assetServer/virtual.js')
 const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
-const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackedCache } = require('../utilities/env.js')
 const { streamFileKey } = require('../utilities/zip.js')
@@ -11,6 +10,7 @@ const { layeredDir } = require('../assetServer/layered.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { ScanAndLoadShaderFiles } = require('../assetServer/shaders.js')
 const { START_SERVICES } = require('../contentServer/features.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 const GAME_ARENAS = {
 
@@ -19,6 +19,9 @@ const GAME_ARENAS = {
 const MAP_ARENAS = {
 
 }
+
+const MAP_ENTITIES = {}
+
 
 
 // TODO: rewrite this completely use read BSP files directly or use WASM functionally
@@ -64,8 +67,36 @@ async function getMapInfo(mapname) {
 
 
   // TODO: combine with BSP loop above
-  let entities = ''
   let images = []
+
+  // TODO: contribute to lvlshot database cached locally
+  if(images.length == 0 || entities.length == 0) {
+    //let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
+    //if(fileResults.length) {
+    //  images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase()
+    //      .replace(path.extname(img), ''))
+    //}
+  }
+  let entities = await getEntities(basegame, mapname)
+  let worldspawn = parseWorldspawn(entities)
+
+  return {
+    bsp: mapname,
+    levelshot: levelshotPath,
+    entities: entities + '\n' + (scripts || []).join('\n'),
+    worldspawn: worldspawn[0],
+    title: await findMapname(basegame, mapname),
+    images: images,
+    pakname: MAP_DICTIONARY[mapname]
+  }
+
+}
+
+async function getEntities(basegame, mapname) {
+  let entities = ''
+  if(typeof  MAP_ENTITIES[basegame + '/' + mapname] != 'undefined') {
+    return MAP_ENTITIES[basegame + '/' + mapname]
+  }
   let entityFile = path.join(FS_GAMEHOME, basegame, 'maps', mapname + '.ent')
   if (fs.existsSync(entityFile)) {
     entities = fs.readFileSync(entityFile).toString('utf-8')
@@ -78,23 +109,13 @@ async function getMapInfo(mapname) {
     }
   }
 
-  // TODO: contribute to lvlshot database cached locally
-  if(images.length == 0 || entities.length == 0) {
-    //let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
-    //if(fileResults.length) {
-    //  images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase()
-    //      .replace(path.extname(img), ''))
-    //}
-  }
-  if(images.length == 0) {
-    // async
-    //console.error('WARNING: images not found: ' + mapname)
-  }
-  if(entities.length == 0) {
-    //console.error('WARNING: entities not found: ' + mapname)
-  }
+  // TODO: alternatively extract from bytes and BSP file
+  MAP_ENTITIES[basegame + '/' + mapname] = entities
+  return entities
+}
 
 
+async function parseWorldspawn(entities) {
   let worldspawn = []
   let entityStr = entities
   entityStr.replace(/\{([^}]*)\}/mg, function ($0, entitySrc) {
@@ -108,19 +129,21 @@ async function getMapInfo(mapname) {
 
     worldspawn.push(entity)
   })
-
-  return {
-    bsp: mapname,
-    levelshot: levelshotPath,
-    entities: entities + '\n' + (scripts || []).join('\n'),
-    worldspawn: worldspawn[0],
-    title: (worldspawn[0] || {}).message || mapname,
-    images: images,
-    pakname: MAP_DICTIONARY[mapname]
-  }
-
+  return worldspawn
 }
+
+
+async function findMapname(basegame, mapname) {
+  let entities = await getEntities(basegame, mapname)
+  let worldspawn = await parseWorldspawn(entities)
+  return (worldspawn[0] || {}).message || mapname
+}
+
 
 module.exports = {
   getMapInfo,
+  findMapname,
+  parseWorldspawn,
+  getEntities,
+
 }

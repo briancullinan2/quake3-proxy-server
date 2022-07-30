@@ -8,7 +8,7 @@ const { PassThrough, Readable } = require('stream')
 
 const { fileKey, streamKey } = require('../utilities/zip.js')
 const { CACHY_PATHY, findFile } = require('../assetServer/virtual.js')
-const { IMAGE_FORMATS, AUDIO_FORMATS, MODS_NAMES, getGames } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')

@@ -11,7 +11,9 @@ const { HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS } = require('../contentServer/se
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { STATUS_MENU } = require('../gameServer/processes.js')
 const { setOutput, repackBasemap, repackBasepack } = require('../mapServer/repack.js')
-const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
+const { listMaps } = require('../assetServer/list-maps.js')
+const { layeredDir } = require('../assetServer/layered.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 
 const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
@@ -45,8 +47,8 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
+  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
+  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
 
   // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
@@ -69,6 +71,11 @@ async function exportGame(game) {
       console.error(e)
     }
   }
+
+  // TODO: put the vm in the right place in the output path so the new VM is picked up
+  //   and packaged into the pk3
+  let files = layeredDir('multigame/xxx-multigame.pk3dir', true)
+  console.log(files)
 
   // TODO: export all images and maps from TRIAL DEMO ONLY
   const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']

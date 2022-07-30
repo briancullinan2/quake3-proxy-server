@@ -2,9 +2,9 @@ const path = require('path')
 const fs = require('fs')
 const { findFile } = require('../assetServer/virtual.js')
 const { downloadCache, getGame } = require('../utilities/env.js')
-const { MAP_DICTIONARY } = require('../assetServer/list-maps.js')
 
 const MAP_SOURCES = {}
+const MAP_DICTIONARY = {}
 
 // https://efservers.com/games/baseEF/
 
@@ -43,6 +43,7 @@ async function sourcePk3Download(filename) {
 }
 
 module.exports = {
+  MAP_DICTIONARY,
   sourcePk3Download
 }
 

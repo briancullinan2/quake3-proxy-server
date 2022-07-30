@@ -13,8 +13,8 @@ const { streamImageFile, streamAudioFile, streamAndCache,
 const { makePalette } = require('../assetServer/make-palette.js')
 const { parsePalette } = require('../assetServer/list-palettes.js')
 const { START_SERVICES } = require('../contentServer/features.js')
-const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 
 let REPACKED_OUTPUT = path.join(TEMP_DIR, getGame(), 'pak0.pk3dir')
@@ -255,11 +255,12 @@ function filterBasepack(file) {
 
 
 async function exportFile(file, outputDir) {
-  let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
+  let newFile = path.join(outputDir, typeof file == 'object' 
+      ? file.name.toLocaleLowerCase() : file.toLocaleLowerCase())
   if (!fs.existsSync(path.dirname(newFile))) {
     fs.mkdirSync(path.dirname(newFile), { recursive: true })
   }
-  if(unsupportedImage(file.name)) {
+  if(unsupportedImage(typeof file == 'object' ? file.name : file)) {
     if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.jpg')] != 'undefined') {
       return newFile.replace(path.extname(newFile), '.jpg')
     }
@@ -273,7 +274,7 @@ async function exportFile(file, outputDir) {
       return newFile.replace(path.extname(newFile), '.png')
     }
   }
-  if(unsupportedAudio(file.name)) {
+  if(unsupportedAudio(typeof file == 'object' ? file.name : file)) {
     if(typeof CONVERTED_FILES[newFile.replace(path.extname(newFile), '.ogg')] != 'undefined') {
       return newFile.replace(path.extname(newFile), '.ogg')
     }
@@ -323,6 +324,9 @@ async function listGameFiles(modname, pk3Name) {
       directory.push(index[j])
     }
   }
+  // TODO: add files from Github game checkout
+
+  
   return directory
 }
 
@@ -432,4 +436,5 @@ module.exports = {
   repackPk3,
   setOutput,
   getOutput,
+  exportFile,
 }

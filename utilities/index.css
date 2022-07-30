@@ -441,7 +441,7 @@ ol.directory-list li {
 
 .main-menu li {
   background-color: rgb(169, 147, 21);
-  border-radius: 10px;
+  border-radius: 3px;
   flex-shrink: 0;
   color: white;
   text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);
@@ -483,7 +483,7 @@ ol.directory-list li {
 .main-menu li a {
   color: white;
   text-decoration: none;
-  padding: 10px 20px;
+  padding: 10px 10px;
   display: inline-block;
 }
 
@@ -637,7 +637,7 @@ ol.directory-list li {
 .menu-list h3,
 .stream-list h3 {
   background-color: rgb(68 21 169);
-  border-radius: 10px 10px 0 0;
+  border-radius: 4px 4px 0 0;
   margin: 0;
   flex-shrink: 0;
   text-shadow: 1px 2px 3px rgba(0, 0, 0, 0.5);

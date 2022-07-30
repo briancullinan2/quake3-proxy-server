@@ -11,8 +11,9 @@ const { renderDirectory } = require('../contentServer/serve-live.js')
 const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/async-size.js')
 const { listPk3s } = require('../assetServer/layered.js')
-const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
+const { listMaps } = require('../assetServer/list-maps.js')
 const { filteredGames } = require('../gameServer/list-games.js')
+const { MAP_DICTIONARY } = require('../mapServer/bsp.js')
 
 
 const VIRTUAL_EXPLAINATION = `

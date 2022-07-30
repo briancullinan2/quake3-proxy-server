@@ -5,12 +5,13 @@ const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')
-const { MAP_DICTIONARY, filteredMaps } = require('../assetServer/list-maps.js')
+const { filteredMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
 const { renderImages } = require('../mapServer/shaders.js')
 const { renderIndex, renderMenu, renderEngine } = require('../utilities/render.js')
 const { START_SERVICES } = require('../contentServer/features.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 
 // display map info, desconstruct

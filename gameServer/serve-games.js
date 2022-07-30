@@ -2,7 +2,7 @@ const path = require('path')
 const fs = require('fs')
 
 const { GAME_SERVERS } = require('../gameServer/processes.js')
-const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
+const { listMaps } = require('../assetServer/list-maps.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { getGame } = require('../utilities/env.js')
 const { renderIndex, renderList, renderMenu, renderEngine,
@@ -11,6 +11,7 @@ const { UDP_SOCKETS, MASTER_PORTS, INFO_TIMEOUT,
   RESOLVE_STATUS, sendOOB } = require('./master.js')
 const { lookupDNS } = require('../utilities/dns.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 const GAMEINFO_TIMEOUT = 60 * 1000
 

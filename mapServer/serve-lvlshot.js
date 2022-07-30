@@ -1,6 +1,5 @@
 const path = require('path')
 const fs = require('fs')
-const { PassThrough, Readable } = require('stream')
 
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')

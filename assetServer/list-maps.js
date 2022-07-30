@@ -1,10 +1,12 @@
 const path = require('path')
+const fs = require('path')
 
 const { getGame } = require('../utilities/env.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
 const { listPk3s } = require('../assetServer/layered.js')
-const MAP_DICTIONARY = {}
+const { findMapname } = require('../mapServer/bsp.js')
+const { MAP_DICTIONARY } = require('../mapServer/download.js')
 
 async function listMaps(basegame) {
   let pk3files = (await listPk3s(basegame)).sort().reverse()
@@ -26,9 +28,13 @@ async function listMaps(basegame) {
 }
 
 async function filteredMaps() {
+  let zeroTimer = new Promise(resolve => setTimeout(
+    resolve, 200))
+
   let basegame = getGame()
   let bsps = await listMaps(basegame)
-  let maps = bsps.map(function (mapname) {
+  let mapNames = await Promise.all(bsps.map(async map => Promise.any([await findMapname(basegame, map), zeroTimer.then(() => map)])))
+  let maps = bsps.map(function (mapname, i) {
     let basename = MAP_DICTIONARY[mapname]
     return {
       link: `maps/${mapname}`,
@@ -38,7 +44,7 @@ async function filteredMaps() {
       pakname: basename.match(/pak[0-9]\.pk3/) 
           ? void 0
           : 'Download: ' + basename.replace('map-', '').replace('map_', ''),
-      title: mapname,
+      title: mapNames[i],
       bsp: mapname,
       have: true,
     }
@@ -51,7 +57,6 @@ async function filteredMaps() {
 
 
 module.exports = {
-  MAP_DICTIONARY,
   filteredMaps,
   listMaps,
 }
