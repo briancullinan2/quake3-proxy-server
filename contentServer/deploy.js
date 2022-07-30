@@ -45,14 +45,13 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
 
   // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
     try {
       let response = await fetch('http://localhost:' + HTTP_PORTS[0] + ROUTES[i])
-      if(ROUTES[i].match(/\?index/i)) {
-        ROUTES[i] = ROUTES[i].replace(/\?index/i, '')
-      }
+      ROUTES[i] = ROUTES[i].replace(/\?index/i, '').replace(/\?alt/i, '')
       if(path.basename(ROUTES[i]).length < 1
         || ROUTES[i].endsWith('/')) {
         ROUTES[i] += 'index'

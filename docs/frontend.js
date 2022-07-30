@@ -8,25 +8,6 @@ let remoteConsole
 let renderInterval
 
 function pageBindings() {
-  // TODO: remove all this, handled by callback system now
-  /*
-  if(mapList) {
-    renderInterval setInterval(refreshMaps, 20)
-    setInterval(function () { previousLine = -1 }, 500)
-  }
-
-  mapList = document.getElementById('shader-list')
-  if(mapList) {
-    setInterval(refreshMaps, 20)
-    setInterval(function () { previousLine = -1 }, 500)
-  }
-
-  mapInfo = document.getElementById('map-info')
-  if(mapInfo) {
-    setInterval(refreshMapinfo, 20)
-    setInterval(function () { previousLine = -1 }, 2000)
-  }
-  */
 
   previousLine = -1
   refreshMaps()
@@ -284,16 +265,17 @@ async function refreshMaps() {
     }
     item.style.backgroundImage = `url(${object.levelshot})`
 
-    let title = item.children[0].children[0].children[0]
+    let title = item.children[0].children[0]
     if(object.link
-      && title.parentElement.href != object.link) {
-      title.parentElement.href = object.link
+      && title.href != object.link) {
+      title.href = object.link
     } else
-    if(object.bsp 
-      && title.parentElement.href != '/maps/' + object.bsp) {
-      title.parentElement.href = '/maps/' + object.bsp
-    }
-    if(title.innerText != object.title) {
+    if(title.children[0]
+      && title.children[0].innerText != object.title) {
+      title.children[0].innerText = object.title
+    } else 
+    if(object.title
+      && title.innerText != object.title) {
       title.innerText = object.title
     }
 
@@ -315,10 +297,10 @@ async function refreshMaps() {
     }
 
     let pakname = item.children[2]
-    if(pakname.href != '/maps/download/' + object.bsp) {
+    if(pakname && pakname.href != '/maps/download/' + object.bsp) {
       pakname.href = '/maps/download/' + object.bsp
     }
-    if(!pakname.innerText.includes(object.pakname)) {
+    if(pakname && !pakname.innerText.includes(object.pakname)) {
       pakname.innerText = `${object.pakname}`
     }
   }
@@ -399,10 +381,17 @@ function socketProxyControl(evt) {
       previousLine = -1
       refreshMaps()
     }
-
+    
     // unlikely if fail but try the next statement anyways, 
     //   in-case we are doing something stupid with JSON template strings in another module
+    //return
   } // else
+
+  if(!evt.data.includes('sessionCallback')) {
+    window.sessionCallback = null
+
+  }
+
   if(evt.data.includes('<html')) {
     let length = document.body.children.length
     let hasViewport = false
