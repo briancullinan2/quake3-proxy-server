@@ -10,6 +10,7 @@ const { streamFileKey } = require('../utilities/zip.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { ScanAndLoadShaderFiles } = require('../assetServer/shaders.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 const GAME_ARENAS = {
 
@@ -68,26 +69,16 @@ async function getMapInfo(mapname) {
   let entityFile = path.join(FS_GAMEHOME, basegame, 'maps', mapname + '.ent')
   if (fs.existsSync(entityFile)) {
     entities = fs.readFileSync(entityFile).toString('utf-8')
-  }
-  /*
-  for(let i = 0; i < caches.length; i++) {
-
+  } else
   // TODO: contribute to lvlshot database cached locally
-  
-
-
-    let imagesFile = path.join(caches[i], '/maps/', mapname + '-images.txt')
-    if (fs.existsSync(imagesFile)) {
-      images = fs.readFileSync(imagesFile).toString('utf-8').split('\n')
-    }
-
+  if(START_SERVICES.includes('deploy')) {
+    await execLevelshot(mapname, /saveents/)
   }
-  */
 
   // TODO: contribute to lvlshot database cached locally
   if(images.length == 0 || entities.length == 0) {
-    Promise.resolve(execLevelshot(mapname, /saveents|imagelist/i))
-        .catch(console.error)
+    let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
+    images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase().replace(path.extname(img), ''))
   }
   if(images.length == 0) {
     // async

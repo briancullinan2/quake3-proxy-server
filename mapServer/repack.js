@@ -103,7 +103,10 @@ async function repackBasemap(modname, mapname) {
   console.log('Using temporary for map (' + mapname + '): ' + outputDir)
   // TODO: load the map in renderer, get list of loaded images / shaders available 
   //   on server, and package into new converted / compressed zip
-  let pk3Name = findFile(getGame() + '/' + MAP_DICTIONARY[mapname])
+  let pk3Name = findFile(modname + '/' + MAP_DICTIONARY[mapname])
+  if(!pk3Name) {
+    throw new Error('pk3 File not found: ' + modname + '/' + MAP_DICTIONARY[mapname])
+  }
   //let bspFile = path.join(mapname + 'dir', `/maps/${mapname}.bsp`)
 
   // TODO: get shader/sound/model information using RPC

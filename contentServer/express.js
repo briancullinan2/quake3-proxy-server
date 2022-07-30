@@ -175,8 +175,9 @@ function createWebServers(services) {
     // http
     let httpServer = createServer(virtualApp).listen(HTTP_PORTS[i])
     HTTP_LISTENERS[HTTP_PORTS[i]] = httpServer
-    if (services.includes('all')
-      || services.includes('socks')) {
+    if (!services.includes('deploy') // don't start websocket in deploy mode
+      && (services.includes('all')
+      || services.includes('socks'))) {
       const { Server } = require('ws')
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
       WEB_SOCKETS[HTTP_PORTS[i]].on('connection', socketConnect)

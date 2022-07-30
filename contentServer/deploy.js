@@ -10,6 +10,8 @@ const { UDP_SOCKETS } = require('../gameServer/master.js')
 const { HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS } = require('../contentServer/session.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { STATUS_MENU } = require('../gameServer/processes.js')
+const { setOutput, repackBasemap, repackBasepack } = require('../mapServer/repack.js')
+const { MAP_DICTIONARY, listMaps } = require('../assetServer/list-maps.js')
 
 
 const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
@@ -27,6 +29,8 @@ async function exportGame(game) {
 
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
 
+  await listMaps('baseq3')
+
   // loop through every detectable route and export it to /docs/
   let ROUTES = ['/index.css', '/', '/?alt', '/index.html',
     '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js', 
@@ -40,6 +44,7 @@ async function exportGame(game) {
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature => 
     !feature.link.includes('://')).map(feature => '/' + feature.link))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
 
   // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
@@ -66,10 +71,17 @@ async function exportGame(game) {
   }
 
   // TODO: export all images and maps from TRIAL DEMO ONLY
-  const TRIAL_MAPS = []
+  const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
+  setOutput(path.join(EXPORT_DIRECTORY, 'demoq3/pak0.pk3dir'))
 
-  // TODO: include the other BSPs for background display but no PLAY and no copyrighted content
-  //   generated images will be okay, TODO: replace BSP files with voxel tracemaps
+  //await repackBasepack('demoq3')
+  // TODO: include the other BSPs for background display but no PLAY NOW 
+  //   button and no copyrighted content generated images will be okay, 
+  for(let i = 0; i < TRIAL_MAPS.length; i++) {
+    //await repackBasemap('demoq3', TRIAL_MAPS[i].toLocaleLowerCase())
+  }
+
+  // TODO: replace BSP files with voxel tracemaps, remove lightmaps here
 
 }
 
@@ -92,7 +104,7 @@ if(runDeploy) {
   .then(async () => {
     START_SERVICES.push('all')
     START_SERVICES.push('deploy')
-    //await createMasters(false)
+    await createMasters(false)
     await createWebServers(START_SERVICES)
 
     for(let i = 0; i < DEPLOY_GAMES.length; i++) {

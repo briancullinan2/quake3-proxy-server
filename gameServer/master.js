@@ -271,7 +271,7 @@ async function serveMaster(socket, message, rinfo) {
       continue;
     }
 
-    console.log(request)
+    //console.log(request)
 
     buffer = buffer.slice(MASTER_SERVICE[i].length)
     if (i == 0) {
