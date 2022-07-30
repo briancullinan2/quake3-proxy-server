@@ -297,10 +297,10 @@ async function refreshMaps() {
     }
 
     let pakname = item.children[2]
-    if(pakname.href != '/maps/download/' + object.bsp) {
+    if(pakname && pakname.href != '/maps/download/' + object.bsp) {
       pakname.href = '/maps/download/' + object.bsp
     }
-    if(!pakname.innerText.includes(object.pakname)) {
+    if(pakname && !pakname.innerText.includes(object.pakname)) {
       pakname.innerText = `${object.pakname}`
     }
   }
