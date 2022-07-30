@@ -326,6 +326,9 @@ async function loadNextPage(page, halfwareMark) {
       responseType: 'json',
       credentials: 'omit',
     })
+    if(response.headers.get('content-type').includes('text/html')) {
+      throw new Error('Not a json response.')
+    }
     json = await response.json()
     loading--
   } catch (e) {

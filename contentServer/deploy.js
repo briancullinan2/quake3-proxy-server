@@ -46,6 +46,7 @@ async function exportGame(game) {
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
 
   // export HTML content with a cache banner message
   for(let i = 0; i < ROUTES.length; i++) {
