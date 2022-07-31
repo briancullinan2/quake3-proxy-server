@@ -10,8 +10,9 @@ const { streamFileKey, streamKey } = require('../utilities/zip.js')
 const CONVERTED_IMAGES = {}
 
 async function convertCmd(imagePath, unsupportedFormat, quality, outFile, supportedExt, wait) {
-
   let unsupportedExt = path.extname(unsupportedFormat)
+  let startArgs = ['-strip', '-interlace', 'Plane', '-sampling-factor', 
+    '4:2:0', '-quality', quality ? quality : '20%',]
   if (typeof imagePath == 'object' || imagePath.match(/\.pk3$/i)) {
     if(START_SERVICES.includes('debug')) {
       console.log('Converting: ', unsupportedFormat)
@@ -23,12 +24,12 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
     } else {
       streamFileKey(imagePath, unsupportedFormat, passThrough)
     }
-    return await execCmd('convert', ['-strip', '-interlace',
-      'Plane', '-sampling-factor', '4:2:0', '-quality',
-      quality ? quality : '20%',
-      unsupportedExt.substring(1) + ':-', 
-      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
-    ], {
+    if(unsupportedExt == '.tga') {
+      startArgs.push('-auto-orient')
+    }
+    startArgs.push.apply(startArgs, [unsupportedExt.substring(1) + ':-', 
+      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')])
+    return await execCmd('convert', startArgs, {
       shell: true,
       once: path.join(typeof imagePath == 'object' 
         ? imagePath.file : imagePath, unsupportedFormat),
@@ -42,11 +43,12 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
     if(START_SERVICES.includes('debug')) {
       console.log('Converting: ', imagePath)
     }
-    return await execCmd('convert', ['-strip', '-interlace',
-      'Plane', '-sampling-factor', '4:2:0', '-quality',
-      quality ? quality : '20%',  '"' + imagePath + '"', 
-      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
-    ], {
+    if(unsupportedExt == '.tga') {
+      startArgs.push('-auto-orient')
+    }
+    startArgs.push.apply(startArgs, ['"' + imagePath + '"', 
+      typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')])
+    return await execCmd('convert', startArgs, {
       shell: true,
       wait: wait,
       once: imagePath,

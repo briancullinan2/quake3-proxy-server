@@ -43,7 +43,7 @@ async function execCmd(cmd, args, options) {
   }
 
   LIMIT++
-  //console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
+  console.log('Executing:', LIMIT, RUNNING, cmd, args.join(' '))
   let transform = async function (key, result) {
     return await Promise.resolve(result)
   }
