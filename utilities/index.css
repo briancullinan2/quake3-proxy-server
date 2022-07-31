@@ -484,7 +484,10 @@ ol.directory-list li {
   color: white;
   text-decoration: none;
   padding: 10px 10px;
-  display: inline-block;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #map-info ol .title,
@@ -856,5 +859,6 @@ body.captured .main-menu {
   padding: 10px;
   background:#107f2f;
   z-index: 950;
+  white-space: normal;
 }
 

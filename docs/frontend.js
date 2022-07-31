@@ -263,7 +263,6 @@ async function refreshMaps() {
     if(!object) {
       continue
     }
-    item.style.backgroundImage = `url(${object.levelshot})`
 
     let title = item.children[0].children[0]
     if(object.link
@@ -286,9 +285,16 @@ async function refreshMaps() {
 
     let levelshot = item.children[1]
     //if(levelshot.getAttribute('src') != object.levelshot) {
+    // TODO: get levelshots to update as renderer completes using file mtimes
+    if(object.levelshot) {
       levelshot.setAttribute('src', object.levelshot 
       //    + (object.levelshot.includes('?') ? '&t=' : '?t=') + Date.now()
       )
+      item.style.backgroundImage = `url(${object.levelshot})`
+    } else {
+      levelshot.setAttribute('src', '/unknownmap.jpg')
+      item.style.backgroundImage = `url(/unknownmap.jpg)`
+    }
     //}
     if(object.have) {
       levelshot.classList.remove('unknownmap')

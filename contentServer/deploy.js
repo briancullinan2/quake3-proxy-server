@@ -57,9 +57,9 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature =>
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0002.jpg?alt'))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
+  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
+  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0002.jpg?alt'))
+  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
 
   // export HTML content with a cache banner message
   for (let i = 0; i < ROUTES.length; i++) {
@@ -92,7 +92,7 @@ async function exportGame(game) {
   //await exportFiles(files, outputDir)
   //await exportFiles(files2, outputDir)
 
-  //return
+  return
   // TODO: export all images and maps from TRIAL DEMO ONLY
   const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
   setOutput(path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir'))
