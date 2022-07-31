@@ -107,6 +107,7 @@ if(os.platform == 'linux') {
 
 const MODS = []
 const MODS_NAMES = []
+const MODS_DESCRIPTIONS = {}
 
 if(fs.existsSync(FS_BASEPATH)
 //    || fs.existsSync(STEAMPATH)
@@ -114,17 +115,23 @@ if(fs.existsSync(FS_BASEPATH)
   let appDirectory = fs.readdirSync(FS_BASEPATH)
   for(let i = 0; i < appDirectory.length; i++) {
     let modDir = path.join(FS_BASEPATH, appDirectory[i])
+    let description = appDirectory[i]
     if(fs.existsSync(modDir) 
         && fs.statSync(modDir).isDirectory()) {
-      if(fs.existsSync(path.join(modDir, 'description.txt'))
-        || fs.readdirSync(modDir)
-          .filter(filename => filename.match(/\.pk3/i)).length > 0) {
+      let hasDescription = false
+      if(fs.existsSync(path.join(modDir, 'description.txt'))) {
+        hasDescription = true
+        description = fs.readFileSync(path.join(modDir, 'description.txt')).toString('utf-8')
+      }
+      if(description || fs.readdirSync(modDir).filter(filename => filename.match(/\.pk3/i)).length > 0) {
         MODS.push(appDirectory[i])
         MODS_NAMES.push(appDirectory[i].toLocaleLowerCase())
+        MODS_DESCRIPTIONS[appDirectory[i].toLocaleLowerCase()] = description
       }
     }
   }
 }
+
 
 
 const SUPPORTED_FORMATS = [
@@ -171,6 +178,7 @@ module.exports = {
   INDEX,
   MODS,
   MODS_NAMES,
+  MODS_DESCRIPTIONS,
   setGame,
   addGame,
   getGame,

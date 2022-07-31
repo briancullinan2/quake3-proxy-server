@@ -690,7 +690,7 @@ function CL_Download(cmd, name, auto) {
         }
       }
       if (nameStr.match(/\.pk3/i)) {
-        Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${cmd} ${nameStr} ; `))
+        Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${addressToString(cmd)} ${nameStr} ; `))
       }
       Com_DL_Perform(gamedir + nameStr, gamedir + localName, responseData)
     } catch (e) {

@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { MODS_NAMES, getGames } = require('../utilities/env.js')
+const { MODS_DESCRIPTIONS, MODS_NAMES, getGames } = require('../utilities/env.js')
 const { renderIndex, renderList, renderFeature } = require('../utilities/render.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 
@@ -48,7 +48,7 @@ async function serveModsReal(start, end, isJson, response, next) {
     .slice(start, end).map(game => {
       let levelshot
       return {
-        title: MODS_NAMES[game] || game,
+        title: MODS_DESCRIPTIONS[game] || game,
         subtitle: game,
         levelshot: levelshot,
         link: `mods/${game}`,

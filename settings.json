@@ -6,5 +6,15 @@
   "--add-game",
   "baseq3a",
   "--add-game",
-  "multigame"
+  "multigame",
+  "--add-game",
+  "demoq3",
+  "--add-game",
+  "rctc2",
+  "--add-game",
+  "based3",
+  "--add-game",
+  "q3ut4",
+  "--add-game",
+  "diablo"
 ]

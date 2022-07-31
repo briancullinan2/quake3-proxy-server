@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const { PassThrough } = require('stream')
 
+const { parseAguments } = require('../utilities/parse-args.js')
 const { SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS,
   getGame, setGame, addGame } = require('../utilities/env.js')
 const { START_SERVICES, CONTENT_FEATURES } = require('../contentServer/features.js')
@@ -36,9 +37,6 @@ async function exportGame(game) {
   } else {
     setGame(game)
   }
-
-  // TODO: addGame
-  addGame('multigame')
 
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
   await listMaps('baseq3')
@@ -131,6 +129,11 @@ if (runDeploy) {
 
   Promise.resolve()
     .then(async () => {
+
+      if (fs.existsSync(path.join(__dirname, '/../settings.json'))) {
+        parseAguments(require(path.join(__dirname, '/../settings.json')))
+      }
+    
       START_SERVICES.push('all')
       START_SERVICES.push('deploy')
       await createMasters(false)

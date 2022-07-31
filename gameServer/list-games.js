@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { gameDirectories } = require('../assetServer/virtual.js')
 const { calculateSize } = require('../utilities/async-size.js')
-const { MODS_NAMES, getGames } = require('../utilities/env.js')
+const { MODS, MODS_NAMES, getGames } = require('../utilities/env.js')
 
 // TODO: combine with filteredGames from list-filtered
 
