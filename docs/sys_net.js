@@ -684,17 +684,15 @@ function CL_Download(cmd, name, auto) {
       let rename = responseData.response.headers.get('content-disposition')
       if (rename) {
         let newFilename = (/filename=['"]*(.*?)['"]*$/i).exec(rename)
-        localName = '/' + localName
-        nameStr = '/' + nameStr
         if (newFilename) {
-          localName = localName.replace(/\/.*?$/, '/' + newFilename[1])
-          nameStr = nameStr.replace(/\/.*?$/, '/' + newFilename[1])
+          localName = localName.replace(/[\/]*?$/, newFilename[1])
+          nameStr = nameStr.replace(/[\/]*?$/, newFilename[1])
         }
       }
       if (nameStr.match(/\.pk3/i)) {
         Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${addressToString(cmd)} ${nameStr} ; `))
       }
-      Com_DL_Perform(gamedir + nameStr, gamedir + localName, responseData)
+      Com_DL_Perform(gamedir + '/' + nameStr, gamedir + '/' + localName, responseData)
     } catch (e) {
 
     }
