@@ -883,6 +883,9 @@ function loadImage(filename, pic, ext) {
         Com_DL_Begin(remoteFile, '/' + remoteFile
           .replace(/\.[^\/]*?$/, '.jpg') + '?alt')
           .then(responseData => {
+            if(!responseData) {
+              return
+            }
             Com_DL_Perform(remoteFile
               .replace(/\.[^\/]*?$/, '.jpg'), remoteFile, responseData)
             return responseData
@@ -890,6 +893,9 @@ function loadImage(filename, pic, ext) {
         Com_DL_Begin(remoteFile, '/' + remoteFile
           .replace(/\.[^\/]*?$/, '.png') + '?alt')
           .then(responseData => {
+            if(!responseData) {
+              return
+            }
             Com_DL_Perform(remoteFile
               .replace(/\.[^\/]*?$/, '.png'), remoteFile, responseData)
             return responseData
