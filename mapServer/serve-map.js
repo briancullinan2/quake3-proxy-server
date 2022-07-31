@@ -39,9 +39,11 @@ async function serveMapInfo(request, response, next) {
     return next(e)
   }
 
+  const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2'].map(m => m.toLocaleLowerCase())
   let DEPLOY = START_SERVICES.includes('deploy')
   let MAP_MENU = []
-  if (DEPLOY && MAP_DICTIONARY[mapname].match(/pak[0-9]\.pk3/i)) {
+  if (DEPLOY && MAP_DICTIONARY[mapname].match(/pak[0-9]\.pk3/i)
+    && !TRIAL_MAPS.includes(mapname)) {
     MAP_MENU.push({
       title: 'Buy Now',
       link: 'https://store.steampowered.com/app/2200/Quake_III_Arena/',
