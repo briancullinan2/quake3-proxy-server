@@ -219,9 +219,6 @@ async function processQueue() {
 
       console.log('Starting renderer task: ', serversAvailable[0].address 
           + ':' + serversAvailable[0].port, task.cmd)
-      if(START_SERVICES.includes('deploy')) {
-        console.log(EXECUTING_MAPS)
-      }
       ++RUNCMD
       // TODO: ; set developer 1 ; 
       sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 

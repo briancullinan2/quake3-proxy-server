@@ -10,7 +10,6 @@ const { fileKey, streamKey } = require('../utilities/zip.js')
 async function opaqueCmd(imagePath, unsupportedFormat, wait) {
   let isOpaque
 
-  let unsupportedExt = path.extname(unsupportedFormat)
   if (typeof imagePath == 'object' || imagePath.match(/\.pk3$/i)) {
     let file = typeof imagePath == 'object' 
         ? imagePath : await fileKey(imagePath, unsupportedFormat)
@@ -19,7 +18,7 @@ async function opaqueCmd(imagePath, unsupportedFormat, wait) {
       isOpaque = (await Promise.all([
         streamKey(file, passThrough),
         execCmd('identify', ['-format', '\'%[opaque]\'',
-          unsupportedExt.substring(1) + ':-'], { 
+        path.extname(file.name).substring(1) + ':-'], { 
             wait: wait,
             pipe: passThrough,
             once: path.join(file.file, unsupportedFormat),

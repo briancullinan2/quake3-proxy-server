@@ -178,7 +178,7 @@ async function streamAudioFile(filename, response) {
 
 
   if (typeof CONVERTED_SOUNDS[newKey] != 'undefined') {
-    if (typeof response.setHeader == 'function') {
+    if (response && typeof response.setHeader == 'function') {
       response.setHeader('content-type', 'audio/ogg')
       response.send(CONVERTED_SOUNDS[newKey])
     } else {
@@ -189,7 +189,7 @@ async function streamAudioFile(filename, response) {
     return newKey
   }
 
-  if (typeof response.setHeader == 'function') {
+  if (response && typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'audio/ogg')
   }
   // .pipe(response)
@@ -294,7 +294,7 @@ async function streamImageFile(filename, response) {
   } else
 
     if (typeof CONVERTED_IMAGES[newKey] != 'undefined') {
-      if (typeof response.setHeader == 'function') {
+      if (response && typeof response.setHeader == 'function') {
         response.setHeader('content-type', 'image/' + path.extname(newKey).substring(1))
         response.send(CONVERTED_IMAGES[newKey])
       } else {
@@ -307,12 +307,12 @@ async function streamImageFile(filename, response) {
 
 
   // TODO: call out to this somehow and result results
-  isOpaque = await opaqueCmd(pk3File, pk3InnerPath, true)
+  let isOpaque = await opaqueCmd(pk3File, pk3InnerPath, true)
   let newExt = isOpaque ? '.jpg' : '.png'
   newKey = key.replace(path.extname(key), newExt)
   CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
   CONVERTED_TIMES[newKey] = stat.mtime.getTime()
-  if (typeof response.setHeader == 'function') {
+  if (response && typeof response.setHeader == 'function') {
     response.setHeader('content-type', 'image/' + newExt.substring(1))
   }
   // .pipe(response)
@@ -367,8 +367,7 @@ async function streamFile(filename, stream) {
       }
 
 
-  if (!fs.existsSync(pk3File)
-    || fs.statSync(pk3File).isDirectory()) {
+  if (!fs.existsSync(pk3File) || fs.statSync(pk3File).isDirectory()) {
     return false
   }
 

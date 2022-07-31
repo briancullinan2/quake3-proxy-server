@@ -33,7 +33,7 @@ async function filteredMaps() {
 
   let basegame = getGame()
   let bsps = await listMaps(basegame)
-  let mapNames = await Promise.all(bsps.map(async map => Promise.any([await findMapname(basegame, map), zeroTimer.then(() => map)])))
+  let mapNames = await Promise.all(bsps.map(async map => Promise.any([findMapname(basegame, map), zeroTimer.then(() => map)])))
   let maps = bsps.map(function (mapname, i) {
     let basename = MAP_DICTIONARY[mapname]
     return {

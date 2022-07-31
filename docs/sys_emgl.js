@@ -877,8 +877,16 @@ function loadImage(filename, pic, ext) {
       if(!remoteFile.includes('.')) {
         remoteFile += '.tga'
       }
-      responseData = await Com_DL_Begin(remoteFile, '/' + remoteFile + '?alt')
-      Com_DL_Perform(remoteFile, remoteFile, responseData)
+      responseData = Promise.any([
+        Com_DL_Begin(remoteFile, '/' + remoteFile
+        .replace(/\.[^\/]*?$/, '.jpg') + '?alt')
+          .then(responseData => Com_DL_Perform(remoteFile
+            .replace(/\.[^\/]*?$/, '.jpg'), remoteFile, responseData)),
+        Com_DL_Begin(remoteFile, '/' + remoteFile
+        .replace(/\.[^\/]*?$/, '.png') + '?alt')
+          .then(responseData => Com_DL_Perform(remoteFile
+            .replace(/\.[^\/]*?$/, '.png'), remoteFile, responseData))])
+      
       let replaceImage = createImageFromBuffer(filenameStr, Array.from(new Uint8Array(responseData)))
       // same thing as above but synchronously after the images loads async
       replaceImage.addEventListener('load', function () {

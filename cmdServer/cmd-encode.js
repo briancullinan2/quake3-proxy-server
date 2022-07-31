@@ -28,17 +28,24 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
     }
   }
 
-  if(path.extname(typeof audioPath == 'object' ? audioPath.name : audioPath).match(/\.mp3/gi)) {
+  if(path.extname(typeof audioPath == 'object' ? audioPath.name : audioPath).match(/\.mp3|\.ogg/gi)) {
     cmd = 'ffmpeg'
-    startArgs = ['-i', file]
+    startArgs = ['-i']
     if(passThrough) {
       startArgs.push('-')
     } else {
       startArgs.push(audioPath)
     }
     startArgs.push.apply(startArgs, [
-      '-c:a', 'libvorbis', '-q:a', '4', typeof outFile == 'string' ? newPath : '-'
+      '-c:a', 'libvorbis', '-q:a', '4',
     ])
+    if(typeof newPath == 'string') {
+      startArgs.push(newPath)
+    } else {
+      startArgs.push.apply(startArgs, [
+        '-f', 'ogg', '-'
+      ])
+    }
   } else {
     cmd = 'oggenc'
     startArgs = [
@@ -51,12 +58,13 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
       startArgs.push(audioPath)
     }
     startArgs.push.apply(startArgs, [
-      '-o', typeof outFile == 'string' ? newPath : '-'
+      '-o', typeof newPath == 'string' ? '"' + newPath + '"' : '-'
     ])
   }
 
   if(START_SERVICES.includes('debug')) {
-    console.log('Transcoding: ', typeof audioPath == 'object' ? audioPath.name : audioPath, unsupportedFormat)
+    console.log('Transcoding: ', typeof audioPath == 'object' 
+        ? audioPath.name : audioPath, unsupportedFormat)
   }
   let logs
   if(passThrough) {
@@ -67,10 +75,16 @@ async function encodeCmd(audioPath, unsupportedFormat, quality, newPath, wait) {
         write: typeof newPath == 'string' ? void 0 : newPath,
         pipe: passThrough,
         wait: wait,
+        shell: true,
       })
     ]))[1]
   } else {
-    logs = await execCmd(cmd, startArgs)
+    logs = await execCmd(cmd, startArgs, {
+      once: path.join(audioPath, unsupportedFormat),
+      write: typeof newPath == 'string' ? void 0 : newPath,
+      wait: wait,
+      shell: true,
+    })
   }
   return newPath
 }

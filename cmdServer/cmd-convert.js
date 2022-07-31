@@ -18,16 +18,18 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
     }
     let passThrough = new PassThrough()
     if(typeof imagePath == 'object') {
+      unsupportedExt = path.extname(imagePath.name)
       streamKey(imagePath, passThrough)
     } else {
       streamFileKey(imagePath, unsupportedFormat, passThrough)
     }
     return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
-      quality ? quality : '20%', '-auto-orient',
+      quality ? quality : '20%',
       unsupportedExt.substring(1) + ':-', 
       typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
     ], {
+      shell: true,
       once: path.join(typeof imagePath == 'object' 
         ? imagePath.file : imagePath, unsupportedFormat),
       write: typeof outFile == 'string' ? void 0 : outFile,
@@ -42,9 +44,10 @@ async function convertCmd(imagePath, unsupportedFormat, quality, outFile, suppor
     }
     return await execCmd('convert', ['-strip', '-interlace',
       'Plane', '-sampling-factor', '4:2:0', '-quality',
-      quality ? quality : '20%', '-auto-orient', imagePath, 
+      quality ? quality : '20%',  '"' + imagePath + '"', 
       typeof outFile == 'string' ? outFile : (supportedExt.substring(1) + ':-')
     ], {
+      shell: true,
       wait: wait,
       once: imagePath,
       write: typeof outFile == 'string' ? void 0 : outFile,
