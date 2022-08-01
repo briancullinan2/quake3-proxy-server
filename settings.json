@@ -24,6 +24,7 @@
   "--add-game",
   "loco",
   "--add-game",
-  "hl1"
-
+  "hl1",
+  "--add-game",
+  "tron"
 ]

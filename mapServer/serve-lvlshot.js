@@ -202,7 +202,8 @@ async function execLevelshot(mapname, waitFor) {
         mapname: mapname,
         created: Date.now(),
         subscribers: [],
-        cmd: task.cmd
+        cmd: task.cmd,
+        game: getGame(),
       })
     }
     if (existing.length == 0) {

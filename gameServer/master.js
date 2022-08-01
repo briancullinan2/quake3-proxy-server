@@ -92,15 +92,18 @@ async function statusResponse(socket, message, rinfo) {
     }
     if (typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId] = {
-        mapname: infos.mapname,
+        timedout: false,
         renderer: parseInt(infos.qps_renderer),
         challenge: infos.qps_serverId,
         pid: parseInt(infos.qps_pid),
         logs: '',
       }
-      console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ' : '') 
+      console.log('Dedicated ' + (!!EXECUTING_MAPS[infos.qps_serverId].renderer ? ' renderer ' : '') 
           + 'already started', EXECUTING_MAPS)
     }
+    EXECUTING_MAPS[infos.qps_serverId].game = infos.gamename
+    EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
+
     if (typeof infos.qps_pid == 'undefined'
       && typeof EXECUTING_MAPS[infos.qps_serverId].pid != 'undefined') {
       sendOOB(socket, 'rcon password1 sets qps_pid ' 
@@ -146,8 +149,6 @@ async function infoResponse(socket, message, rinfo) {
 
   console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
   if (typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
-    EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
-    //console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
     EXECUTING_MAPS[SERVER.qps_serverId].timedout = false
   }
 

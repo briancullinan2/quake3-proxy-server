@@ -36,16 +36,23 @@ async function gameInfo(serverInfo) {
   } else {
     levelshot = '/unknownmap.jpg'
   }
+  let isRenderer = !!parseInt(serverInfo.qps_renderer)
+  let isDedicated = !!parseInt(serverInfo.qps_dedicated)
   return {
-    title: (serverInfo.qps_renderer ? '(renderer) '
-      : (serverInfo.dedicated ? '(dedicated) ' : ''))
+    title: (isRenderer ? '(renderer) '
+      : (isDedicated ? '(dedicated) ' : ''))
       + (serverInfo.hostname || serverInfo.sv_hostname),
     levelshot: levelshot,
     bsp: mapname,
-    pakname: 'Download: ' + MAP_DICTIONARY[mapname],
+    pakname: !MAP_DICTIONARY[mapname]
+      || MAP_DICTIONARY[mapname].match(/pak[0-9]\.pk3/)
+      ? void 0
+      : 'Download: ' + MAP_DICTIONARY[mapname],
     have: !!pk3name,
     mapname: mapname,
-    link: serverInfo.qps_renderer ? void 0 : `games/${serverInfo.address}:${serverInfo.port}`,
+    // TODO: change to nomap check?
+    link: serverInfo.address ? `${isDedicated || isRenderer
+      ? 'rcon' : 'games'}/${serverInfo.address}:${serverInfo.port}` : void 0,
   }
 }
 
@@ -114,6 +121,7 @@ async function serveRcon(request, response, next) {
   }
 
   if (request.method == 'POST') {
+    console.log('Sending RCON:', modname, request.body.command)
     sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 ' + request.body.command + '  \n', serverInfo)
     response.setHeader('expires', Date.now())
     return response.json({})
@@ -146,8 +154,7 @@ async function serveRcon(request, response, next) {
   let logs = serverInfo.logs || '(no logs to show)'
 
   return response.send(renderIndex(
-    renderGamesMenu(modname)
-    + renderEngine()
+    renderGamesMenu(modname, serverInfo)
     + `<div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="rcon-info" class="info-layout">
     <h2>RCon: <a href="/games/${basegame}/?index">${basegame}</a> / ${modname}</h2>
@@ -158,32 +165,42 @@ async function serveRcon(request, response, next) {
 
 }
 
-function renderGamesMenu(filename) {
-  return renderMenu([{
+function renderGamesMenu(filename, serverInfo) {
+  let isRenderer = !!parseInt(serverInfo.qps_renderer)
+  let isDedicated = !!parseInt(serverInfo.qps_dedicated)
+  let GAME_MENU = [{
     title: 'Games',
     link: 'games'
-  }, {
-    title: 'Game Info',
-    link: 'games/' + filename
-  }, {
-    title: 'Connect',
-    link: 'index.html?connect%20' + filename
-  }, {
+  }]
+  if (!isRenderer && !isDedicated) {
+    GAME_MENU.push.apply(GAME_MENU, [{
+      title: 'Game Info',
+      link: 'games/' + filename
+    }, {
+      title: 'Connect',
+      link: 'index.html?connect%20' + filename
+    }])
+  }
+  GAME_MENU.push({
     title: 'RCon',
     link: 'rcon/' + filename
-  }, {
-    title: 'Player Info',
-    link: 'games/' + filename + '#players'
-  }, {
-    title: 'Server Info',
-    link: 'games/' + filename + '#info'
-  }, {
-    title: 'Links',
-    link: 'games/' + filename + '#links'
-  }, {
-    title: 'Screenshots',
-    link: 'games/' + filename + '#screenshots'
-  }], 'games-menu')
+  })
+  if (!isRenderer) {
+    GAME_MENU.push.apply(GAME_MENU, [{
+      title: 'Player Info',
+      link: 'games/' + filename + '#players'
+    }, {
+      title: 'Server Info',
+      link: 'games/' + filename + '#info'
+    }, {
+      title: 'Links',
+      link: 'games/' + filename + '#links'
+    }, {
+      title: 'Screenshots',
+      link: 'games/' + filename + '#screenshots'
+    }])
+  }
+  return renderMenu(GAME_MENU, 'games-menu')
 }
 
 
@@ -243,7 +260,7 @@ async function serveGameInfo(request, response, next) {
 
 
   return response.send(renderIndex(
-    renderGamesMenu(modname)
+    renderGamesMenu(modname, serverInfo)
     + renderEngine()
     + `<div class="loading-blur"><img src="/${levelshot}" /></div>
     <div id="game-info" class="info-layout">

@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { watcherPID } = require('../utilities/env.js')
+const { watcherPID, getGame } = require('../utilities/env.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
@@ -34,8 +34,14 @@ async function serveDedicated() {
       console.log('Dedicated started.')
       updatePageViewers('/games')
     })
+    EXECUTING_MAPS[challenge] = {
+      challenge: challenge,
+      mapname: 'lsdm3_v1',
+    }
 
     let ps = await dedicatedCmd([
+      '+set', 'fs_basegame', getGame(),
+      '+set', 'fs_game', getGame(),
       '+set', 'sv_pure', '1',
       '+set', 'dedicated', '2',
       '+set', 'developer', '1',
@@ -43,6 +49,7 @@ async function serveDedicated() {
       '+set', 'sv_master2', '"207.246.91.235:27950"',
       '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
       '+sets', 'qps_renderer', '0',
+      '+sets', 'qps_dedicated', '1',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+set', 'rconPassword2', 'password1',
       '+set', 'com_yieldCPU', '1',
@@ -68,11 +75,19 @@ async function serveDedicated() {
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]
     })
-    EXECUTING_MAPS[challenge] = {
-      challenge: challenge,
-      pid: ps.pid,
-      mapname: 'lsdm3_v1',
+    EXECUTING_MAPS[challenge].pid = ps.pid
+    // TODO: reset the sent times for base servers so the master process
+    //   forces servers to checkin again
+    for (let i = 0; i < 10; i++) {
+      if (typeof GAME_SERVERS['127.0.0.1:' + (27960 + i)] == 'undefined') {
+        continue
+      }
+      if (typeof GAME_SERVERS['127.0.0.1:' + (27960 + i)].timeSent != 'undefined'
+        && Date.now() - GAME_SERVERS['127.0.0.1:' + (27960 + i)].timeSent > 1000) {
+        GAME_SERVERS['127.0.0.1:' + (27960 + i)].timeSent = Date.now() - 58 * 1000
+      }
     }
+
   } catch (e) {
     console.error('DEDICATED:', e)
   }

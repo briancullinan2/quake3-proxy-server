@@ -7,7 +7,7 @@ const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
 const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, getGame, setGame } = require('../utilities/env.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 
 
@@ -56,7 +56,8 @@ async function resolveSwitchmap(logs, task) {
     throw new Error('Not working!')
   }
 
-  if(task.cmd.match(serverInfo.mapname)) {
+  if(task.cmd.match(serverInfo.mapname)
+      && task.cmd.match(serverInfo.gamename)) {
     return true
   }
   return false
@@ -79,10 +80,18 @@ async function processQueue() {
   let mapNamesFiltered = listJobs()
 
   for(let i = 0; i < mapNamesFiltered.length; ++i) {
+
+    // TODO: use RCON interface to control servers and get information
+    let mapname = mapNamesFiltered[i]
+    let task = EXECUTING_LVLSHOTS[mapname][0]
+    if(!task) {
+      //console.log('No tasks: ' + mapname)
+      continue
+    }
+
     // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
     //   of the <MAX_RENDERERS> servers to perform simultaneously.
-    let mapname = mapNamesFiltered[i]
-    let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer)
+    let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer && map.game == task.game)
     let freeRenderers = renderers.filter(map => !map.working)
 
     if(freeRenderers.length == 0) {
@@ -104,14 +113,20 @@ async function processQueue() {
         //console.log('Max servers: ' + mapname)
         continue // can't do anything
       } else { // start another server
-        Promise.resolve(serveLvlshot(mapname))
+        let previousGame = getGame()
+        setGame(task.game)
+        await serveLvlshot(mapname)
+        setGame(previousGame)
         continue
       }
     } // else {
 
+
     let mapRenderers = renderers.filter(map => map.mapname == mapname)
     let serversAvailable = freeRenderers
-        .sort((a, b) => (a.mapname == mapname ? 0 : 1) - (b.mapname == mapname ? 0 : 1))
+        .sort((a, b) => 
+              (a.mapname == mapname && a.game == task.game ? 0 : 1) 
+            - (b.mapname == mapname && a.game == task.game ? 0 : 1))
         .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
         .filter(server => server)
     let SERVER
@@ -130,13 +145,6 @@ async function processQueue() {
     
     // remove tasks that have already completed so we don't waste time switching maps
 
-    // TODO: use RCON interface to control servers and get information
-    let task = EXECUTING_LVLSHOTS[mapname][0]
-    if(!task) {
-      //console.log('No tasks: ' + mapname)
-      continue
-    }
-
     if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
       console.log('Already done: ' + mapname + task.cmd)
       EXECUTING_LVLSHOTS[mapname].shift()
@@ -153,24 +161,27 @@ async function processQueue() {
     }
 
     // switch the maps
-    if(serversAvailable[0].mapname != mapname) {
+    if(serversAvailable[0].mapname != mapname || serversAvailable[0].game != task.game) {
       // this server is no longer needed by the mapserver
       //   this prevents it from switching servers back and forth
       //   continuously and not getting any work done
-      if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
+      if(
+        (!mapNamesFiltered.includes(serversAvailable[0].mapname))
         // this prevents it from running devmap commands on 
         //   more than one server at a time?
         && (!task.started || !task.cmd.match('devmap'))
       ) {
         console.log('Switching maps: ' + mapname)
+        //let isRenderer = !!parseInt(serversAvailable[0].qps_renderer)
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         task = {
           // TODO: not going to risk trying to make this lower
           //   rather just add more servers with com_affinityMask set
-          cmd: ` ; devmap ${mapname} ; wait 30 ; heartbeat ; `,
+          cmd: ` ; set fs_game ${task.game} ; vid_restart ; devmap ${mapname} ; wait 30 ; heartbeat ; `,
           resolve: resolveSwitchmap,
           outFile: void 0,
           mapname: mapname,
+          game: task.game,
           // drag the time average down so this event is sure to stick when using listJobs() to sort
           //   what events to execute next
           created: Number.MIN_VALUE, 
@@ -247,7 +258,7 @@ async function processQueue() {
     // TODO: if the qconsole log file changes on disk, let clients know about it
     // TODO: individual logs files for all client
     // TODO: support for other log parsing mechanism like a game stats generator based on logs?
-    let consoleLog = path.join(FS_GAMEHOME, getGame(), 'qconsole.log')
+    let consoleLog = path.join(FS_GAMEHOME, task.game, 'qconsole.log')
     if(fs.existsSync(consoleLog)) {
       let stat = fs.statSync(consoleLog)
       if(typeof task.logPosition == 'undefined'
@@ -282,13 +293,16 @@ async function processQueue() {
 
 // TODO: turn this into some sort of temporary cfg script
 async function serveLvlshot(mapname, waitFor) {
+  let basegame = getGame()
   // TODO: wait for the new dedicated process to connect to our specialized
   //   control port. Now we have a Quake 3 server command pipe. Send OOB
   //   RCON messages to control our own process remotely / asynchronously.
   // TODO: take the screenshots, run client commands using local dedicate 
   //   connected commands (side-effect, easily switch out client to a real
   //   server using the reconnect command).
-  if(Object.values(EXECUTING_MAPS).filter(map => map.renderer).length >= MAX_RENDERERS) {
+  if(Object.values(EXECUTING_MAPS).filter(map => {
+    return map.renderer && map.game == basegame
+  }).length >= MAX_RENDERERS) {
     return
   }
 
@@ -311,12 +325,13 @@ async function serveLvlshot(mapname, waitFor) {
       updatePageViewers('/games')
     })
     EXECUTING_MAPS[challenge] = {
+      game: basegame,
       renderer: true,
       challenge: challenge,
       mapname: mapname,
       logs: ''
     }
-    let consoleLog = path.join(FS_GAMEHOME, getGame(), 'qconsole.log')
+    let consoleLog = path.join(FS_GAMEHOME, basegame, 'qconsole.log')
     if(fs.existsSync(consoleLog)) {
       let stat = fs.statSync(consoleLog)
       EXECUTING_MAPS[challenge].logPosition = stat.size
@@ -327,7 +342,8 @@ async function serveLvlshot(mapname, waitFor) {
     //   all CPUs 100% when the time comes so make sure they 
     //   are evenly spread out.
     let ps = await dedicatedCmd([
-      '+set', 'fs_basegame', getGame(),
+      '+set', 'fs_basegame', basegame,
+      '+set', 'fs_game', basegame,
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
       '+set', 'developer', '0',
@@ -340,6 +356,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'sv_master3', '""',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+sets', 'qps_renderer', '1',
+      '+sets', 'qps_dedicated', '0',
       // snapshot server has low FPS
       '+set', 'com_yieldCPU', '16',
       '+set', 'com_maxfps', '3',
@@ -363,10 +380,10 @@ async function serveLvlshot(mapname, waitFor) {
                           EXECUTING_MAPS[challenge].working)
       }
     })
-    EXECUTING_MAPS[challenge].pid = ps.pid
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]
     })
+    EXECUTING_MAPS[challenge].pid = ps.pid
     if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
       EXECUTING_LVLSHOTS[mapname] = []
     }

@@ -11,6 +11,9 @@ const { repackBasemap, repackBasepack } = require('../mapServer/repack.js')
 const { listMaps } = require('../assetServer/list-maps.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { MAP_DICTIONARY } = require('../mapServer/download.js')
+const { EXPORT_DIRECTORY, setGame } = require('../utilities/env.js')
+const { setOutput } = require('../mapServer/repack.js')
+const { START_SERVICES } = require('../contentServer/features.js')
 
 
 async function filterMappack(file) {
@@ -29,6 +32,14 @@ async function serveFinished(request, response, next) {
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
   }
+
+  let previousGame = getGame()
+  if(START_SERVICES.includes('deploy')) {
+    let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
+    setOutput(outputDir)
+    setGame('demoq3')
+  }
+
   // TODO: lookup modname like in stream-file
   let modname = path.basename(path.dirname(filename))
   if(modname == 'repacked') {
@@ -54,6 +65,10 @@ async function serveFinished(request, response, next) {
     newZip = findFile(getGame() + '/' + mapname + '.pk3')
     //newZip = await repackPk3(newZip)
   }
+  if(START_SERVICES.includes('deploy')) {
+    setGame(previousGame)
+  }
+
   if(!newZip) {
     return next(new Error('File not found: ' + filename))
   }

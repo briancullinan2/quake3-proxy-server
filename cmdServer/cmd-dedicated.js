@@ -31,7 +31,6 @@ async function dedicatedCmd(startArgs, callback) {
   ps = await execCmd(dedicated, [
     '+set', 'fs_basepath', FS_BASEPATH,
     '+set', 'fs_homepath', FS_GAMEHOME,
-    '+set', 'fs_basegame', getGame(),
     // Ironically, the thing I learned working for the radio station about
     //   M$ Windows not being able to run without a video card for remote
     //   desktop, but Xvfb working fine with remote desktop, has suddenly
