@@ -64,6 +64,50 @@ async function resolveSwitchmap(logs, task) {
 }
 
 
+async function getTask(mapname, previousTask) {
+  
+  let mapNamesFiltered = listJobs()
+  let task
+  for(let i = 0; i < mapNamesFiltered.length; ++i) {
+    if(mapNamesFiltered[i] != mapname) {
+      continue
+    }
+    // TODO: use RCON interface to control servers and get information
+    task = EXECUTING_LVLSHOTS[mapname][0]
+    if(!task) {
+      //console.log('No tasks: ' + mapname)
+      continue
+    }
+
+    if(await updateSubscribers(mapname, '', task)) {
+      console.log('Already done: ' + mapname + task.cmd)
+      EXECUTING_LVLSHOTS[mapname].shift()
+      continue // already done, don't command
+    }
+
+    if(task.done) {
+      EXECUTING_LVLSHOTS[mapname].shift()
+      continue
+    }
+
+    if(task.started && Date.now() - task.started < 1000
+      || (task.started && !task.timedout)) {
+      continue // don't duplicate tasks
+    }
+
+    EXECUTING_LVLSHOTS[mapname].sort((c, d) => d.subscribers.length - c.subscribers.length)
+    task = EXECUTING_LVLSHOTS[mapname][0]
+  }
+
+  if(task && task != previousTask) {
+    return await getTask(mapname, task)
+  } else {
+    return task
+  }
+}
+
+
+
 async function processQueue() {
   // TODO: keep track of levelshot servers separately, sort / priorize by 
   //   Object.keys(EXECUTING_LVLSHOTS) == mapname, then prioritize by list
@@ -83,12 +127,14 @@ async function processQueue() {
 
     // TODO: use RCON interface to control servers and get information
     let mapname = mapNamesFiltered[i]
-    let task = EXECUTING_LVLSHOTS[mapname][0]
+    let task = await getTask(mapname)
     if(!task) {
-      //console.log('No tasks: ' + mapname)
       continue
     }
-
+    if(!task.game) {
+      console.log(task)
+      throw new Error('No game set!')
+    }
     // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
     //   of the <MAX_RENDERERS> servers to perform simultaneously.
     let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer && map.game == task.game)
@@ -145,28 +191,15 @@ async function processQueue() {
     
     // remove tasks that have already completed so we don't waste time switching maps
 
-    if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
-      console.log('Already done: ' + mapname + task.cmd)
-      EXECUTING_LVLSHOTS[mapname].shift()
-      continue // already done, don't command
-    }
-
-    if(task.done) {
-      EXECUTING_LVLSHOTS[mapname].shift()
-    }
-
-    if(task.started && Date.now() - task.started < 1000
-      || (task.started && !task.timedout)) {
-      continue // don't duplicate tasks
-    }
 
     // switch the maps
-    if(serversAvailable[0].mapname != mapname || serversAvailable[0].game != task.game) {
+    let serverGame = serversAvailable[0].fs_game || serversAvailable[0].fs_basegame
+      || serversAvailable[0].gamename
+    if(serversAvailable[0].mapname != mapname || serverGame != task.game) {
       // this server is no longer needed by the mapserver
       //   this prevents it from switching servers back and forth
       //   continuously and not getting any work done
-      if(
-        (!mapNamesFiltered.includes(serversAvailable[0].mapname))
+      if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
         // this prevents it from running devmap commands on 
         //   more than one server at a time?
         && (!task.started || !task.cmd.match('devmap'))
@@ -344,6 +377,8 @@ async function serveLvlshot(mapname, waitFor) {
     let ps = await dedicatedCmd([
       '+set', 'fs_basegame', basegame,
       '+set', 'fs_game', basegame,
+      '+sets', 'fs_basegame', basegame,
+      '+sets', 'fs_game', basegame,
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
       '+set', 'developer', '0',

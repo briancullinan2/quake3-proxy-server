@@ -47,6 +47,9 @@ function addRepacked(directory) {
 }
 
 function setGame(game) {
+  if(!game) {
+    throw new Error('No game set!')
+  }
   FS_BASEGAME = game
 }
 

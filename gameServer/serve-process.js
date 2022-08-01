@@ -15,6 +15,7 @@ const DEDICATED_TIMEOUT = 5000
 
 
 async function serveDedicated() {
+  let basegame = getGame()
   // only ever start 1 dedicated server automatically
   //console.log(Object.values(EXECUTING_MAPS).filter(map => !map.renderer))
   if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length > 0) {
@@ -40,8 +41,10 @@ async function serveDedicated() {
     }
 
     let ps = await dedicatedCmd([
-      '+set', 'fs_basegame', getGame(),
-      '+set', 'fs_game', getGame(),
+      '+set', 'fs_basegame', basegame,
+      '+set', 'fs_game', basegame,
+      '+sets', 'fs_basegame', basegame,
+      '+sets', 'fs_game', basegame,
       '+set', 'sv_pure', '1',
       '+set', 'dedicated', '2',
       '+set', 'developer', '1',

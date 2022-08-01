@@ -95,13 +95,19 @@ async function statusResponse(socket, message, rinfo) {
         timedout: false,
         renderer: parseInt(infos.qps_renderer),
         challenge: infos.qps_serverId,
-        pid: parseInt(infos.qps_pid),
+        pid: infos.qps_pid ? parseInt(infos.qps_pid) : void 0,
         logs: '',
       }
       console.log('Dedicated ' + (!!EXECUTING_MAPS[infos.qps_serverId].renderer ? ' renderer ' : '') 
           + 'already started', EXECUTING_MAPS)
     }
-    EXECUTING_MAPS[infos.qps_serverId].game = infos.gamename
+    if(EXECUTING_MAPS[infos.qps_serverId].game != infos.gamename
+        && EXECUTING_MAPS[infos.qps_serverId].game != infos.fs_game
+        && EXECUTING_MAPS[infos.qps_serverId].game != infos.fs_basegame) {
+      console.error(new Error('Gamename mismatch!'))
+    } else {
+      EXECUTING_MAPS[infos.qps_serverId].game = infos.fs_game || infos.fs_basegame || infos.gamename
+    }
     EXECUTING_MAPS[infos.qps_serverId].mapname = infos.mapname
 
     if (typeof infos.qps_pid == 'undefined'

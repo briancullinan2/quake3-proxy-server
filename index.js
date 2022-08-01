@@ -75,8 +75,12 @@ function exceptionHandler(ex) {
 
 function errorConsole(...args) {
   REDIRECTED_ERRORS.push(args)
-  previousError(REDIRECTED_ERRORS.length, 'errors:',
+  if(START_SERVICES.includes('deploy')) {
+    previousError(REDIRECTED_ERRORS.length, args)
+  } else {
+    previousError(REDIRECTED_ERRORS.length, 'errors:',
     args.join(' ').substring(0, 100))
+  }
 }
 
 
