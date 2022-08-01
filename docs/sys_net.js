@@ -692,6 +692,11 @@ function CL_Download(cmd, name, auto) {
           nameStr = nameStr.replace(/[\/]*?$/, newFilename[1])
         }
       }
+      Com_DL_Perform(gamedir + '/' + nameStr, gamedir + '/' + localName, responseData)
+      Cvar_Set( stringToAddress('cl_downloadName'), stringToAddress('') );
+      Cvar_Set( stringToAddress('cl_downloadSize'), stringToAddress('0') );
+      Cvar_Set( stringToAddress('cl_downloadCount'), stringToAddress('0') );
+      Cvar_Set( stringToAddress('cl_downloadTime'), stringToAddress('0') );
       if (nameStr.match(/\.pk3/i)) {
         let cmdStr = addressToString(cmd)
         if(cmdStr == 'dlmap') {
@@ -700,12 +705,6 @@ function CL_Download(cmd, name, auto) {
           Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${cmdStr} ${nameStr.replace('.pk3', '')} ; `))
         }
       }
-      Com_DL_Perform(gamedir + '/' + nameStr, gamedir + '/' + localName, responseData)
-      Cvar_Set( stringToAddress('cl_downloadName'), stringToAddress('') );
-      Cvar_Set( stringToAddress('cl_downloadSize'), stringToAddress('0') );
-      Cvar_Set( stringToAddress('cl_downloadCount'), stringToAddress('0') );
-      Cvar_Set( stringToAddress('cl_downloadTime'), stringToAddress('0') );
-  
     } catch (e) {
 
     }
