@@ -27,6 +27,7 @@ const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
 const REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
 const DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
+const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
 
 function setRepack(directory) {
   REPACK_CACHE.splice(0)
@@ -135,7 +136,7 @@ if(fs.existsSync(FS_BASEPATH)
 
 
 const SUPPORTED_FORMATS = [
-  '.cfg', '.qvm', '.bot',
+  '.cfg', '.qvm', '.jts', '.bot',
   '.txt', 
   '.shader', '.shaderx',
   '.crosshair', '.skin', '.font',
@@ -156,6 +157,7 @@ const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
 
 
 module.exports = {
+  EXPORT_DIRECTORY,
   TEMP_DIR,
   WEB_FORMATS,
   SUPPORTED_FORMATS,

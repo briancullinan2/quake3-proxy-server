@@ -16,5 +16,14 @@
   "--add-game",
   "q3ut4",
   "--add-game",
-  "diablo"
+  "diablo",
+  "--add-game",
+  "myst",
+  "--add-game",
+  "aoe",
+  "--add-game",
+  "loco",
+  "--add-game",
+  "hl1"
+
 ]

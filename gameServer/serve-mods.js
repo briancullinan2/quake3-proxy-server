@@ -58,8 +58,7 @@ async function serveModsReal(start, end, isJson, response, next) {
   if (isJson) {
     return response.json(gamesFiltered)
   }
-  let total = Object.values(MODS_NAMES).length
-  let index = renderIndex(renderList('/mods/', gamesFiltered, total))
+  let index = renderIndex(renderList('/mods/', gamesFiltered, gamesFiltered.length))
   return response.send(index)
 }
 

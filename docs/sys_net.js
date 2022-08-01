@@ -673,7 +673,7 @@ function CL_Download(cmd, name, auto) {
           await Com_DL_Begin(localName + '.pk3', remoteURL + '.pk3')
             .then(responseData => {
               if(responseData && !nameStr.match(/\.pk3$/)) {
-                nameStr += '.pk3'
+              nameStr += '.pk3'
               }
               return responseData
             })])).filter(f => f)[0]

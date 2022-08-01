@@ -104,6 +104,7 @@ async function getEntities(basegame, mapname) {
   // TODO: contribute to lvlshot database cached locally
   if(START_SERVICES.includes('deploy')) {
     let fileResults = await execLevelshot(mapname, /saveents/)
+    console.log(fileResults)
     if(fileResults.length && fileResults[0]) {
       entities = fileResults[0]
     }

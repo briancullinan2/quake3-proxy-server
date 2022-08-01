@@ -13,15 +13,16 @@ function renderFeature(map) {
     ? `style="background-color: rgba(${map.palette})"` : ''}>`
   if(map.link) {
     result += `<a href="${map.link.includes('://') ? '' : '/'}${map.link}">`
+  } else {
+    result += `<a name="${map.title || map.subtitle || map.bsp}">`
   }
   result += `<span>${map.title}</span>`
   result += (map.bsp || map.subtitle) 
       && map.title != map.bsp && map.title != map.subtitle
     ? `<small>${map.subtitle || map.bsp}</small>`
     : '<small>&nbsp;</small>'
-  if(map.link) {
-    result += '</a>'
-  }
+
+  result += '</a>'
   result += '</h3>'
   result += `<img ${map.have ? '' : 'class="unknownmap"'} src="${map.levelshot || '/unknownmap.jpg'}" />`
   if(map.download || map.pakname) {

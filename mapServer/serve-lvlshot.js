@@ -78,7 +78,7 @@ async function resolveScreenshot(logs, task) {
       }
       continue
     }
-    return true
+    return newFile
   }
   return false
 }
@@ -87,7 +87,7 @@ async function resolveScreenshot(logs, task) {
 async function resolveEnts(logs, task) {
   let outputEnts = path.join(FS_GAMEHOME, task.outFile)
   if (fs.existsSync(outputEnts)) {
-    return true
+    return outputEnts
   }
   return false
 }
@@ -129,7 +129,7 @@ async function resolveModels(logs, task) {
   let match
   let modelList
   while (match = search.exec(logs)) {
-    if(match[0].includes('Total models')) {
+    if (match[0].includes('Total models')) {
       modelList = match
     }
   }
@@ -158,7 +158,7 @@ async function resolveSounds(logs, task) {
   let match
   let modelList
   while (match = search.exec(logs)) {
-    if(match[0].includes('Total resident')) {
+    if (match[0].includes('Total resident')) {
       modelList = match
     }
   }
@@ -168,7 +168,7 @@ async function resolveSounds(logs, task) {
 
   let sounds = modelList[0].split('\n').slice(1, -3)
     .map(line => (' ' + line.replace('[resident ]', ''))
-    .split(/\s+/ig).pop().replace(/\^3/gi, '').trim())
+      .split(/\s+/ig).pop().replace(/\^3/gi, '').trim())
     .join('\n')
   CONVERTED_FILES[task.outFile] = sounds
   if (START_SERVICES.includes('cache')) {
@@ -182,7 +182,7 @@ async function resolveSounds(logs, task) {
 async function execLevelshot(mapname, waitFor) {
   let basegame = getGame()
 
-  if(mapname == 'nomap') {
+  if (mapname == 'nomap') {
     return
   }
 
@@ -303,14 +303,26 @@ async function execLevelshot(mapname, waitFor) {
 
   // return promise wait on filtered tasks
   if (waitFor) {
-    Promise.resolve(processQueue())
     if (promises.length == 0) {
+      Promise.resolve(processQueue())
       return
     } else {
-      return await Promise.all(promises.map(task => new Promise(resolve => {
-        task.subscribers.push(resolve)
+      let count = promises.length
+      return await new Promise(resolve => {
+        let result = []
+        function countdown(logs, task) {
+          count--
+          result[promises.indexOf(task)] = logs
+          if (count == 0) {
+            resolve(result)
+          }
+        }
+        promises.forEach(task => {
+          task.subscribers.push(countdown)
+        })
+        Promise.resolve(processQueue())
         updatePageViewers('\/maps')
-      })))
+      })
     }
   } else {
     Promise.resolve(processQueue())

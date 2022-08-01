@@ -70,7 +70,7 @@ async function updatePageViewers(route) {
               .then(response => {
                 //CODE REVIEW: this makes it synchronous because it waits for stdio?
                 console.log('Sending: ', route, SESSION_URLS[sess[0]])
-                return response.text()
+                return await response.text()
               }))
           }
 

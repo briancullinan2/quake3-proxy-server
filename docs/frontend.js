@@ -128,11 +128,14 @@ async function initEvents() {
         return false // dont modify stack, because its the same
       }
       let header = document.getElementsByTagName('H2')[0]
-      let sock = NET.socket1
-      if(!sock) {
-        sock = NET.socket2
-      }
-      sock.send(eventPath[i].href, { binary: false })
+      let abortTimeout = setTimeout(function () {
+        Com_DL_Cleanup()
+        window.location = eventPath[i].href
+      }, 5000)
+      sendPageRequest(eventPath[i].href)
+        .catch(() => window.location = eventPath[i].href)
+        .then(() => clearTimeout(abortTimeout))
+      
       history.pushState(
         {location: window.location.pathname + ''}, 
         header ? 'Quake III Arena: ' + header : document.title, 
@@ -161,11 +164,13 @@ async function initEvents() {
   })
 
   window.addEventListener('popstate', function () {
-    let sock = NET.socket1
-    if(!sock) {
-      sock = NET.socket2
-    }
-    sock.send(window.location, { binary: false })
+    let abortTimeout = setTimeout(function () {
+      Com_DL_Cleanup()
+      window.location = eventPath[i].href
+    }, 5000)
+    sendPageRequest(window.location + '')
+      .catch(() => window.location = window.location )
+      .then(() => clearTimeout(abortTimeout))
   }, false)
 }
 
@@ -265,17 +270,17 @@ async function refreshMaps() {
     }
 
     let title = item.children[0].children[0]
-    if(object.link
-      && title.href != object.link) {
+    if(title.children[0]) {
+      if(title.children[0].innerText != object.title) {
+        title.children[0].innerText = object.title
+      }
+    } else {
+      if(object.title && title.innerText != object.title) {
+        title.innerText = object.title
+      }
+    }
+    if(object.link && title.href != object.link) {
       title.href = object.link
-    } else
-    if(title.children[0]
-      && title.children[0].innerText != object.title) {
-      title.children[0].innerText = object.title
-    } else 
-    if(object.title
-      && title.innerText != object.title) {
-      title.innerText = object.title
     }
 
     let mapname = item.children[0].children[0].children[1]
@@ -313,7 +318,31 @@ async function refreshMaps() {
 }
 
 
+async function sendPageRequest(location) {
+  let sock = NET.socket1
+  if(!sock) {
+    sock = NET.socket2
+  }
+  if(sock) {
+    sock.send(window.location.origin + window.location.pathname + '?json', { binary: false })
+  } else {
+    if (AbortController && !NET.controller) {
+      NET.controller = new AbortController()
+    }
+    let response = await fetch(location, {
+      signal: NET.controller ? NET.controller.signal : null
+    })
+    if(response.status != 200) {
+      throw new Error('Not found!')
+    }
+    let html = await response.text()
+    updatePage(html)
+  }
+}
 
+
+
+// TODO: combine with socks code below?
 async function loadNextPage(page, halfwareMark) {
   previousHalf = halfwareMark
 
@@ -402,48 +431,7 @@ function socketProxyControl(evt) {
   }
 
   if(evt.data.includes('<html')) {
-    let length = document.body.children.length
-    let hasViewport = false
-    let hasGamesmenu = false
-    for(let i = length - 1; i > 0; --i) { // don't remove menu
-      if(document.body.children[i].id == 'viewport-frame') {
-        hasViewport = true
-        continue
-      }
-      if(evt.data.includes('viewport-frame') // since we won't be adding
-        && document.body.children[i].id == 'home-menu') {
-        // preserve games menu
-        hasGamesmenu = true
-        continue
-      }
-      document.body.children[i].remove()
-    }
-    let loaderDiv = document.createElement('div')
-    loaderDiv.style.display = 'none'
-    let innerContent = (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
-        .exec(evt.data)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
-    loaderDiv.innerHTML = innerContent
-    document.body.appendChild(loaderDiv)
-    let previous = null
-    for(let i = loaderDiv.children.length - 1; i >= 0; --i) {
-      let current = loaderDiv.children[i]
-      // don't add engine twice, because it hangs around
-      if(hasViewport && current.id == 'viewport-frame') {
-        continue
-      }
-      if(hasGamesmenu && current.id == 'home-menu') {
-        continue
-      }
-
-      if(previous) {
-        document.body.insertBefore(loaderDiv.children[i], previous)
-      } else {
-        document.body.appendChild(loaderDiv.children[i])
-      }
-      previous = current
-    }
-    loaderDiv.remove()
-    pageBindings()
+    updatePage(evt.data)
     return
   } else
   if(evt.data.startsWith('URL: ')) {
@@ -462,15 +450,12 @@ function socketProxyControl(evt) {
       if(!debounceTimer) {
         debounceTimer = setTimeout(function () {
           debounceTimer = null
-          let sock = NET.socket1
-          if(!sock) {
-            sock = NET.socket2
-          }
           if (typeof window.sessionCallback != 'undefined') {
-            sock.send(window.location.origin + window.location.pathname + '?json', { binary: false })
+            sendPageRequest(window.location.origin + window.location.pathname + '?json')
           } else {
-            sock.send(window.location + '', { binary: false })
+            sendPageRequest(window.location + '')
           }
+      
         }, 1000)
       }
     }
@@ -478,6 +463,53 @@ function socketProxyControl(evt) {
   }
 
 }
+
+
+function updatePage(pageData) {
+  let length = document.body.children.length
+  let hasViewport = false
+  let hasGamesmenu = false
+  for(let i = length - 1; i > 0; --i) { // don't remove menu
+    if(document.body.children[i].id == 'viewport-frame') {
+      hasViewport = true
+      continue
+    }
+    if(pageData.includes('viewport-frame') // since we won't be adding
+      && document.body.children[i].id == 'home-menu') {
+      // preserve games menu
+      hasGamesmenu = true
+      continue
+    }
+    document.body.children[i].remove()
+  }
+  let loaderDiv = document.createElement('div')
+  loaderDiv.style.display = 'none'
+  let innerContent = (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
+      .exec(pageData)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
+  loaderDiv.innerHTML = innerContent
+  document.body.appendChild(loaderDiv)
+  let previous = null
+  for(let i = loaderDiv.children.length - 1; i >= 0; --i) {
+    let current = loaderDiv.children[i]
+    // don't add engine twice, because it hangs around
+    if(hasViewport && current.id == 'viewport-frame') {
+      continue
+    }
+    if(hasGamesmenu && current.id == 'home-menu') {
+      continue
+    }
+
+    if(previous) {
+      document.body.insertBefore(loaderDiv.children[i], previous)
+    } else {
+      document.body.appendChild(loaderDiv.children[i])
+    }
+    previous = current
+  }
+  loaderDiv.remove()
+  pageBindings()
+}
+
 
 function tryRegExp(exp) {
   try {

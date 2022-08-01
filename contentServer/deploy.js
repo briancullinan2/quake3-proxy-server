@@ -4,7 +4,7 @@ const fs = require('fs')
 const { PassThrough } = require('stream')
 
 const { parseAguments } = require('../utilities/parse-args.js')
-const { SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS,
+const { EXPORT_DIRECTORY, SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS,
   getGame, setGame, addGame } = require('../utilities/env.js')
 const { START_SERVICES, CONTENT_FEATURES } = require('../contentServer/features.js')
 const { createWebServers } = require('../contentServer/express.js')
@@ -25,7 +25,6 @@ const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { streamKey } = require('../utilities/zip.js')
 
 
-const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
 // TODO: generate a GitHub redirect file from routes
 
 // TODO: including yellow banner warning message like "This is a cached page, reconnecting..."
@@ -39,6 +38,7 @@ async function exportGame(game) {
   }
 
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
+  fs.mkdirSync(path.join(EXPORT_DIRECTORY, 'maps/repacked'), { recursive: true })
   await listMaps('baseq3')
 
   // loop through every detectable route and export it to /docs/
@@ -84,18 +84,19 @@ async function exportGame(game) {
   // TODO: put the vm in the right place in the output path so the new VM is picked up
   //   and packaged into the pk3
   let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
-  let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
+  //let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
   //let files2 = layeredDir('multigame/vm', true).map(file => path.basename(file))
   //console.log(files)
   //await exportFiles(files, outputDir)
   //await exportFiles(files2, outputDir)
 
-  return
+  //return
   // TODO: export all images and maps from TRIAL DEMO ONLY
   const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
-  setOutput(path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir'))
+  setOutput(outputDir)
 
   await repackBasepack('demoq3')
+  // TODO: INSTALL
   fs.renameSync(
     path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3'),
     path.join(EXPORT_DIRECTORY, 'maps/repacked/pak0.pk3'))
@@ -104,9 +105,10 @@ async function exportGame(game) {
   //   button and no copyrighted content generated images will be okay, 
   for (let i = 0; i < TRIAL_MAPS.length; i++) {
     await repackBasemap('demoq3', TRIAL_MAPS[i].toLocaleLowerCase())
+    // TODO: INSTALL
     fs.renameSync(
-      path.join(EXPORT_DIRECTORY, 'baseq3/' + TRIAL_MAPS[i] + '.pk3'),
-      path.join(EXPORT_DIRECTORY, 'maps/repacked/' + TRIAL_MAPS[i] + '.pk3'))
+      path.join(EXPORT_DIRECTORY, 'baseq3/' + TRIAL_MAPS[i].toLocaleLowerCase() + '.pk3'),
+      path.join(EXPORT_DIRECTORY, 'maps/repacked/' + TRIAL_MAPS[i].toLocaleLowerCase() + '.pk3'))
   }
 
   // TODO: replace BSP files with voxel tracemaps, remove lightmaps here

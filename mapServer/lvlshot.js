@@ -107,129 +107,131 @@ async function processQueue() {
         Promise.resolve(serveLvlshot(mapname))
         continue
       }
+    } // else {
+
+    let mapRenderers = renderers.filter(map => map.mapname == mapname)
+    let serversAvailable = freeRenderers
+        .sort((a, b) => (a.mapname == mapname ? 0 : 1) - (b.mapname == mapname ? 0 : 1))
+        .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
+        .filter(server => server)
+    let SERVER
+    if (serversAvailable.length == 0 || 
+      // if there are other renderers of this map name available
+      //   and there are other map names to serve, then try not to switch
+      (serversAvailable[0].mapname != mapname
+        && mapRenderers.length > 0 && mapNamesFiltered.length > 1)
+    ) {
+      //console.log('None available: ' + mapname)
+      continue
     } else {
-
-      let mapRenderers = renderers.filter(map => map.mapname == mapname)
-      let serversAvailable = freeRenderers
-          .sort((a, b) => (a.mapname == mapname ? 0 : 1) - (b.mapname == mapname ? 0 : 1))
-          .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
-          .filter(server => server)
-      let SERVER
-      if (serversAvailable.length == 0 || 
-        // if there are other renderers of this map name available
-        //   and there are other map names to serve, then try not to switch
-        (serversAvailable[0].mapname != mapname
-          && mapRenderers.length > 0 && mapNamesFiltered.length > 1)
-      ) {
-        //console.log('None available: ' + mapname)
-        continue
-      } else {
-        SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
-      }
-      //console.log('Server available: ', mapRenderers, mapname, serversAvailable[0])
-      
-      // remove tasks that have already completed so we don't waste time switching maps
-
-      // TODO: use RCON interface to control servers and get information
-      let task = EXECUTING_LVLSHOTS[mapname][0]
-      if(!task) {
-        //console.log('No tasks: ' + mapname)
-        continue
-      } else
-      if(task.done) {
-        EXECUTING_LVLSHOTS[mapname].shift()
-      } else
-      if(task.started && Date.now() - task.started < 100
-        || (task.started && !task.timedout)) {
-        continue // don't duplicate tasks
-      } else
-      if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
-        //console.log('Already done: ' + mapname)
-        EXECUTING_LVLSHOTS[mapname].shift()
-        continue // already done, don't command
-      }
-
-
-      // switch the maps
-      if(serversAvailable[0].mapname != mapname) {
-        // this server is no longer needed by the mapserver
-        //   this prevents it from switching servers back and forth
-        //   continuously and not getting any work done
-        if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
-          // this prevents it from running devmap commands on 
-          //   more than one server at a time?
-          && (!task.started || !task.cmd.match('devmap'))
-        ) {
-          console.log('Switching maps: ' + mapname)
-          // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
-          task = {
-            // TODO: not going to risk trying to make this lower
-            //   rather just add more servers with com_affinityMask set
-            cmd: ` ; devmap ${mapname} ; wait 360 ; heartbeat ; `,
-            resolve: resolveSwitchmap,
-            outFile: void 0,
-            mapname: mapname,
-            // drag the time average down so this event is sure to stick when using listJobs() to sort
-            //   what events to execute next
-            created: Number.MIN_VALUE, 
-            subscribers: [],
-          }
-          // CODE REVIEW: LOL GODDAMNIT, 
-          //   interfering with the shift() above and below
-          //   this line should have been here when I put task = { ... } in
-          //   but I forgot about the shifting, this was causing image 
-          //   comands to always get skipped which was causing me to 
-          //   refresh the window multiple times.
-          EXECUTING_LVLSHOTS[mapname].unshift(task)
-          // so it doesn't try and change all servers, 
-          SERVER.working = true
-          // change this name here to fail the mapNamesFiltered condition
-          //   this will be updated by the time the server switches
-          SERVER.mapname = mapname
-        } else {
-          // CODE REVIEW: this was missing, this function is too complicated and leafy
-          // skip sending this maps commands to this server, it might be needed elsewhere
-          continue
-        }
-      }
-
-      // run the task
-      SERVER.working = task
-      task.timedout = false
-      task.started = Date.now()
-      task.subscribers.push(function () {
-        // TODO: add a checkin and a timeout to retry the task
-        if(task.timedout) {
-          // TODO: add a retry counter
-          console.log('Task timed-out. Retrying.')
-        } else {
-          EXECUTING_LVLSHOTS[mapname].shift()
-          console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
-        }
-        SERVER.working = false
-      })
-
-      // when we get a print response, let waiting clients know about it
-      if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
-        RESOLVE_LOGS[serversAvailable[0].challenge] = []
-      }
-      RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
-        Promise.resolve(updateSubscribers(mapname, logs, task))
-      })
-
-      console.log('Starting renderer task: ', serversAvailable[0].address 
-          + ':' + serversAvailable[0].port, task.cmd)
-      ++RUNCMD
-      // TODO: ; set developer 1 ; 
-      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
-          + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
-      sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+      SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
     }
+    //console.log('Server available: ', mapRenderers, mapname, serversAvailable[0])
+    
+    // remove tasks that have already completed so we don't waste time switching maps
+
+    // TODO: use RCON interface to control servers and get information
+    let task = EXECUTING_LVLSHOTS[mapname][0]
+    if(!task) {
+      //console.log('No tasks: ' + mapname)
+      continue
+    }
+
+    if(await updateSubscribers(mapname, serversAvailable[0].logs, task)) {
+      console.log('Already done: ' + mapname + task.cmd)
+      EXECUTING_LVLSHOTS[mapname].shift()
+      continue // already done, don't command
+    }
+
+    if(task.done) {
+      EXECUTING_LVLSHOTS[mapname].shift()
+    }
+
+    if(task.started && Date.now() - task.started < 1000
+      || (task.started && !task.timedout)) {
+      continue // don't duplicate tasks
+    }
+
+    // switch the maps
+    if(serversAvailable[0].mapname != mapname) {
+      // this server is no longer needed by the mapserver
+      //   this prevents it from switching servers back and forth
+      //   continuously and not getting any work done
+      if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
+        // this prevents it from running devmap commands on 
+        //   more than one server at a time?
+        && (!task.started || !task.cmd.match('devmap'))
+      ) {
+        console.log('Switching maps: ' + mapname)
+        // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
+        task = {
+          // TODO: not going to risk trying to make this lower
+          //   rather just add more servers with com_affinityMask set
+          cmd: ` ; devmap ${mapname} ; wait 30 ; heartbeat ; `,
+          resolve: resolveSwitchmap,
+          outFile: void 0,
+          mapname: mapname,
+          // drag the time average down so this event is sure to stick when using listJobs() to sort
+          //   what events to execute next
+          created: Number.MIN_VALUE, 
+          subscribers: [],
+        }
+        // CODE REVIEW: LOL GODDAMNIT, 
+        //   interfering with the shift() above and below
+        //   this line should have been here when I put task = { ... } in
+        //   but I forgot about the shifting, this was causing image 
+        //   comands to always get skipped which was causing me to 
+        //   refresh the window multiple times.
+        EXECUTING_LVLSHOTS[mapname].unshift(task)
+        // so it doesn't try and change all servers, 
+        SERVER.working = task
+        // change this name here to fail the mapNamesFiltered condition
+        //   this will be updated by the time the server switches
+        SERVER.mapname = mapname
+      } else {
+        // CODE REVIEW: this was missing, this function is too complicated and leafy
+        // skip sending this maps commands to this server, it might be needed elsewhere
+        continue
+      }
+    }
+
+    // run the task
+    SERVER.working = task
+    task.timedout = false
+    task.started = Date.now()
+    task.subscribers.push(function () {
+      // TODO: add a checkin and a timeout to retry the task
+      if(task.timedout) {
+        // TODO: add a retry counter
+        console.log('Task timed-out. Retrying.')
+      } else {
+        //EXECUTING_LVLSHOTS[mapname].shift()
+        console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
+      }
+      SERVER.working = false
+    })
+
+    // when we get a print response, let waiting clients know about it
+    if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
+      RESOLVE_LOGS[serversAvailable[0].challenge] = []
+    }
+    RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
+      Promise.resolve(updateSubscribers(mapname, logs, task))
+    })
+
+    console.log(RUNCMD, 'Starting renderer task: ', serversAvailable[0].address 
+        + ':' + serversAvailable[0].port, task.cmd)
+    ++RUNCMD
+    // TODO: ; set developer 1 ; 
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
+        + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
+    //}
   }
 
 
   Object.values(EXECUTING_MAPS).forEach(task => {
-    if(typeof task.working != 'object') {
+    if(typeof task.working != 'object' || !task.working) {
       return
     }
     if(task.working.updated && Date.now() - task.working.updated < RESOLVE_INTERVAL) {
@@ -325,6 +327,7 @@ async function serveLvlshot(mapname, waitFor) {
     //   all CPUs 100% when the time comes so make sure they 
     //   are evenly spread out.
     let ps = await dedicatedCmd([
+      '+set', 'fs_basegame', getGame(),
       '+set', 'sv_pure', '0', 
       '+set', 'dedicated', '0',
       '+set', 'developer', '0',

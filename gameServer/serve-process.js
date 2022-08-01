@@ -42,6 +42,7 @@ async function serveDedicated() {
       '+set', 'r_headless', '1',
       '+set', 'sv_master2', '"207.246.91.235:27950"',
       '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
+      '+sets', 'qps_renderer', '0',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       '+set', 'rconPassword2', 'password1',
       '+set', 'com_yieldCPU', '1',

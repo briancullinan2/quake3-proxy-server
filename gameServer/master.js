@@ -93,9 +93,9 @@ async function statusResponse(socket, message, rinfo) {
     if (typeof EXECUTING_MAPS[infos.qps_serverId] == 'undefined') {
       EXECUTING_MAPS[infos.qps_serverId] = {
         mapname: infos.mapname,
-        renderer: !!infos.qps_renderer,
+        renderer: parseInt(infos.qps_renderer),
         challenge: infos.qps_serverId,
-        pid: infos.qps_pid,
+        pid: parseInt(infos.qps_pid),
         logs: '',
       }
       console.log('Dedicated ' + (!!infos.qps_renderer ? ' renderer ' : '') 
@@ -147,9 +147,6 @@ async function infoResponse(socket, message, rinfo) {
   console.log('Updating server: ', rinfo.address + ':' + rinfo.port, '->', SERVER.mapname)
   if (typeof EXECUTING_MAPS[SERVER.qps_serverId] != 'undefined') {
     EXECUTING_MAPS[SERVER.qps_serverId].mapname = SERVER.mapname
-    if (typeof EXECUTING_MAPS[SERVER.qps_serverId].working != 'object') {
-      EXECUTING_MAPS[SERVER.qps_serverId].working = false
-    }
     //console.log('Server is ', EXECUTING_MAPS[SERVER.qps_serverId].working ? 'working' : 'available')
     EXECUTING_MAPS[SERVER.qps_serverId].timedout = false
   }

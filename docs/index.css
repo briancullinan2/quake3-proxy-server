@@ -610,6 +610,10 @@ ol.directory-list li {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+#game-list li a:not([href]) {
+  color:#ccc;
+}
+
 #map-list img,
 #game-list img,
 .menu-list img,

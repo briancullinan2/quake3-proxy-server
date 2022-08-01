@@ -17,6 +17,8 @@ const { EXECUTING_MAPS, GAME_SERVERS } = require('./gameServer/processes.js')
 const { log: previousLog, error: previousError } = require('console')
 const { EXECUTING_LVLSHOTS, listJobs } = require('./mapServer/lvlshot.js')
 const { parseAguments } = require('./utilities/parse-args.js')
+const { EXPORT_DIRECTORY, setGame } = require('./utilities/env.js')
+const { setOutput } = require('./mapServer/repack.js')
 
 const REDIRECTED_LOGS = []
 const REDIRECTED_ERRORS = []
@@ -141,6 +143,12 @@ function main() {
     parseAguments(require(path.join(__dirname, 'settings.json')))
   }
 
+  if(START_SERVICES.includes('deploy')) {
+    let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
+    setOutput(outputDir)
+    setGame('demoq3')
+  }
+
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
     Promise.resolve(createMasters(START_SERVICES.includes('mirror')))
@@ -159,6 +167,7 @@ function main() {
     || START_SERVICES.includes('live')) {
     contentWatcher()
   }
+
 
 }
 

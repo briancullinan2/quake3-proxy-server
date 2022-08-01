@@ -52,12 +52,10 @@ async function repackPk3(directory, newZip) {
         || await unsupportedAudio(file.name)) {
         directory.splice(directoryIndex, 1)
         filesToRemove.push(file)
-      } else
-        if (directoryIndex == -1) {
-          // add 
-        } else { // TODO: update files on change
-          directory.splice(directoryIndex, 1)
-        }
+      } else if (directoryIndex > -1) { 
+        // TODO: update files on change
+        directory.splice(directoryIndex, 1)
+      }
     }
     for (let i = 0; i < filesToRemove.length; i++) {
       if (START_SERVICES.includes('debug')) {
@@ -67,6 +65,8 @@ async function repackPk3(directory, newZip) {
     }
     //return newZip
   }
+
+//console.log(directory)
 
   for (let i = 0; i < directory.length; i++) {
     if (await unsupportedImage(directory[i])) {
@@ -113,6 +113,7 @@ async function repackBasemap(modname, mapname) {
   let models = []
   let sounds = []
   let fileResults = await execLevelshot(mapname, /-images\.txt|-models\.txt|-sounds\.txt/)
+
   if (fileResults && fileResults[0]) {
     images = fileResults[0].split('\n').map(img => img.toLocaleLowerCase()
       .replace(path.extname(img), ''))
@@ -137,6 +138,9 @@ async function repackBasemap(modname, mapname) {
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
     let ext = path.extname(newFile)
     let newStripped = file.name.replace(path.extname(file.name), '').toLocaleLowerCase()
+    if (typeof includedDates[newFile] != 'undefined') {
+      continue
+    }
     if (typeof excludedSizes[newStripped] != 'undefined') {
       continue
     }
@@ -191,7 +195,7 @@ async function repackBasemap(modname, mapname) {
 
   // TODO: assert BSP file is included
 
-  let newZip = path.join(TEMP_DIR, modname, mapname + '.pk3')
+  let newZip = path.join(path.dirname(outputDir), mapname + '.pk3')
   // TODO: add converted names to output list
   await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
   return newZip
@@ -288,7 +292,7 @@ async function exportFile(file, outputDir) {
   let fileName = await streamFile(file, passThrough)
   return await new Promise(resolve => {
     newFile = typeof fileName == 'string'
-      ? fileName.replace(/.*\.pk3.*?\//gi, outputDir + '/')
+      ? fileName.toLocaleLowerCase().replace(/.*\.pk3.*?\//gi, outputDir + '/')
       : newFile
     let writeStream = fs.createWriteStream(newFile)
     passThrough.pipe(writeStream)
@@ -363,12 +367,14 @@ async function repackBasepack(modname) {
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
     let ext = path.extname(newFile)
 
+    if (typeof includedDates[newFile] != 'undefined') {
+      continue
+    }
     // TODO: move size check below image format conversion?
     if (IMAGE_FORMATS.includes(ext)) {
       // TODO: palette file, combine with make-palette
       paletteNeeded.push(file)
     }
-
     if (typeof excludedSizes[newFile] != 'undefined') {
       continue
     }
@@ -387,8 +393,8 @@ async function repackBasepack(modname) {
     // still do conversions for images and audio because we will need it
     //   the deployment.
     let newTime
-    if (!fs.existsSync(newFile) 
-        || fs.statSync(newFile).mtime.getTime() < file.time) {
+    if (!fs.existsSync(newFile)
+      || fs.statSync(newFile).mtime.getTime() < file.time) {
       // output files with new stream functions, saving on indexing
       //   only export the first occurance of a filename
       //if(typeof includedDates[newFile] == 'undefined') {
@@ -426,7 +432,7 @@ async function repackBasepack(modname) {
   fs.writeFileSync(paletteFile, newPalette)
   includedDates[paletteFile] = maxMtime
 
-  let newZip = path.join(TEMP_DIR, modname, 'pak0.pk3')
+  let newZip = path.join(path.dirname(outputDir), 'pak0.pk3')
   await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
   return newZip
 }
