@@ -205,7 +205,7 @@ async function streamAudioFile(filename, response) {
 
 
 function streamAndCache(key, cache, response) {
-  let strippedKey = key.replace(path.extname(key), '').toLocaleLowerCase()
+  let strippedKey = key/*.replace(path.extname(key), '')*/.toLocaleLowerCase()
   // TODO: store a piped stream in memory to save some bigger job we just did
   //   also, doesn't make sense to read from FS every time
   if (typeof CONVERTED_FILES[strippedKey] != 'undefined' || typeof cache[key] != 'undefined') {

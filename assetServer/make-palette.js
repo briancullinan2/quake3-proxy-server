@@ -45,11 +45,11 @@ async function rebuildPalette(pk3files) {
     // TODO: automatically add palette and built QVMs
   }
 
-  let paletteFile = path.join(repackedCache(), 'pak0.pk3dir/scripts/palette.shader')
-  fs.mkdirSync(path.dirname(paletteFile), { recursive: true })
-  let {paletteNeeded, existingPalette} = await parseExisting(pk3sOnly)
-  let newPalette = await makePalette(paletteNeeded, existingPalette)
-  fs.writeFileSync(paletteFile, newPalette)
+  //let paletteFile = path.join(repackedCache(), 'pak0.pk3dir/scripts/palette.shader')
+  //fs.mkdirSync(path.dirname(paletteFile), { recursive: true })
+  //let {paletteNeeded, existingPalette} = await parseExisting(pk3sOnly)
+  //let newPalette = await makePalette(paletteNeeded, existingPalette)
+  //fs.writeFileSync(paletteFile, newPalette)
   // TODO: get complete list of images no matter the size from index, ugh, again
 
   // TODO: convert list of images to filtered list without extensions, 

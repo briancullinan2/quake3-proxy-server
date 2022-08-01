@@ -8,39 +8,39 @@ palettes/baseq3
   palette "gfx/2d/numbers_128.tga" 191,191,191,100
   palette "gfx/2d/numbers_32.tga" 191,191,191,100
   palette "gfx/2d/numbers_64.tga" 190,190,190,100
-  palette "icons/envirosuit.tga" 255,168,0,131
+  palette "icons/envirosuit.tga" 255,166,1,137
   palette "icons/flight.tga" 192,23,160,72
-  palette "icons/haste.tga" 183,229,0,42
-  palette "icons/icona_bfg.tga" 1,106,255,76
-  palette "icons/icona_grenade.tga" 2,145,18,63
-  palette "icons/icona_lightning.tga" 255,255,176,92
-  palette "icons/icona_machinegun.tga" 255,255,0,100
-  palette "icons/icona_plasma.tga" 198,1,255,62
-  palette "icons/icona_railgun.tga" 2,232,1,52
-  palette "icons/icona_rocket.tga" 255,0,0,63
-  palette "icons/icona_shotgun.tga" 255,125,0,76
-  palette "icons/iconf_blu.tga" 0,22,161,236
+  palette "icons/haste.tga" 183,229,0,44
+  palette "icons/icona_bfg.tga" 1,90,255,84
+  palette "icons/icona_grenade.tga" 2,144,18,62
+  palette "icons/icona_lightning.tga" 255,255,176,100
+  palette "icons/icona_machinegun.tga" 255,255,0,101
+  palette "icons/icona_plasma.tga" 196,0,255,82
+  palette "icons/icona_railgun.tga" 2,232,1,62
+  palette "icons/icona_rocket.tga" 254,1,1,80
+  palette "icons/icona_shotgun.tga" 255,125,0,71
+  palette "icons/iconf_blu.tga" 0,20,153,234
   palette "icons/iconf_blu1.tga" 0,15,151,255
   palette "icons/iconf_blu2.tga" 0,12,127,255
   palette "icons/iconf_blu3.tga" 0,13,129,255
   palette "icons/iconf_blu4.tga" 0,13,136,255
   palette "icons/iconf_neutral1.tga" 151,151,151,255
   palette "icons/iconf_neutral3.tga" 132,132,132,255
-  palette "icons/iconf_red.tga" 161,0,0,237
+  palette "icons/iconf_red.tga" 153,1,0,234
   palette "icons/iconf_red1.tga" 151,0,0,255
   palette "icons/iconf_red2.tga" 126,0,0,255
   palette "icons/iconf_red3.tga" 128,0,0,255
   palette "icons/iconf_red4.tga" 136,0,0,255
   palette "icons/iconh_borb.tga" 5,174,250,120
-  palette "icons/iconh_green.tga" 101,176,73,69
-  palette "icons/iconh_mega.tga" 0,63,249,81
-  palette "icons/iconh_red.tga" 255,115,1,104
+  palette "icons/iconh_green.tga" 101,176,73,64
+  palette "icons/iconh_mega.tga" 1,63,248,75
+  palette "icons/iconh_red.tga" 255,115,1,99
   palette "icons/iconh_rorb.tga" 250,1,11,120
-  palette "icons/iconh_yellow.tga" 255,255,0,86
+  palette "icons/iconh_yellow.tga" 255,255,0,79
   palette "icons/iconr_green.tga" 82,189,1,110
-  palette "icons/iconr_red.tga" 255,1,1,124
-  palette "icons/iconr_shard.tga" 102,176,73,66
-  palette "icons/iconr_yellow.tga" 255,255,1,121
+  palette "icons/iconr_red.tga" 255,1,1,110
+  palette "icons/iconr_shard.tga" 102,176,73,63
+  palette "icons/iconr_yellow.tga" 255,255,1,110
   palette "icons/icont_bfg.tga" 1,90,255,115
   palette "icons/icont_gauntlet.tga" 0,216,255,110
   palette "icons/icont_grapple.tga" 0,201,149,33
@@ -51,26 +51,26 @@ palettes/baseq3
   palette "icons/icont_railgun.tga" 2,232,1,35
   palette "icons/icont_rocket.tga" 254,1,1,57
   palette "icons/icont_shotgun.tga" 255,125,0,117
-  palette "icons/iconw_bfg.tga" 1,90,255,102
-  palette "icons/iconw_gauntlet.tga" 0,216,255,86
-  palette "icons/iconw_grapple.tga" 0,201,149,29
+  palette "icons/iconw_bfg.tga" 1,90,255,115
+  palette "icons/iconw_gauntlet.tga" 0,216,255,110
+  palette "icons/iconw_grapple.tga" 0,201,149,33
   palette "icons/iconw_grapple_hr.tga" 0,201,149,33
-  palette "icons/iconw_grenade.tga" 2,144,18,72
-  palette "icons/iconw_lightning.tga" 255,255,186,73
+  palette "icons/iconw_grenade.tga" 2,144,18,74
+  palette "icons/iconw_lightning.tga" 255,255,176,81
   palette "icons/iconw_machinegun.tga" 255,255,0,78
-  palette "icons/iconw_plasma.tga" 197,0,255,62
-  palette "icons/iconw_railgun.tga" 0,255,0,40
-  palette "icons/iconw_rocket.tga" 255,1,1,69
+  palette "icons/iconw_plasma.tga" 197,0,255,66
+  palette "icons/iconw_railgun.tga" 2,232,1,35
+  palette "icons/iconw_rocket.tga" 254,1,1,57
   palette "icons/iconw_shotgun.tga" 255,125,0,117
-  palette "icons/invis.tga" 0,0,255,22
-  palette "icons/medkit.tga" 255,0,0,35
-  palette "icons/noammo.tga" 255,255,255,115
-  palette "icons/quad.tga" 0,227,241,69
-  palette "icons/regen.tga" 209,10,0,76
+  palette "icons/invis.tga" 0,0,254,19
+  palette "icons/medkit.tga" 255,0,0,32
+  palette "icons/noammo.tga" 255,255,255,92
+  palette "icons/quad.tga" 0,227,241,67
+  palette "icons/regen.tga" 209,10,0,78
   palette "icons/skull_blue.tga" 5,75,114,255
   palette "icons/skull_red.tga" 115,0,3,255
-  palette "icons/teleporter.tga" 0,236,255,50
-  palette "menu/art/fx_base.tga" 54,61,62,202
+  palette "icons/teleporter.tga" 0,236,255,55
+  palette "menu/art/fx_base.tga" 106,107,111,202
   palette "models/flags/w_flag2.tga" 222,222,222,167
   palette "models/players/anarki/color.tga" 86,86,86,134
   palette "models/players/anarki/color_h.tga" 0,0,0,0

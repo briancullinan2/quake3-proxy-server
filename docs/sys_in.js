@@ -385,6 +385,7 @@ function InputPushMouseEvent(evt) {
   }
 
   if(down) {
+    createTemporaryText()
     TEMPORARY_TEXT.focus()
   }
 

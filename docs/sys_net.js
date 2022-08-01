@@ -179,11 +179,14 @@ function NET_Sleep() {
 
 function sendHeartbeat(sock) {
   if (sock && sock.readyState == WebSocket.OPEN) {
-    sock.fresh = 5
-    sock.send(Uint8Array.from([0x05, 0x01, 0x00, 0x00]),
-      { binary: true })
+    if(sock.fresh >= 3) { // don't heartbeat too early
+      sock.fresh = 5
+      sock.send(Uint8Array.from([0x05, 0x01, 0x00, 0x00]),
+        { binary: true })
+    }
     return
-  } else if (sock && sock.readyState == WebSocket.CLOSED) {
+  } else 
+  if (sock && sock.readyState == WebSocket.CLOSED) {
     NET.port_try = 0
     NET.reconnect = true
     if (sock == NET.socket1) {

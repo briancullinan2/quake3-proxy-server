@@ -4,7 +4,7 @@ const path = require('path')
 const { PassThrough } = require('stream')
 
 
-const { streamKey } = require('../utilities/zip.js')
+const { streamKey, fileKey } = require('../utilities/zip.js')
 const { execCmd } = require('../utilities/exec.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { getGame } = require('../utilities/env.js')

@@ -141,7 +141,7 @@ async function repackBasemap(modname, mapname) {
     if (typeof includedDates[newFile] != 'undefined') {
       continue
     }
-    if (typeof excludedSizes[newStripped] != 'undefined') {
+    if (typeof excludedSizes[newFile] != 'undefined') {
       continue
     }
 
@@ -159,7 +159,7 @@ async function repackBasemap(modname, mapname) {
       && !filterBasemap(file)
       // but then also allow smaller files from map packs
       && !filterBasepack(file)) {
-      excludedSizes[newStripped] = file.size
+      excludedSizes[newFile] = file.size
       continue
     }
     // export and convert the file but don't include the results in the pk3
@@ -186,13 +186,13 @@ async function repackBasemap(modname, mapname) {
   }
 
   // new stream functions
-  let newImages = await Promise.all(allPromises.map(file => {
-    return Promise.resolve(exportFile(file, outputDir))
-  }))
-  await Promise.all(allExports.map(file => {
-    return Promise.resolve(exportFile(file, outputDir))
-  }))
-
+  let newImages = []
+  for(let i = 0; i < allPromises.length; i++) {
+    newImages.push(await exportFile(allPromises[i], outputDir))
+  }
+  for(let i = 0; i < allExports.length; i++) {
+    await exportFile(allExports[i], outputDir)
+  }
   // TODO: assert BSP file is included
 
   let newZip = path.join(path.dirname(outputDir), mapname + '.pk3')
@@ -344,9 +344,7 @@ async function repackBasepack(modname) {
   }
   let outputDir = getOutput()
   console.log('Using temporary: ' + outputDir)
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true })
-  }
+  fs.mkdirSync(path.join(outputDir, 'scripts'), { recursive: true })
 
   let paletteFile = path.join(outputDir, 'scripts/palette.shader')
   let existingPalette = {}
@@ -418,12 +416,15 @@ async function repackBasepack(modname) {
   }
 
   // new stream functions
-  let newImages = await Promise.all(allPromises.map(file => {
-    return Promise.resolve(exportFile(file, outputDir))
-  }))
-  await Promise.all(allExports.map(file => {
-    return Promise.resolve(exportFile(file, outputDir))
-  }))
+  // TODO: for loop instead
+  //   ALL? something is wrong with zip extraction maybe it can't do paralell on the same object
+  let newImages = []
+  for(let i = 0; i < allPromises.length; i++) {
+    newImages.push(await exportFile(allPromises[i], outputDir))
+  }
+  for(let i = 0; i < allExports.length; i++) {
+    await exportFile(allExports[i], outputDir)
+  }
   //console.log('Exporting:', newImages)
 
   // TODO: write current pak palette file

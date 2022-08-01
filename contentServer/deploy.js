@@ -55,9 +55,9 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature =>
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
-  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
-  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0002.jpg?alt'))
-  //ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0002.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
 
   // export HTML content with a cache banner message
   for (let i = 0; i < ROUTES.length; i++) {
@@ -161,6 +161,10 @@ if (runDeploy) {
           console.log('Shutting down HTTP server.')
         })
       }
+
+      setTimeout(function () {
+        process.exit(0)
+      }, 1000)
     })
 }
 
