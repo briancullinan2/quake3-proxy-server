@@ -693,7 +693,12 @@ function CL_Download(cmd, name, auto) {
         }
       }
       if (nameStr.match(/\.pk3/i)) {
-        Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${addressToString(cmd)} ${nameStr.replace('.pk3', '')} ; `))
+        let cmdStr = addressToString(cmd)
+        if(cmdStr == 'dlmap') {
+          Cbuf_AddText(stringToAddress(` ; fs_restart ; vid_restart ; `))
+        } else {
+          Cbuf_AddText(stringToAddress(` ; wait 300 ; fs_restart ; ${cmdStr} ${nameStr.replace('.pk3', '')} ; `))
+        }
       }
       Com_DL_Perform(gamedir + '/' + nameStr, gamedir + '/' + localName, responseData)
       Cvar_Set( stringToAddress('cl_downloadName'), stringToAddress('') );
