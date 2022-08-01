@@ -90,7 +90,7 @@ async function exportGame(game) {
   //await exportFiles(files, outputDir)
   //await exportFiles(files2, outputDir)
 
-  //return
+  return
   // TODO: export all images and maps from TRIAL DEMO ONLY
   const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
   setOutput(outputDir)

@@ -323,7 +323,7 @@ async function sendPageRequest(location) {
   if(!sock) {
     sock = NET.socket2
   }
-  if(sock) {
+  if(sock && sock.fresh >= 1) { // don't clog up game networking
     sock.send(window.location.origin + window.location.pathname + '?json', { binary: false })
   } else {
     if (AbortController && !NET.controller) {
