@@ -4,7 +4,7 @@
 const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
-const { getGame } = require('../utilities/env.js')
+const { setGame, getGame } = require('../utilities/env.js')
 const { filteredMaps } = require('../assetServer/list-maps.js')
 const { unsupportedImage } = require('../contentServer/unsupported.js')
 const { getMapInfo } = require('../mapServer/bsp.js')
@@ -17,7 +17,11 @@ const { MAP_DICTIONARY } = require('../mapServer/download.js')
 // display map info, desconstruct
 async function serveMapInfo(request, response, next) {
   let basegame = getGame()
-  let mapsAvailable = await filteredMaps()
+  if(request.query && typeof request.query.game != 'undefined') {
+    // TODO: validate
+    basegame = request.query.game
+  }
+  let mapsAvailable = await filteredMaps(basegame)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
   if (typeof MAP_DICTIONARY[mapname] == 'undefined') {
@@ -32,12 +36,15 @@ async function serveMapInfo(request, response, next) {
   let previousMap = mapsAvailable[mapsAvailable.map(map => map.bsp).indexOf(mapname) - 1]
   let nextMap = mapsAvailable[mapsAvailable.map(map => map.bsp).indexOf(mapname) + 1]
   let mapInfo
+  let previousGame = getGame()
   try {
+    setGame(basegame)
     mapInfo = await getMapInfo(mapname)
   } catch (e) {
     console.error('MAPINFO:', e)
     return next(e)
   }
+  setGame(previousGame)
 
   const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2'].map(m => m.toLocaleLowerCase())
   let DEPLOY = START_SERVICES.includes('deploy')
@@ -51,7 +58,7 @@ async function serveMapInfo(request, response, next) {
   } else {
     MAP_MENU.push({
       title: 'Play Now',
-      link: 'index.html?map%20' + mapname,
+      link: 'index.html?map%20' + mapname + (previousGame != basegame ? ('&set fs_game ' + basegame) : ''),
     })
     MAP_MENU.push({
       title: 'Download',
@@ -173,6 +180,8 @@ async function serveMapInfo(request, response, next) {
     <li class="title"><span>Predator</span></li>
     </ol>
     <script>window.preStart = [
+      // TODO: add cl_dlURL specific to mod /q3ut4/mapname
+      '+set', 'cl_dlURL', '"/maps/${basegame}/%1"',
       '+set', 'bot_enable', '0', '+map', '${mapname}', '+wait', '30', '+team', 's',
     ];</script>
     </div>`)

@@ -275,7 +275,7 @@ async function refreshMaps() {
     }
 
     let title = item.children[0].children[0]
-    if(title.children[0]) {
+    if(title && title.children[0]) {
       if(title.children[0].innerText != object.title) {
         title.children[0].innerText = object.title
       }
@@ -456,7 +456,7 @@ function socketProxyControl(evt) {
         debounceTimer = setTimeout(function () {
           debounceTimer = null
           if (typeof window.sessionCallback != 'undefined') {
-            sendPageRequest(window.location.origin + window.location.pathname + '?json')
+            sendPageRequest(window.location.origin + window.sessionCallback + '?json')
           } else {
             sendPageRequest(window.location + '')
           }

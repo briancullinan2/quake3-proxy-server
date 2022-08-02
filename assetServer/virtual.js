@@ -2,9 +2,8 @@
 const fs = require('fs')
 const path = require('path')
 const {
-  BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME,
-  ASSETS_DIRECTORY, FS_BASEPATH, STEAMPATH,
-  getGames, MODS_NAMES,
+  BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME, MODS_NAMES, APPLICATIONS,
+  ASSETS_DIRECTORY, getGames, 
 } = require('../utilities/env.js')
 const GAMEDIRS = {}
 
@@ -35,11 +34,11 @@ function gameDirectories(basegame, unexisting) {
     return list
   }, []))
   GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, basegame))
-  GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame))
-  GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame))
-  GAME_DIRECTORIES.push(path.join(FS_BASEPATH, basegame.toLocaleLowerCase()))
-  GAME_DIRECTORIES.push(path.join(STEAMPATH, basegame.toLocaleLowerCase()))
-
+  for(let i = 0; i < APPLICATIONS.length; i++) {
+    GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, basegame))
+    GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, basegame.toLocaleLowerCase()))
+  }
+  // store for later use, because of live reloading we don't need to update this every time
   GAMEDIRS[basegame] = GAME_DIRECTORIES
     .filter(g => (unexisting || fs.existsSync(g)))
     .filter((g, i, arr) => arr.indexOf(g) == i)
@@ -102,7 +101,6 @@ function findFile(filename) {
   let GAME_ORDER = gameDirectories(modname)
   for(let i = 0; i < GAME_ORDER.length; i++) {
     let newPath = path.join(GAME_ORDER[i], filename.substr(modname.length))
-    //console.log(newPath)
     if(fs.existsSync(newPath)) {
       return (CACHY_PATHY[filename.toLocaleLowerCase()] = newPath)
     }

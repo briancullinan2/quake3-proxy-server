@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('path')
 
-const { getGame } = require('../utilities/env.js')
+const { setGame, getGame } = require('../utilities/env.js')
 const { getIndex } = require('../utilities/zip.js')
 const { findFile } = require('./virtual.js')
 const { listPk3s } = require('../assetServer/layered.js')
@@ -27,13 +27,18 @@ async function listMaps(basegame) {
   return maps
 }
 
-async function filteredMaps() {
+async function filteredMaps(basegame) {
   let zeroTimer = new Promise(resolve => setTimeout(
     resolve, 200))
-
-  let basegame = getGame()
+  if(!basegame) {
+    basegame = getGame()
+  }
   let bsps = await listMaps(basegame)
-  let mapNames = await Promise.all(bsps.map(async map => Promise.any([findMapname(basegame, map), zeroTimer.then(() => map)])))
+  let previousGame = getGame()
+  setGame(basegame)
+  let mapNames = await Promise.all(bsps.map(async map => Promise.any([
+      findMapname(basegame, map), zeroTimer.then(() => map)])))
+  setGame(previousGame)
   let maps = bsps.map(function (mapname, i) {
     let basename = MAP_DICTIONARY[mapname]
     return {

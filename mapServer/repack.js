@@ -66,8 +66,6 @@ async function repackPk3(directory, newZip) {
     //return newZip
   }
 
-//console.log(directory)
-
   for (let i = 0; i < directory.length; i++) {
     if (await unsupportedImage(directory[i])) {
       continue
@@ -79,7 +77,7 @@ async function repackPk3(directory, newZip) {
       if (START_SERVICES.includes('debug')) {
         console.log('Adding: ', directory[i])
       }
-      await zipCmd(directory[i], '-u' /* !first */, newZip)
+      await zipCmd(directory[i].replace('.jpeg', '.jpg'), '-u' /* !first */, newZip)
     } catch (e) {
       if (!e.message.includes('up to date')) {
         throw e
@@ -314,7 +312,7 @@ async function listGameFiles(modname, pk3Name) {
   }
 
   let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-  console.log(pk3s)
+  console.log('games', pk3s)
   // TODO: add to pk3Files the mapname file specified, pk3name from MAP_DICTIONARY above
   if (pk3Name && !pk3s.includes(pk3Name)) {
     pk3s.push(pk3Name)

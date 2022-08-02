@@ -115,6 +115,7 @@ function setupExtensions(features, app) {
 
   if (features.includes('all')
     || features.includes('repack')) {
+    app.use(/\/maps\/[^\/]+\/[^\/]+\.pk3$/i, serveFinished)
     app.use(/\/[^\/]+\/[^\/]+\.pk3$/i, serveFinished)
     app.use('/maps/repacked', serveFinished) // /maps/download/%1
     app.use('/repacked', serveRepacked) // /maps/download/%1

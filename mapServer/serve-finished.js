@@ -5,7 +5,7 @@
 const path = require('path')
 const fs = require('fs')
 
-const { getGame } = require('../utilities/env.js')
+const { MODS_NAMES, getGame } = require('../utilities/env.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackBasemap, repackBasepack } = require('../mapServer/repack.js')
 const { listMaps } = require('../assetServer/list-maps.js')
@@ -34,17 +34,27 @@ async function serveFinished(request, response, next) {
   }
 
   let previousGame = getGame()
-  if(START_SERVICES.includes('deploy')) {
-    let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
-    setOutput(outputDir)
-    setGame('demoq3')
-  }
-
-  // TODO: lookup modname like in stream-file
   let modname = path.basename(path.dirname(filename))
   if(modname == 'repacked') {
     modname = getGame()
   }
+  if(!MODS_NAMES.includes(modname.toLocaleLowerCase())) {
+    modname = previousGame
+  }
+  if(START_SERVICES.includes('deploy')) {
+    if(modname == 'baseq3' || modname == 'demoq3') {
+      modname = 'demoq3'
+      let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
+      setOutput(outputDir)
+      setGame('demoq3')
+    } else {
+      let outputDir = path.join(EXPORT_DIRECTORY, modname, 'pak0.pk3dir')
+      setOutput(outputDir)
+      setGame(modname)
+    }
+  }
+
+  // TODO: lookup modname like in stream-file
   let mapname = path.basename(filename).replace(path.extname(filename), '').toLocaleLowerCase()
 
   await listMaps(modname)

@@ -4,7 +4,7 @@ const fs = require('fs')
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
-const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
+const { MODS_NAMES, FS_GAMEHOME, setGame, getGame } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { CONVERTED_FILES, streamFile } = require('../assetServer/stream-file.js')
 const { START_SERVICES } = require('../contentServer/features.js')
@@ -17,6 +17,10 @@ async function serveLevelshot(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   if (filename.startsWith('/')) {
     filename = filename.substr(1)
+  }
+  let modname = filename.split('/')[0].toLocaleLowerCase()
+  if(modname && MODS_NAMES.includes(modname)) {
+    basegame = modname
   }
 
   let match
@@ -42,8 +46,11 @@ async function serveLevelshot(request, response, next) {
   }
 
   // still can't find a levelshot or screenshot, execute the engine to generate
-  let timeout = new Promise(resolve => setTimeout(resolve, 200))
+  let timeout = new Promise(resolve => setTimeout(resolve, 500))
+  let previousGame = getGame()
+  setGame(basegame)
   let outFile = await Promise.any([execLevelshot(mapname, matchName), timeout])
+  setGame(previousGame)
   if (outFile && outFile[0] && (await streamFile(outFile[0], response))) {
     return
   }
@@ -228,19 +235,19 @@ async function execLevelshot(mapname, waitFor) {
 
   // figure out which images are missing and do it in one shot
   queueTask({
-    cmd: ' ; vstr setupLevelshot ; levelshot ; screenshot levelshot ; ',
+    cmd: ' ; vstr setupLevelshot ; levelshot ; wait 20 ; screenshot levelshot ; ',
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'levelshots', mapname + '.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupLevelshot ; levelshot ; screenshot ${mapname}_screenshot0001 ; `,
+    cmd: ` ; vstr setupLevelshot ; levelshot ; wait 20 ; screenshot ${mapname}_screenshot0001 ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0001.tga')
   })
   queueTask({
     // special exception
-    cmd: ` ; vstr setupBirdseye ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
+    cmd: ` ; vstr setupBirdseye ; wait 20 ; screenshot ${mapname}_screenshot0002 ; vstr resetBirdseye ; `,
     resolve: resolveScreenshot,
     outFile: path.join(basegame, 'screenshots', mapname + '_screenshot0002.tga')
   })
@@ -311,15 +318,15 @@ async function execLevelshot(mapname, waitFor) {
       let count = promises.length
       return await new Promise(resolve => {
         let result = []
-        function countdown(logs, task) {
+        function countdown(i, logs, task) {
           count--
-          result[promises.indexOf(task)] = logs
+          result[i] = logs
           if (count == 0) {
             resolve(result)
           }
         }
-        promises.forEach(task => {
-          task.subscribers.push(countdown)
+        promises.forEach((task, i) => {
+          task.subscribers.push(countdown.bind(null, i))
         })
         Promise.resolve(processQueue())
         updatePageViewers('\/maps')

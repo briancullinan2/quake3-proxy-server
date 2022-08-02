@@ -117,7 +117,6 @@ async function statusResponse(socket, message, rinfo) {
     }
   }
 
-  //console.log(infos, playerStrings)
   if (typeof RESOLVE_STATUS[infos.challenge] != 'undefined') {
     let res
     while ((res = RESOLVE_STATUS[infos.challenge].shift())) {

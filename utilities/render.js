@@ -45,9 +45,9 @@ function renderMenu(jsonView, id) {
 function renderList(link, jsonView, total, id) {
   let list = jsonView.map(renderFeature).join('\n')
   return `<ol ${id ? `id="${id}"` : ''} class="stream-list">${list}</ol>
-  <script>window.sessionLines=${JSON.stringify(jsonView)}</script>
-  <script>window.sessionLength=${total}</script>
-  <script>window.sessionCallback=${link}</script>
+  <script>window.sessionLines=${JSON.stringify(jsonView)};</script>
+  <script>window.sessionLength=${total};</script>
+  <script>window.sessionCallback='${link}';</script>
   `
 }
 
@@ -65,7 +65,7 @@ function renderIndex(body, bodyClass) {
         Reconnecting to proxy server...</div>` : '')
     + (!body.includes('loading-blur') 
     ? `<div class="loading-blur">
-      <img src="/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg">
+      <img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
     </div>` : '')
     + body + INDEX.substring(offset, INDEX.length)
   return index

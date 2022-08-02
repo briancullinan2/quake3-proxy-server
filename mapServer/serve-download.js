@@ -113,19 +113,26 @@ async function serveMapsRange(request, response, next) {
     start = parseInt(rangeString.split('\/')[0])
     end = parseInt(rangeString.split('\/')[1])
   }
-  return await serveMapsReal(start, end, isJson, response)
+  let basegame = getGame()
+  if(request.query && typeof request.query.game != 'undefined') {
+    // TODO: validate
+    basegame = request.query.game
+  }
+  return await serveMapsReal(start, end, isJson, basegame, response)
 }
 
 
-async function serveMapsReal(start, end, isJson, response) {
-  let mapsAvailable = await filteredMaps()
+async function serveMapsReal(start, end, isJson, game, response) {
+  let mapsAvailable = await filteredMaps(game)
   let maps = mapsAvailable.slice(start, end)
   if (isJson) {
     return response.json(maps)
   }
 
   let total = mapsAvailable.length
-  let index = renderIndex(renderList('/maps/', maps, total, 'map-list'))
+  let basegame = getGame()
+  let index = renderIndex(renderList('/maps' 
+    + (game != basegame ? ('?game=' + game) : ''), maps, total, 'map-list'))
   return response.send(index)
 }
 
@@ -134,7 +141,12 @@ async function serveMaps(request, response, next) {
   let isJson = request.url.match(/\?json/)
   let start = 0
   let end = 100
-  return await serveMapsReal(start, end, isJson, response)
+  let basegame = getGame()
+  if(request.query && typeof request.query.game != 'undefined') {
+    // TODO: validate
+    basegame = request.query.game
+  }
+  return await serveMapsReal(start, end, isJson, basegame, response)
 }
 
 

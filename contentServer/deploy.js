@@ -46,7 +46,7 @@ async function exportGame(game) {
     '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js',
     '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js',
     '/sys_web.js', '/sys_snd.js', '/sys_wasm.js', '/frontend.js',
-    '/unknownmap.jpg', `/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg`
+    '/unknownmap.jpg', `/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg`
   ]
   ROUTES = ROUTES.concat(Object.values(CONTENT_FEATURES).filter(feature =>
     !feature.link.includes('://')).map(feature => '/' + feature.link))
@@ -86,7 +86,6 @@ async function exportGame(game) {
   let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
   //let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
   //let files2 = layeredDir('multigame/vm', true).map(file => path.basename(file))
-  //console.log(files)
   //await exportFiles(files, outputDir)
   //await exportFiles(files2, outputDir)
 

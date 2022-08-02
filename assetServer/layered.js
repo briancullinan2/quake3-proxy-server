@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const { FS_BASEPATH, MODS_NAMES, MODS } = require('../utilities/env.js')
+const { APPLICATIONS, MODS_NAMES, MODS } = require('../utilities/env.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
 
 
@@ -17,17 +17,21 @@ function layeredDir(filepath, includeBuild) {
   let result = []
   if (filepath.length == 0) {
     // list available mods
-    if (fs.existsSync(FS_BASEPATH) && fs.statSync(FS_BASEPATH).isDirectory()) {
-      result.push.apply(result, fs.readdirSync(FS_BASEPATH)
-        .map(r => path.join(FS_BASEPATH, r)).filter(r => fs.existsSync(r)))
+    for (let i = 0; i < APPLICATIONS.length; i++) {
+      if (fs.existsSync(APPLICATIONS[i].basepath)
+        && fs.statSync(APPLICATIONS[i].basepath).isDirectory()) {
+        result.push.apply(result, fs.readdirSync(APPLICATIONS[i].basepath)
+          .map(r => path.join(APPLICATIONS[i].basepath, r))
+          .filter(r => fs.existsSync(r)))
+      }
     }
   }
 
-  if(includeBuild) {
+  if (includeBuild) {
     let BUILD_ORDER = buildDirectories()
-    for(let i = 0; i < BUILD_ORDER.length; i++) {
+    for (let i = 0; i < BUILD_ORDER.length; i++) {
       let newPath = path.join(BUILD_ORDER[i], filepath)
-      if(fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
+      if (fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
         result.push.apply(result, fs.readdirSync(newPath)
           .map(r => path.join(newPath, r)).filter(r => fs.existsSync(r)))
       }
@@ -48,7 +52,7 @@ function layeredDir(filepath, includeBuild) {
 
   // because even if its empty, there will be a link to parent ..
   if (result.length) {
-    return result.filter((r, i, arr) => !path.basename(r).startsWith('.') 
+    return result.filter((r, i, arr) => !path.basename(r).startsWith('.')
       /* && arr.indexOf(r) === i */)
   } else {
     return false
@@ -60,16 +64,16 @@ async function combinedDir(orderedDir) {
   let directory = []
   let lowercasePaths = []
   // TODO: add base directory conversions
-  for(let i = 0; i < orderedDir.length; i++) {
-    if(!fs.existsSync(orderedDir[i])) {
+  for (let i = 0; i < orderedDir.length; i++) {
+    if (!fs.existsSync(orderedDir[i])) {
       continue
     }
-    if(!fs.statSync(orderedDir[i]).isDirectory())  {
+    if (!fs.statSync(orderedDir[i]).isDirectory()) {
       continue
     }
     let subdir = fs.readdirSync(orderedDir[i])
-    for(let j = 0; j < subdir.length; j++) {
-      if(!fs.existsSync(path.join(orderedDir[i], subdir[j]))) {
+    for (let j = 0; j < subdir.length; j++) {
+      if (!fs.existsSync(path.join(orderedDir[i], subdir[j]))) {
         continue
       }
       let stat = fs.statSync(path.join(orderedDir[i], subdir[j]))
@@ -78,9 +82,9 @@ async function combinedDir(orderedDir) {
       lowercasePaths.push(subdir[j].toLocaleLowerCase())
     }
   }
-  let directoryFiltered = directory.filter((d, i) => d 
-      && !path.basename(d).startsWith('.') 
-      && lowercasePaths.indexOf(path.basename(d).toLocaleLowerCase()) == i)
+  let directoryFiltered = directory.filter((d, i) => d
+    && !path.basename(d).startsWith('.')
+    && lowercasePaths.indexOf(path.basename(d).toLocaleLowerCase()) == i)
   return directoryFiltered
 }
 
@@ -92,13 +96,13 @@ function filterPk3(file, i, arr) {
 
 async function listPk3s(modname) {
   return (await layeredDir(modname, true) || [])
-  .filter(filterPk3) // unique / first - basename
-  // build directories are include here in repacked because
-  //   it is showing what will become, but in "Virtual" mode
-  //   only what is currently built is listed with all of the
-  //   alternative overrides.
-  .map(pk3 => path.join(modname, 
-    path.basename(pk3).replace(path.extname(pk3), '.pk3')))
+    .filter(filterPk3) // unique / first - basename
+    // build directories are include here in repacked because
+    //   it is showing what will become, but in "Virtual" mode
+    //   only what is currently built is listed with all of the
+    //   alternative overrides.
+    .map(pk3 => path.join(modname,
+      path.basename(pk3).replace(path.extname(pk3), '.pk3')))
 }
 
 

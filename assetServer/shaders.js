@@ -51,7 +51,7 @@ const SHADER_TIMES = {
 }
 
 function parseCurlys(shaderText) {
-  let lines = shaderText.split('\n')
+  let lines = shaderText.replace(/\/\*[\s\S]*?\*\//ig, '').split('\n')
   let skipBlock = false
   let shaderName
   let depth = 0

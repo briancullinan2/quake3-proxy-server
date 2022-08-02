@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { watcherPID, getGame } = require('../utilities/env.js')
+const { APPLICATIONS, FS_GAMEHOME, watcherPID, getGame } = require('../utilities/env.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
@@ -9,6 +9,7 @@ const buildChallenge = require('../quake3Utils/generate-challenge.js')
 const { EXECUTING_MAPS, RESOLVE_DEDICATED, STATUS_MENU,
   GAME_SERVERS } = require('../gameServer/processes.js')
 const { updatePageViewers } = require('../contentServer/session.js')
+const { MASTER_PORTS } = require('../gameServer/master.js')
 
 
 const DEDICATED_TIMEOUT = 5000
@@ -17,7 +18,6 @@ const DEDICATED_TIMEOUT = 5000
 async function serveDedicated() {
   let basegame = getGame()
   // only ever start 1 dedicated server automatically
-  //console.log(Object.values(EXECUTING_MAPS).filter(map => !map.renderer))
   if (Object.values(EXECUTING_MAPS).filter(map => !map.renderer).length > 0) {
     return
   }
@@ -39,18 +39,20 @@ async function serveDedicated() {
       challenge: challenge,
       mapname: 'lsdm3_v1',
     }
-
+    let basepath = APPLICATIONS.filter(app => app.mods.includes(basegame))[0].basepath
     let ps = await dedicatedCmd([
-      '+set', 'fs_basegame', basegame,
-      '+set', 'fs_game', basegame,
+      '+set', 'fs_basepath', basepath,
+      '+set', 'fs_homepath', FS_GAMEHOME,
       '+sets', 'fs_basegame', basegame,
       '+sets', 'fs_game', basegame,
       '+set', 'sv_pure', '1',
       '+set', 'dedicated', '2',
       '+set', 'developer', '1',
       '+set', 'r_headless', '1',
-      '+set', 'sv_master2', '"207.246.91.235:27950"',
-      '+set', 'sv_master3', '"ws://master.quakejs.com:27950"',
+      '+set', 'sv_master20', '"207.246.91.235:27950"',
+      '+set', 'sv_master21', '"ws://master.quakejs.com:27950"',
+      '+set', 'cl_master22', `"127.0.0.1:${MASTER_PORTS[0]}"`,
+      '+set', 'sv_master22', `"127.0.0.1:${MASTER_PORTS[0]}"`,
       '+sets', 'qps_renderer', '0',
       '+sets', 'qps_dedicated', '1',
       '+sets', 'qps_serverId', '"' + challenge + '"',
@@ -61,6 +63,7 @@ async function serveDedicated() {
       '+set', 'snaps', '60',
       '+set', 'sv_fps', '100',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
+      '+set', 'g_gametype', '1',
       '+map', 'lsdm3_v1',
       '+wait', '30', '+heartbeat',
     ], function (lines) {

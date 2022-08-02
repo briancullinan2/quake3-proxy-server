@@ -152,7 +152,6 @@ function socketConnect(socket, request) {
   // if we haven't gotten a URL, the websocket is probably working, but 
   //   the client never got a page, try to set one after a second
   setTimeout(function () {
-    //console.log(sessionId, SESSION_URLS[sessionId], UDP_CLIENTS[SESSION_IDS[sessionId]])
     if (typeof SESSION_URLS[sessionId] == 'undefined'
       && UDP_CLIENTS[SESSION_IDS[sessionId]]) {
       for (let i = 0; i < UDP_CLIENTS[SESSION_IDS[sessionId]].length; i++) {

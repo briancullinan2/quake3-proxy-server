@@ -70,13 +70,16 @@ async function serveModInfo(request, response, next) {
 
   return response.send(renderIndex(
     `<div id="mod-info" class="info-layout">
-    <h2>${modname}</h2>
+    <h2>${MODS_DESCRIPTIONS[modname] || modname}</h2>
     <h3>Screenshots</h3>
     <h3>Links</h3>
     <ol class="menu-list">
     ${[{
       title: 'Play',
       link: 'index.html?set%20fs_game%20' + modname,
+    }, {
+      title: 'Maps',
+      link: 'maps' + '?game=' + modname,
     }, {
       title: 'Assets',
       link: modname + '/?index',

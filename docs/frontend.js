@@ -63,7 +63,7 @@ function pageBindings() {
 	let MATCH_ADDRESS = /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\:[0-9]+/gi
 	let connectAddr = MATCH_ADDRESS.exec(window.location.pathname + '')
   let reconnect
-	if(connectAddr 
+	if(connectAddr && !window.location.pathname.includes('rcon')
       && (typeof SYS != 'undefined'
       && typeof Cbuf_AddText != 'undefined')) {
     reconnect = addressToString(Cvar_VariableString(stringToAddress('cl_reconnectArgs')))
@@ -249,12 +249,17 @@ async function refreshMaps() {
   let offset = startLine * scrollback * lineHeight
   mapList.style.transform = `translate(0px, ${offset}px)`
 
+  const MAX = Math.min(window.sessionLength, 100)
   // update lines every half page
-  for(let i = 0; i < mapList.children.length; i++) {
+  for(let i = 0; i < MAX; i++) {
     let ariaId = startLine * scrollback * itemsPerLine + i
     let object = window.sessionLines[ariaId]
 
     let item = mapList.children[i]
+    if(!item) {
+      item = mapList.children[0].cloneNode()
+      mapList.appendChild(item)
+    }
     if(!object && !loading) {
       item.style.display = 'none'
       continue
@@ -489,6 +494,9 @@ function updatePage(pageData) {
   loaderDiv.innerHTML = innerContent
   document.body.appendChild(loaderDiv)
   let previous = null
+  window.sessionLength = 0
+  window.sessionLines = []
+  window.sessionCallback = null
   for(let i = loaderDiv.children.length - 1; i >= 0; --i) {
     let current = loaderDiv.children[i]
     // don't add engine twice, because it hangs around

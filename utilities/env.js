@@ -10,8 +10,6 @@ const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
 //let FS_BASEGAME = 'demoq3'
 let FS_BASEGAME = 'baseq3'
-let FS_BASEPATH = ''
-let STEAMPATH = ''
 
 const TEMP_DIR = os.tmpdir()
 const WEB_DIRECTORY = path.resolve(__dirname)
@@ -21,7 +19,7 @@ const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USER
 const FS_GAMEHOME = path.join(FS_HOMEPATH, '.q3a')
 const LVLWORLD_DB = process.env.LVLWORLD || path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
-const STYLES  = path.resolve(__dirname + '/../utilities/index.css')
+const STYLES = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
 const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
@@ -47,7 +45,7 @@ function addRepacked(directory) {
 }
 
 function setGame(game) {
-  if(!game) {
+  if (!game) {
     throw new Error('No game set!')
   }
   FS_BASEGAME = game
@@ -95,40 +93,77 @@ function redirectAddress() {
   return PUBLIC_REDIRECT
 }
 
-if(os.platform == 'win32') {
-  FS_BASEPATH = 'C:/Program\ Files/Quake\ III\ Arena'
-  STEAMPATH = path.join(PROGRAMPATH, '\/Steam\/steamapps\/common')
-} else
-if(os.platform == 'darwin') {
-  FS_BASEPATH = '/Applications/ioquake3'
-  STEAMPATH = path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common/Quake\ III\ Arena')
-} else
-if(os.platform == 'linux') {
-  FS_BASEPATH = '/usr/local/games/quake3'
-  STEAMPATH = path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common/quake3')
+const APPLICATIONS = []
+
+
+function addCommon(application) {
+  if (os.platform == 'win32') {
+    APPLICATIONS.push.apply(APPLICATIONS, [{
+      basepath: path.join('C:/Program\ Files', application),
+    }, {
+      basepath: path.join(PROGRAMPATH, '\/Steam\/steamapps\/common', application),
+      steam: true,
+    }])
+  } else
+    if (os.platform == 'darwin') {
+      APPLICATIONS.push.apply(APPLICATIONS, [{
+        basepath: path.join('/Applications', application)
+      }, {
+        basepath: path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common', application),
+        steam: true,
+      }])
+    } else
+      APPLICATIONS.push.apply(APPLICATIONS, [{
+        basepath: path.join('/usr/local/games', application)
+      }, {
+        basepath: path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common', application),
+        steam: true,
+      }])
 }
 
+addCommon('Quake\ III\ Arena')
+addCommon('quake3')
+addCommon('ioquake3')
+addCommon('UrbanTerror')
+addCommon('Urban\ Terror')
 
 const MODS = []
 const MODS_NAMES = []
 const MODS_DESCRIPTIONS = {}
 
-if(fs.existsSync(FS_BASEPATH)
-//    || fs.existsSync(STEAMPATH)
-) {
-  let appDirectory = fs.readdirSync(FS_BASEPATH)
-  for(let i = 0; i < appDirectory.length; i++) {
-    let modDir = path.join(FS_BASEPATH, appDirectory[i])
-    let description = appDirectory[i]
-    if(fs.existsSync(modDir) 
-        && fs.statSync(modDir).isDirectory()) {
+const GAME_FORMATS = [
+  '.pk3' // TODO: dlls and isos and roms
+]
+
+function refreshMods() {
+  MODS.splice(0)
+  MODS_NAMES.splice(0)
+  Object.keys(MODS_DESCRIPTIONS).forEach(key => {
+    delete MODS_DESCRIPTIONS[key]
+  })
+  for (let j = 0; j < APPLICATIONS.length; j++) {
+    APPLICATIONS[j].mods = []
+    if (!fs.existsSync(APPLICATIONS[j].basepath)
+        || !fs.statSync(APPLICATIONS[j].basepath).isDirectory()) {
+      continue
+    }
+    let appDirectory = fs.readdirSync(APPLICATIONS[j].basepath)
+    for (let i = 0; i < appDirectory.length; i++) {
+      let modDir = path.join(APPLICATIONS[j].basepath, appDirectory[i])
+      let description = appDirectory[i]
+      if (!fs.existsSync(modDir) || !fs.statSync(modDir).isDirectory()) {
+        continue
+      }
       let hasDescription = false
-      if(fs.existsSync(path.join(modDir, 'description.txt'))) {
+      if (fs.existsSync(path.join(modDir, 'description.txt'))) {
         hasDescription = true
         description = fs.readFileSync(path.join(modDir, 'description.txt')).toString('utf-8')
       }
-      if(description || fs.readdirSync(modDir).filter(filename => filename.match(/\.pk3/i)).length > 0) {
+      if (description
+        || fs.readdirSync(modDir).filter(file => GAME_FORMATS.includes(
+          path.extname(file.toLocaleLowerCase()))).length > 0) {
         MODS.push(appDirectory[i])
+        APPLICATIONS[j].mods.push(appDirectory[i].toLocaleLowerCase())
         MODS_NAMES.push(appDirectory[i].toLocaleLowerCase())
         MODS_DESCRIPTIONS[appDirectory[i].toLocaleLowerCase()] = description
       }
@@ -136,23 +171,23 @@ if(fs.existsSync(FS_BASEPATH)
   }
 }
 
-
+refreshMods()
 
 const SUPPORTED_FORMATS = [
   '.cfg', '.qvm', '.jts', '.bot',
-  '.txt', 
+  '.txt',
   '.shader', '.shaderx',
   '.crosshair', '.skin', '.font',
   '.config', '.menu',
   '.defi', // CPMA game mode definition
   '.arena', // map based game mode definition
   // these can be compiled in game to run bot AI
-  '.c', '.h', '.scc', 
+  '.c', '.h', '.scc',
   // camera files
-  '.cam', 
+  '.cam',
   // can load async, but new repacking system includes small ones
-  '.map', '.aas', '.md5', 
-  '.bsp', '.md3',  '.iqm', '.mdr',
+  '.map', '.aas', '.md5',
+  '.bsp', '.md3', '.iqm', '.mdr',
 ]
 const WEB_FORMATS = ['.js', '.wasm', '.css', '.html', '.jpg', '.png', '.jpeg', '.gif', '.svg']
 const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
@@ -160,6 +195,7 @@ const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
 
 
 module.exports = {
+  APPLICATIONS,
   EXPORT_DIRECTORY,
   TEMP_DIR,
   WEB_FORMATS,
@@ -173,10 +209,8 @@ module.exports = {
   ASSETS_DIRECTORY,
   BUILD_DIRECTORY,
   LVLWORLD_DB,
-  FS_BASEPATH,
   FS_HOMEPATH,
   FS_GAMEHOME,
-  STEAMPATH,
   STYLES,
   SCRIPTS,
   UNKNOWN,
