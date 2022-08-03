@@ -80,7 +80,7 @@ async function repackPk3(directory, newZip) {
       await zipCmd(directory[i].replace('.jpeg', '.jpg'), '-u' /* !first */, newZip)
     } catch (e) {
       if (!e.message.includes('up to date')) {
-        throw e
+        console.error(e)
       }
     }
     //first = false
@@ -186,10 +186,18 @@ async function repackBasemap(modname, mapname) {
   // new stream functions
   let newImages = []
   for(let i = 0; i < allPromises.length; i++) {
-    newImages.push(await exportFile(allPromises[i], outputDir))
+    try {
+      newImages.push(await exportFile(allPromises[i], outputDir))
+    } catch(err) {
+      console.error(err)
+    }
   }
   for(let i = 0; i < allExports.length; i++) {
-    await exportFile(allExports[i], outputDir)
+    try {
+      await exportFile(allExports[i], outputDir)
+    } catch(err) {
+      console.error(err)
+    }
   }
   // TODO: assert BSP file is included
 
@@ -418,12 +426,23 @@ async function repackBasepack(modname) {
   //   ALL? something is wrong with zip extraction maybe it can't do paralell on the same object
   let newImages = []
   for(let i = 0; i < allPromises.length; i++) {
-    newImages.push(await exportFile(allPromises[i], outputDir))
+    try {
+      newImages.push(await exportFile(allPromises[i], outputDir))
+    } catch(err) {
+      console.error(err)
+    }
   }
   for(let i = 0; i < allExports.length; i++) {
-    await exportFile(allExports[i], outputDir)
+    try {
+      await exportFile(allExports[i], outputDir)
+    } catch(err) {
+      console.error(err)
+    }
   }
   //console.log('Exporting:', newImages)
+
+  // TODO: inject cl_dlURL to correct game configured on game server
+  // TODO: replace .cfg font files with .png images
 
   // TODO: write current pak palette file
   // TODO: need to reload current palette to not duplicate work

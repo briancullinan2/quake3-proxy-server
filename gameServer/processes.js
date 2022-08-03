@@ -1,6 +1,11 @@
 const GAME_SERVERS = {}
 
 const STATUS_MENU = [{
+  title: 'Engines',
+  subtitle: 'Download and build games engines',
+  link: 'engines',
+  levelshot: `/build/engine.svg`,
+}, {
   title: 'Downloads',
   subtitle: 'Download Remote content',
   link: 'downloads',

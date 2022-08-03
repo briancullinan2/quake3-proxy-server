@@ -1,7 +1,7 @@
 // TODO: list connected clients and usernames
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { UDP_CLIENTS, SESSION_URLS, SESSION_IDS } = require('../proxyServer/serve-udp.js')
 const { STATUS_MENU } = require('../gameServer/processes.js')
+const { UDP_CLIENTS, SESSION_URLS, SESSION_IDS } = require('../contentServer/session.js')
 
 async function serveConnections(request, response, next) {
   let ports = Object.keys(UDP_CLIENTS)

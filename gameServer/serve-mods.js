@@ -54,7 +54,9 @@ async function serveModsReal(start, end, isJson, response, next) {
         link: `mods/${game}`,
       }
     })
-  gamesFiltered.sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }))
+  // sort by name with control colors removed
+  gamesFiltered.sort((a, b) => a.title.replace(/\^[0-9]+/g, '')
+      .localeCompare(b.title.replace(/\^[0-9]+/g, ''), 'en', { sensitivity: 'base' }))
   if (isJson) {
     return response.json(gamesFiltered)
   }

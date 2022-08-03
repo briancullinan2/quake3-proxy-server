@@ -174,6 +174,23 @@ async function initEvents() {
   }, false)
 }
 
+function renderColored(title) {
+  return title.replace(/\^([0-9]+)[^\^]*/g, function ($0, $1) {
+    let color = 'white'
+    switch($1) {
+      case '0': color = 'black'; break
+      case '1': color = 'red'; break
+      case '2': color = 'green'; break
+      case '3': color = 'yellow'; break
+      case '4': color = 'blue'; break
+      case '5': color = 'cyan'; break
+      case '6': color = 'magenta'; break
+      case '7': color = 'white'; break
+    }
+    return '<span style="color: ' + color + ';">' + $0.replace(/\^[0-9]+/gi, '') + '</span> '
+  })
+}
+
 
 //window.addEventListener('scroll', refreshMaps)
 let previousLine = 0
@@ -274,14 +291,15 @@ async function refreshMaps() {
       continue
     }
 
+    let newTitle = object.title.replace(/\^[0-9]+/g, '')
     let title = item.children[0].children[0]
     if(title && title.children[0]) {
-      if(title.children[0].innerText != object.title) {
-        title.children[0].innerText = object.title
+      if(title.children[0].innerText != newTitle) {
+        title.children[0].innerHTML = renderColored(object.title)
       }
     } else {
-      if(object.title && title.innerText != object.title) {
-        title.innerText = object.title
+      if(newTitle && title.innerText != newTitle) {
+        title.innerHTML = renderColored(object.title)
       }
     }
     if(object.link && title.href != object.link) {

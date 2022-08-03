@@ -2,9 +2,8 @@ const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')
-const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS } = require('../proxyServer/serve-udp.js')
-const { HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS, updatePageViewers, restoreSession, 
-    parseCookies } = require('../contentServer/session.js')
+const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS, HTTP_LISTENERS, HTTP_PORTS, WEB_SOCKETS,
+  updatePageViewers, restoreSession, parseCookies } = require('../contentServer/session.js')
 
 // < 100 LoC
 const express = require('express')
@@ -33,19 +32,17 @@ function createApplication(features) {
     if (filename.match('/frontend.js')) {
       return res.sendFile(SCRIPTS)
     }
-
+    // ^^^ don't slow down with session?
+    restoreSession(req, res)
 
     if (filename.match('/index.html')) {
       if (features.includes('all') || features.includes('virtual')) {
         return next()
       }
     }
-    if(filename.length <= 1 && !isIndex) {
+    if (filename.length <= 1 && !isIndex) {
       return serveFeatures(features, res)
     }
-
-    restoreSession(req, res)
-
     next()
   })
 
@@ -55,7 +52,7 @@ function createApplication(features) {
 
   setupExtensions(features, app)
 
-  if(!features.includes('debug')) {
+  if (!features.includes('debug')) {
     app.use(unhandledResponse)
 
     app.use('*', function (req, res, next) {
@@ -176,7 +173,7 @@ function createWebServers(services) {
     HTTP_LISTENERS[HTTP_PORTS[i]] = httpServer
     if (!services.includes('deploy') // don't start websocket in deploy mode
       && (services.includes('all')
-      || services.includes('socks'))) {
+        || services.includes('socks'))) {
       const { Server } = require('ws')
       WEB_SOCKETS[HTTP_PORTS[i]] = new Server({ server: httpServer })
       WEB_SOCKETS[HTTP_PORTS[i]].on('connection', socketConnect)

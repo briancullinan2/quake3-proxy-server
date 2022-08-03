@@ -1,6 +1,10 @@
 
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { UDP_CLIENTS, SESSION_IDS, SESSION_URLS } = require('../proxyServer/serve-udp.js')
+
+const UDP_CLIENTS = {0: []}
+const SESSION_IDS = {}
+const SESSION_URLS = {}
+const SESSION_GAMES = {}
 
 // only update clients with page refresh events at a specific rate not to
 //   overload ourselves with new page requests, TODO: this should be a balance.
@@ -15,23 +19,23 @@ const CLIENT_QUEUE = []
 // make sure this run async because we don't want to block 
 //   something else from queing this cycle
 async function updatePageViewers(route) {
-  if(!clientUpdater) {
+  if (!clientUpdater) {
     clientUpdater = setInterval(function () {
       let func = CLIENT_QUEUE.shift()
-      if(func) {
+      if (func) {
         Promise.resolve(func())
       }
-    }, 1000/60)
+    }, 1000 / 60)
   }
 
   let ports = Object.keys(UDP_CLIENTS)
   let count = 0
 
   function updateClient(client, promise) {
-    if(typeof client.pageTime == 'undefined') {
+    if (typeof client.pageTime == 'undefined') {
       client.pageTime = {}
     }
-    if(typeof client.pageTime[route] != 'undefined'
+    if (typeof client.pageTime[route] != 'undefined'
       && Date.now() - client.pageTime[route] < 800) {
       return
     }
@@ -45,17 +49,17 @@ async function updatePageViewers(route) {
     CLIENT_QUEUE.push(function () {
       // AHHHHH, if I do this beforehand the fetch() will fire too soon and not wait
       Promise.resolve(new Promise(resolve => setTimeout(resolve, 1000))
-      .then(() => Promise.resolve(promise))
-      .then(html2 => {
-        client.send(html2, {binary: false})
-        delete client.pageTime[route]
-      }))
+        .then(() => Promise.resolve(promise))
+        .then(html2 => {
+          client.send(html2, { binary: false })
+          delete client.pageTime[route]
+        }))
     })
   }
 
-  for(let i = 0; i < ports.length; i++) {
-    for(let j = 0; j < UDP_CLIENTS[ports[i]].length; ++j) {
-      if(ports[i] == 0) {
+  for (let i = 0; i < ports.length; i++) {
+    for (let j = 0; j < UDP_CLIENTS[ports[i]].length; ++j) {
+      if (ports[i] == 0) {
         updateClient(UDP_CLIENTS[ports[i]][j], 'UPDATE: ' + route)
       } else {
         let sess = Object.keys(SESSION_IDS).filter(k => SESSION_IDS[k] == ports[i])
@@ -98,21 +102,36 @@ function parseCookies(cookie) {
 
 function restoreSession(req, res) {
   let cookies = parseCookies(req.headers['cookie'])
+  req.cookies = cookies
 
   if (typeof cookies['__planet_quake_sess'] == 'undefined') {
-    let newId = buildChallenge()
-    res.cookie('__planet_quake_sess', newId, { maxAge: 900000, httpOnly: true })
+    cookies['__planet_quake_sess'] = buildChallenge()
+    res.cookie('__planet_quake_sess', cookies['__planet_quake_sess'], { maxAge: 900000, httpOnly: true })
   } else
     if (typeof SESSION_IDS[cookies['__planet_quake_sess']] != 'undefined'
       && (typeof cookies['__planet_quake_port'] == 'undefined'
         || cookies['__planet_quake_port'] != SESSION_IDS[cookies['__planet_quake_sess']])) {
-      res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], { maxAge: 900000, httpOnly: true })
+      res.cookie('__planet_quake_port', SESSION_IDS[cookies['__planet_quake_sess']], {
+        maxAge: 900000, httpOnly: true
+      })
     }
 
+  if (req.query && typeof req.query.game != 'undefined') {
+    SESSION_GAMES[cookies['__planet_quake_sess']] = req.query.game
+    res.cookie('__planet_quake_game', req.query.game, { maxAge: 900000, httpOnly: true })
+  }
+
+  if(typeof cookies['__planet_quake_game'] == 'undefined') {
+    SESSION_GAMES[cookies['__planet_quake_sess']] = cookies['__planet_quake_game']
+  }
 }
 
 
 module.exports = {
+  UDP_CLIENTS,
+  SESSION_GAMES,
+  SESSION_URLS,
+  SESSION_IDS,
   HTTP_PORTS,
   HTTP_LISTENERS,
   WEB_SOCKETS,

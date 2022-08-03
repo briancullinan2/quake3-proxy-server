@@ -2,6 +2,33 @@ const { getFeatureFilter } = require('../contentServer/features.js')
 const { INDEX, getGame } = require('../utilities/env.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 
+// TODO: export automatically to page?
+function renderColored(title) {
+  return title.replace(/\^([0-9]+)[^\^]*/g, function ($0, $1) {
+    let color = 'white'
+    switch($1) {
+      case '0': color = 'black'; break
+      case '1': color = 'red'; break
+      case '2': color = 'green'; break
+      case '3': color = 'yellow'; break
+      case '4': color = 'blue'; break
+      case '5': color = 'cyan'; break
+      case '6': color = 'magenta'; break
+      case '7': color = 'white'; break
+    }
+    return '<span style="color: ' + color + ';">' + $0.replace(/\^[0-9]+/gi, '') + '</span> '
+  })
+}
+/*
+#define S_COLOR_BLACK	"^0"
+#define S_COLOR_RED		"^1"
+#define S_COLOR_GREEN	"^2"
+#define S_COLOR_YELLOW	"^3"
+#define S_COLOR_BLUE	"^4"
+#define S_COLOR_CYAN	"^5"
+#define S_COLOR_MAGENTA	"^6"
+#define S_COLOR_WHITE	"^7"
+*/
 
 function renderFeature(map) {
   if(!map) {
@@ -16,7 +43,7 @@ function renderFeature(map) {
   } else {
     result += `<a name="${map.title || map.subtitle || map.bsp}">`
   }
-  result += `<span>${map.title}</span>`
+  result += `<span>${renderColored(map.title)}</span>`
   result += (map.bsp || map.subtitle) 
       && map.title != map.bsp && map.title != map.subtitle
     ? `<small>${map.subtitle || map.bsp}</small>`

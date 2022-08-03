@@ -179,6 +179,11 @@ async function describePk3(absolute) {
 
 
 let DOWNLOADS_MENU = [{
+  title: 'Engines',
+  subtitle: 'Download and build games engines',
+  link: 'engines',
+  levelshot: `/build/engine.svg`,
+}, {
   title: 'Downloads',
   link: 'downloads',
   subtitle: 'Downloaded Maps / Add-ons'

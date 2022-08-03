@@ -12,6 +12,7 @@ const { renderImages } = require('../mapServer/shaders.js')
 const { renderIndex, renderMenu, renderEngine } = require('../utilities/render.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 const { MAP_DICTIONARY } = require('../mapServer/download.js')
+const { SESSION_GAMES } = require('../contentServer/session.js')
 
 
 // display map info, desconstruct
@@ -20,7 +21,11 @@ async function serveMapInfo(request, response, next) {
   if(request.query && typeof request.query.game != 'undefined') {
     // TODO: validate
     basegame = request.query.game
+  } else 
+  if(request.cookies && SESSION_GAMES[request.cookies['__planet_quake_sess']]) {
+    basegame = SESSION_GAMES[request.cookies['__planet_quake_sess']]
   }
+  console.log(request.cookies, SESSION_GAMES)
   let mapsAvailable = await filteredMaps(basegame)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()
@@ -182,7 +187,12 @@ async function serveMapInfo(request, response, next) {
     <script>window.preStart = [
       // TODO: add cl_dlURL specific to mod /q3ut4/mapname
       '+set', 'cl_dlURL', '"/maps/${basegame}/%1"',
-      '+set', 'bot_enable', '0', '+map', '${mapname}', '+wait', '30', '+team', 's',
+      '+set', 'fs_basegame', '${basegame}',
+      '+set', 'bot_enable', '0', 
+      '+set', 'sv_pure', '0',
+      '+set', 'vm_rtChecks', '0',
+      '+map', '${mapname}', 
+      '+wait', '30', '+team', 's',
     ];</script>
     </div>`)
   return response.send(index)

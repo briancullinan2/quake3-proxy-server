@@ -690,11 +690,11 @@ ol.directory-list li {
 }
 
 
-.shaders li a,
-#map-list h3 span,
-#game-list h3 span,
-.menu-list h3 span,
-.stream-list h3 span {
+.shaders li > a,
+#map-list h3 > a > span,
+#game-list h3 > a > span,
+.menu-list h3 > a > span,
+.stream-list h3 > a > span {
   white-space: nowrap;
   transform: translateX(0);
   transition: 1s;

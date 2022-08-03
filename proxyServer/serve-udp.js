@@ -1,10 +1,8 @@
 const { lookupDNS, reverseLookup } = require('../utilities/dns.js')
+const { UDP_CLIENTS, SESSION_IDS } = require('../contentServer/session.js')
 
 const UDP_SERVERS = []
-const UDP_CLIENTS = {0: []}
 const WS_FORWARDS = []
-const SESSION_IDS = {}
-const SESSION_URLS = {}
 
 
 async function lookupClient(socket) {
@@ -119,8 +117,6 @@ function forwardMessage(port, isWS, message, rinfo) {
 
 
 module.exports = {
-  SESSION_URLS,
-  SESSION_IDS,
   UDP_SERVERS,
   UDP_CLIENTS,
   serveUDP,

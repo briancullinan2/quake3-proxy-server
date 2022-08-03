@@ -14,6 +14,7 @@ const { MAP_DICTIONARY } = require('../mapServer/download.js')
 const { EXPORT_DIRECTORY, setGame } = require('../utilities/env.js')
 const { setOutput } = require('../mapServer/repack.js')
 const { START_SERVICES } = require('../contentServer/features.js')
+const { SESSION_GAMES } = require('../contentServer/session.js')
 
 
 async function filterMappack(file) {
@@ -29,29 +30,37 @@ async function repackMappak(modname, mapname) {
 
 async function serveFinished(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
-  if(filename.startsWith('/')) {
+  if (filename.startsWith('/')) {
     filename = filename.substr(1)
   }
-
-  let previousGame = getGame()
   let modname = path.basename(path.dirname(filename))
-  if(modname == 'repacked') {
+  if (modname == 'repacked') {
     modname = getGame()
   }
-  if(!MODS_NAMES.includes(modname.toLocaleLowerCase())) {
+  if (request.query && typeof request.query.game != 'undefined') {
+    // TODO: validate
+    modname = request.query.game
+  } else
+    if (request.cookies && SESSION_GAMES[request.cookies['__planet_quake_sess']]) {
+      modname = SESSION_GAMES[request.cookies['__planet_quake_sess']]
+    }
+
+  let previousGame = getGame()
+  if (!MODS_NAMES.includes(modname.toLocaleLowerCase())) {
     modname = previousGame
   }
-  if(START_SERVICES.includes('deploy')) {
-    if(modname == 'baseq3' || modname == 'demoq3') {
-      modname = 'demoq3'
-      let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
-      setOutput(outputDir)
-      setGame('demoq3')
-    } else {
-      let outputDir = path.join(EXPORT_DIRECTORY, modname, 'pak0.pk3dir')
-      setOutput(outputDir)
-      setGame(modname)
-    }
+
+  if (modname == 'baseq3' || modname == 'demoq3') {
+    //if (START_SERVICES.includes('deploy')) {
+    modname = 'demoq3'
+    let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
+    setOutput(outputDir)
+    setGame('demoq3')
+    //}
+  } else {
+    let outputDir = path.join(EXPORT_DIRECTORY, modname, 'pak0.pk3dir')
+    setOutput(outputDir)
+    setGame(modname)
   }
 
   // TODO: lookup modname like in stream-file
@@ -60,32 +69,34 @@ async function serveFinished(request, response, next) {
   await listMaps(modname)
 
   let newZip
-  if(path.basename(filename).match(/^pak0\.pk3$|^pak0$/i)) {
+  if (path.basename(filename).match(/^pak0\.pk3$|^pak0$/i)) {
     newZip = await repackBasepack(modname)
   } else
-  if(typeof MAP_DICTIONARY[mapname] != 'undefined') {
-    if(MAP_DICTIONARY[mapname].startsWith('pak')) {
-      newZip = await repackBasemap(modname, mapname)
-    } else {
-      newZip = await repackMappak(modname, mapname)
+    if (typeof MAP_DICTIONARY[mapname] != 'undefined') {
+      if (MAP_DICTIONARY[mapname].startsWith('pak')) {
+        newZip = await repackBasemap(modname, mapname)
+      } else {
+        newZip = await repackMappak(modname, mapname)
+      }
     }
-  } 
-  
-  if(!newZip || !fs.existsSync(newZip)) {
+
+  if (!newZip || !fs.existsSync(newZip)) {
     newZip = findFile(getGame() + '/' + mapname + '.pk3')
     //newZip = await repackPk3(newZip)
   }
-  if(START_SERVICES.includes('deploy')) {
+  if (START_SERVICES.includes('deploy')) {
     setGame(previousGame)
   }
 
-  if(!newZip) {
+  if (!newZip) {
     return next(new Error('File not found: ' + filename))
   }
 
   return response.sendFile(newZip, {
-    headers: { 'content-disposition': 
-      `attachment; filename="${mapname}.pk3"` }
+    headers: {
+      'content-disposition':
+        `attachment; filename="${mapname}.pk3"`
+    }
   })
 
 }

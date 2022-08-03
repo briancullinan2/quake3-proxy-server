@@ -131,6 +131,103 @@ const MODS = []
 const MODS_NAMES = []
 const MODS_DESCRIPTIONS = {}
 
+
+/*
+
+
+baseq3
+Quake III Arena
+(players|player)\/(sarge|major)
+missionpack
+0 Choice: Team Arena
+(players|player)\/(sarge|james)
+defrag
+1 Choice: Defrag
+baseq3r
+2 Choice: Q3Rally
+(players|player)\/(sidepipe)
+basemod
+3 Choice: Monkeys of Doom
+generations
+4 Choice: Generations Arena
+q3f2
+5 Choice: Q3 Fortress 2
+cpma
+6 Choice: Challenge ProMode
+(players|player)\/(sarge|mynx)
+q3ut4
+7 Choice: Urban Terror 4
+(players|player)\/(athena|orion)
+freezetag
+8 Choice: Freeze Tag
+corkscrew
+9 Choice: Corkscrew
+freon
+Excessive Plus: Freon
+baseoa
+Open Arena
+(players|player)\/(sarge|gi)
+bfpq3
+Bid For Power
+excessive
+Excessive+
+q3ut3
+Urban Terror 3
+edawn
+eDawn
+geoball
+Geoball
+neverball
+Neverball
+omissionpack
+OpenArena Mission Pack
+platformer
+Platformer
+legoc
+Lego Carnage
+osp
+Orange Smoothie Productions
+quake2arena
+Quake 2 Arena
+smokin
+Smokin\' Guns
+wfa
+Weapons Factory Arena
+uberarena
+Uber Arena
+demoq3
+Quake III Demo
+mfdata
+Military Forces
+conjunction
+Dark Conjunction
+chili
+Chili Quake XXL
+hqq
+High Quality Quake
+entityplus
+Engine Of Creation: Entity Plus
+wop
+World of Padman
+truecombat
+True Combat 1.3
+(tc_players|player)\/(sarge|alpha)
+rocketarena
+Coming Soon: Rocket Arena
+gpp
+Coming Soon: Tremulous
+gppl
+Coming Soon: Unvanquished
+iortcw
+Coming Soon: Return to Castle Wolfenstien
+baset
+Coming Soom: Wolfenstien: Enemy Territory
+openjk
+Coming Soon: Jedi Knights: Jedi Academy
+baseef
+Coming Soon: Star Trek: Elite Force
+*/
+
 const GAME_FORMATS = [
   '.pk3' // TODO: dlls and isos and roms
 ]
@@ -157,7 +254,8 @@ function refreshMods() {
       let hasDescription = false
       if (fs.existsSync(path.join(modDir, 'description.txt'))) {
         hasDescription = true
-        description = fs.readFileSync(path.join(modDir, 'description.txt')).toString('utf-8')
+        description = fs.readFileSync(path.join(modDir, 'description.txt'))
+          .toString('utf-8').trim()
       }
       if (description
         || fs.readdirSync(modDir).filter(file => GAME_FORMATS.includes(

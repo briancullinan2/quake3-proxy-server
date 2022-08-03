@@ -58,29 +58,34 @@ function parseCurlys(shaderText) {
   let body = []
   for(let l = 0; l < lines.length; l++) {
     let line = lines[l].replace(/\/\/.*/ig, '')
-    if(!skipBlock && line.match(/\w/gi)) {
+    console.log('shader at ', line.match(/\w+/gi), l, line)
+    if(!skipBlock && line.match(/\w+/gi)) {
       skipBlock = true
       shaderName = line.trim()
       body = []
-    } else
+    }
+  
     if(skipBlock && line.indexOf('{') > -1) {
       depth++
+      continue
     } else
     if(skipBlock && line.indexOf('}') > -1) {
       depth--
       if(depth < 0) {
-        throw new Error('Badly formatted shader: ' + shaderName + ' in ' + shaders[i])
+        throw new Error('Badly formatted shader: ' + shaderName)
       } else
       if(depth == 0) {
         skipBlock = false
         SHADER_BODY[shaderName] = body
       }
-    } else
+      continue
+    }
+
     if(skipBlock) {
       body.push(line + '\n')
     } else 
     if (line.trim().length > 0) {
-      throw new Error('Don\'t know what to do! ' + line)
+      throw new Error('Don\'t know what to do! (' + skipBlock + ') ' + lines[l-1] + '\n' + line)
     } else {
       // just whitespace
     }
