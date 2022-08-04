@@ -15,14 +15,7 @@ const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { STATUS_MENU } = require('../gameServer/processes.js')
 const { setOutput, repackBasemap, repackBasepack } = require('../mapServer/repack.js')
 const { listMaps } = require('../assetServer/list-maps.js')
-const { layeredDir } = require('../assetServer/layered.js')
 const { MAP_DICTIONARY } = require('../mapServer/download.js')
-const { streamAndCache, CONVERTED_FILES, streamFile, findAlt } = require('../assetServer/stream-file.js')
-const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
-const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
-const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
-const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
-const { streamKey } = require('../utilities/zip.js')
 
 
 // TODO: generate a GitHub redirect file from routes

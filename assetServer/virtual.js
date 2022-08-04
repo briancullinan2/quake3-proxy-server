@@ -76,7 +76,7 @@ function buildDirectories() {
 const CACHY_PATHY = {}
 
 
-function findFile(filename) {
+function findFile(filename, findPk3File) {
   if(filename.startsWith('/')) {
     filename = filename.substr(1)
   }
@@ -104,6 +104,10 @@ function findFile(filename) {
     if(fs.existsSync(newPath)) {
       return (CACHY_PATHY[filename.toLocaleLowerCase()] = newPath)
     }
+  }
+
+  if(findPk3File === false) {
+    return
   }
 
   // no cachy

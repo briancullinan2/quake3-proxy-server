@@ -75,6 +75,7 @@ async function streamKey(file, stream) {
       if(stream) {
         stm.pipe(stream);
       }
+      stm.on('error', console.error)
       stm.on('end', function () {
         //stream.uncork()
         delete EXTRACTING_ZIPS[fullPath]

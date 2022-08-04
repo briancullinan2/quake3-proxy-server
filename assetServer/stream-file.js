@@ -46,6 +46,13 @@ async function findAlt(filename) {
     return CACHY_PATHY[filename.toLocaleLowerCase()]
   }
 
+  // TODO: redirect models IQM and MD3 just like audio/image files
+
+  let file = findFile(filename, false)
+  if (file && !file.match(/\.pk3$/gi)) {
+    return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
+  }
+
   pk3InnerPath = filename
   // TODO: lookup modname like in serve-virtual
   let pk3s = []
@@ -62,6 +69,15 @@ async function findAlt(filename) {
   if (filename.match(/\.pk3/i)) {
     pk3File = filename.replace(/\.pk3.*/gi, '.pk3')
     pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+  }
+
+  // TODO: extend this function singularly to handle all repackedCache() calls
+  if(pk3File) {
+    file = findFile(path.join(path.dirname(pk3File), pk3InnerPath), false)
+    // try path without pk3 in name like engine does
+    if (file && !file.match(/\.pk3$/gi)) {
+      return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
+    }
   }
 
   // TODO: takes a local / virtual path and traverses both base packs and alternate extensions
@@ -97,10 +113,14 @@ async function findAlt(filename) {
     }
   }
 
+
+
+  // BELOW: don't return a pk3 match because we already checked all the pk3 files above
+
   if (IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
     for (let i = 0; i < IMAGE_FORMATS.length; i++) {
       let altPath = findFile(filename.replace(path.extname(filename), IMAGE_FORMATS[i]))
-      if (altPath) {
+      if (altPath && !altPath.match(/\.pk3$/gi)) {
         return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
       }
     }
@@ -109,20 +129,11 @@ async function findAlt(filename) {
   if (AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
     for (let i = 0; i < AUDIO_FORMATS.length; i++) {
       let altPath = findFile(filename.replace(path.extname(filename), AUDIO_FORMATS[i]))
-      if (altPath) {
+      if (altPath && !altPath.match(/\.pk3$/gi)) {
         return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
       }
     }
   }
-
-  // TODO: redirect models IQM and MD3 just like audio/image files
-
-  let file = findFile(filename)
-  if (file) {
-    return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
-  }
-
-  // TODO: extend this function singularly to handle all repackedCache() calls
 
 }
 
@@ -193,12 +204,12 @@ async function streamAudioFile(filename, response) {
     response.setHeader('content-type', 'audio/ogg')
   }
   // .pipe(response)
-  let passThrough = streamAndCache(newKey, CONVERTED_SOUNDS, response)
+  //let passThrough = streamAndCache(newKey, CONVERTED_SOUNDS, response)
   CONVERTED_TIMES[newKey.replace(path.extname(newKey), '').toLocaleLowerCase()] =
     CONVERTED_TIMES[newKey] = stat.mtime.getTime()
 
   // force async so other threads can answer page requests during conversion
-  Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, passThrough, true))
+  Promise.resolve(encodeCmd(pk3File, pk3InnerPath, void 0, response, true))
   return newKey
 }
 
@@ -213,7 +224,8 @@ function streamAndCache(key, cache, response) {
     if(response) {
       passThrough.pipe(response)
     }
-    passThrough.end(CONVERTED_FILES[strippedKey] || cache[key])
+    passThrough.write(CONVERTED_FILES[strippedKey] || cache[key])
+    passThrough.end()
     return passThrough
   }
 
@@ -316,9 +328,9 @@ async function streamImageFile(filename, response) {
     response.setHeader('content-type', 'image/' + newExt.substring(1))
   }
   // .pipe(response)
-  let passThrough = streamAndCache(newKey, CONVERTED_IMAGES, response)
+  //let passThrough = streamAndCache(newKey, CONVERTED_IMAGES, response)
   // force async so other threads can answer page requests during conversion
-  Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, passThrough, newExt, true))
+  Promise.resolve(convertCmd(pk3File, pk3InnerPath, void 0, response, newExt, true).catch(err => console.error(err)))
   return newKey
 }
 
@@ -335,6 +347,7 @@ async function streamFile(filename, stream) {
     if (!fs.existsSync(filename)) {
       pk3File = await findAlt(filename)
     }
+
   if (!pk3File) {
     return false
   }
@@ -374,12 +387,14 @@ async function streamFile(filename, stream) {
   // TODO: cache read in CONVERTED_FILES?
   //passThrough.pipe(response)
   //passThrough.end(CONVERTED_FILES[strippedKey] || cache[key])
-  if (typeof stream.setHeader == 'function') {
+  if (stream && typeof stream.setHeader == 'function') {
     stream.sendFile(pk3File)
     return true
   } else {
     passThrough = fs.createReadStream(pk3File)
-    passThrough.pipe(stream)
+    if(stream) {
+      passThrough.pipe(stream)
+    }
     return passThrough
   }
 }

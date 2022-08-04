@@ -64,7 +64,10 @@ async function execCmd(cmd, args, options) {
           cwd: (options ? options.cwd : null) || process.cwd(),
           shell: (options ? options.shell : false) || false,
           detached: (options ? options.detached : false) || false,
-          stdio: options && options.detached ? 'ignore' : 'pipe',
+          stdio: options && options.detached ? 'ignore' : [
+            options && options.pipe ? 'pipe' : 'inherit', 
+            options && options.write ? 'pipe' : 'pipe', 
+            options && options.error ? 'pipe' : 'pipe'],
         })
         if(!options || !options.detached) {
           RUNNING++ // don't coult detached toward total
@@ -74,24 +77,27 @@ async function execCmd(cmd, args, options) {
         updatePageViewers('/process')
         let stderr = ''
         let stdout = ''
-        if(!options || !options.detached) {
+        if(ps.stderr) {
           ps.stderr.on('data', (data) => {
             stderr += data.toString('utf-8')
           })
-          if (options && typeof options.write == 'object') {
-            //options.stdout.cork()
-            ps.stdout.pipe(options.write)
-          }
           // TODO: somehow output this to console
           if (options && typeof options.error == 'object') {
             ps.stderr.pipe(options.error)
           }
+        }
+        console.assert(!options || !options.pipe || ps.stdin, 'Pipe not available.')
+        if(ps.stdin && options && options.pipe) {
+          options.pipe.pipe(ps.stdin)
+        }
+        if(ps.stdout) {
+          if (options && typeof options.write == 'object') {
+            //options.stdout.cork()
+            ps.stdout.pipe(options.write)
+          }
           ps.stdout.on('data', (data) => {
             stdout += data.toString('utf-8')
           })
-          if (options && options.pipe) {
-            options.pipe.pipe(ps.stdin)
-          }
         }
         ps.on('close', function (errCode) {
           if (options && typeof options.write == 'object') {
@@ -105,7 +111,7 @@ async function execCmd(cmd, args, options) {
               //console.log('Error executing:', LIMIT, cmd, args.join(' '), options)
               //console.log(stdout, stderr)
               reject(new Error('Process failed: ' + errCode + ': '
-                + stderr + (!options || !options.write ? stdout : '')))
+                 + stderr + (!options || !options.write ? stdout : '') ))
             } else {
               resolve(stdout + stderr)
             }

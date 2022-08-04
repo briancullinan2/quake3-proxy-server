@@ -3,17 +3,18 @@ const path = require('path')
 
 const { findFile } = require('../assetServer/virtual.js')
 const { SUPPORTED_FORMATS, AUDIO_FORMATS, IMAGE_FORMATS,
-  TEMP_DIR, getGame } = require('../utilities/env.js')
+  TEMP_DIR, DOMAIN, getGame } = require('../utilities/env.js')
 const { listPk3s } = require('../assetServer/layered.js')
-const { getIndex } = require('../utilities/zip.js')
+const { getIndex, streamKey } = require('../utilities/zip.js')
 const { zipCmd } = require('../cmdServer/cmd-zip.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
-const { streamAndCache, CONVERTED_FILES, streamFile } = require('../assetServer/stream-file.js')
+const { streamAndCache, CONVERTED_FILES, findAlt, streamFile } = require('../assetServer/stream-file.js')
 const { makePalette } = require('../assetServer/make-palette.js')
 const { parsePalette } = require('../assetServer/list-palettes.js')
 const { START_SERVICES } = require('../contentServer/features.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { MAP_DICTIONARY } = require('../mapServer/download.js')
+const { PassThrough, Readable } = require('stream')
 
 
 let REPACKED_OUTPUT = path.join(TEMP_DIR, getGame(), 'pak0.pk3dir')
@@ -54,7 +55,13 @@ async function repackPk3(directory, newZip) {
         filesToRemove.push(file)
       } else if (directoryIndex > -1) { 
         // TODO: update files on change
-        directory.splice(directoryIndex, 1)
+        if(fs.existsSync(newFile) && fs.statSync(newFile).mtime.getTime() > existingTime) {
+
+        } else {
+          directory.splice(directoryIndex, 1)
+        }
+      } else {
+        
       }
     }
     for (let i = 0; i < filesToRemove.length; i++) {
@@ -203,7 +210,8 @@ async function repackBasemap(modname, mapname) {
 
   let newZip = path.join(path.dirname(outputDir), mapname + '.pk3')
   // TODO: add converted names to output list
-  await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
+  let uniqueFiles = Object.keys(includedDates).concat(newImages).filter((f, i, arr) => arr.indexOf(f) == i)
+  await repackPk3(uniqueFiles, newZip)
   return newZip
   // TODO: include base files less than 512KB? and >= 128KB
   // TODO: include startup sounds?
@@ -264,8 +272,15 @@ function filterBasepack(file) {
 
 
 async function exportFile(file, outputDir) {
-  let newFile = path.join(outputDir, typeof file == 'object'
-    ? file.name.toLocaleLowerCase() : file.toLocaleLowerCase())
+  //let newFile = path.join(outputDir, typeof file == 'object'
+  //  ? file.name.toLocaleLowerCase() : file.toLocaleLowerCase())
+  let newFile = typeof file == 'object'
+    ? file.name.toLocaleLowerCase() : file.toLocaleLowerCase()
+  newFile = newFile.replace(/.*\.pk3.*?\//gi, outputDir + '/')
+  if(!newFile.includes(outputDir)) {
+    newFile = path.join(outputDir, newFile)
+  }
+
   if (!fs.existsSync(path.dirname(newFile))) {
     fs.mkdirSync(path.dirname(newFile), { recursive: true })
   }
@@ -291,23 +306,45 @@ async function exportFile(file, outputDir) {
       return newFile.replace(path.extname(newFile), '.ogg')
     }
   }
-  if (fs.existsSync(newFile)) {
-    return newFile
+  if(newFile.includes('default.cfg')) {
+    debugger
   }
-  let passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
-  let fileName = await streamFile(file, passThrough)
-  return await new Promise(resolve => {
+  if (fs.existsSync(newFile)) {
+    let pk3Name = outputDir.replace(/.*\.pk3.*?\//gi, outputDir + '/')
+    let pk3InnerPath = newFile.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
+    let localName = path.join(path.relative(path.dirname(path.dirname(pk3Name)), pk3Name), pk3InnerPath)
+    let altFile = await findAlt(localName)
+    if(typeof altFile == 'string' && altFile.includes('.qvm')) {
+      console.log('Developing: ', altFile)
+    }
+    let stat = fs.statSync( typeof altFile == 'object' 
+        ? altFile.file : altFile || newFile)
+    if(stat.size > 1 && 
+      ((typeof altFile == 'object' && !altFile.file.includes('build'))
+      || (typeof altFile == 'string' && !altFile.includes('build')))){
+      return newFile
+    }
+    if(altFile) {
+      console.log('Re-exporting:', typeof altFile == 'object' 
+          ? (altFile.file + '/' + altFile.name) : altFile)
+    }
+  }
+  let passThrough
+  let writeStream
+  if(typeof CONVERTED_FILES[newFile] == 'undefined') {
+    passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
+    let fileName = await streamFile(file, passThrough)
     newFile = typeof fileName == 'string'
-      ? fileName.toLocaleLowerCase().replace(/.*\.pk3.*?\//gi, outputDir + '/')
-      : newFile
-    let writeStream = fs.createWriteStream(newFile)
+    ? fileName.toLocaleLowerCase().replace(/.*\.pk3.*?\//gi, outputDir + '/')
+    : newFile
+    writeStream = fs.createWriteStream(newFile)
     passThrough.pipe(writeStream)
-    passThrough.on('end', function () {
-      writeStream.close()
-      resolve(newFile)
-    })
-    return newFile
-  })
+    await new Promise(resolve => passThrough.on('end', resolve))
+    writeStream.close()
+  } else {
+    fs.writeFileSync(newFile, CONVERTED_FILES[newFile])
+  }
+  return newFile
 }
 
 
@@ -397,12 +434,12 @@ async function repackBasepack(modname) {
     // still do conversions for images and audio because we will need it
     //   the deployment.
     let newTime
+    allPromises.push(file)
     if (!fs.existsSync(newFile)
       || fs.statSync(newFile).mtime.getTime() < file.time) {
       // output files with new stream functions, saving on indexing
       //   only export the first occurance of a filename
       //if(typeof includedDates[newFile] == 'undefined') {
-      allPromises.push(file)
       //}
       newTime = file.time
     } else {
@@ -442,7 +479,24 @@ async function repackBasepack(modname) {
   //console.log('Exporting:', newImages)
 
   // TODO: inject cl_dlURL to correct game configured on game server
+  //let defaultPath = await findAlt(modname + '/default.cfg')
+  await exportFile(modname + '/pak0.pk3dir/default.cfg', outputDir)
+  let defaultCfg = fs.readFileSync(path.join(outputDir, 'default.cfg')).toString('utf-8')
+  if(defaultCfg.trim().length < 1) {
+    throw new Error('default.cfg is missing: ' + path.join(outputDir, 'default.cfg'))
+  }
+  await exportFile(modname + '/pak0.pk3dir/vm/cgame.qvm', outputDir)
+  await exportFile(modname + '/pak0.pk3dir/vm/qagame.qvm', outputDir)
+  await exportFile(modname + '/pak0.pk3dir/vm/ui.qvm', outputDir)
+
+  //console.log(defaultCfg)
+  defaultCfg = defaultCfg.replace(/^.*cl_dlUrl.*$/gi, '')
+  defaultCfg += '\nseta cl_dlURL "' + DOMAIN + '/maps/' + modname + '/%1"\n'
+  fs.writeFileSync(path.join(outputDir, 'default.cfg'), defaultCfg)
+  includedDates[path.join(outputDir, 'default.cfg')] = Date.now()
   // TODO: replace .cfg font files with .png images
+
+
 
   // TODO: write current pak palette file
   // TODO: need to reload current palette to not duplicate work
@@ -451,7 +505,8 @@ async function repackBasepack(modname) {
   includedDates[paletteFile] = maxMtime
 
   let newZip = path.join(path.dirname(outputDir), 'pak0.pk3')
-  await repackPk3(Object.keys(includedDates).concat(newImages), newZip)
+  let uniqueFiles = Object.keys(includedDates).concat(newImages).filter((f, i, arr) => arr.indexOf(f) == i)
+  await repackPk3(uniqueFiles, newZip)
   return newZip
 }
 

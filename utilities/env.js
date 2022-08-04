@@ -291,8 +291,11 @@ const WEB_FORMATS = ['.js', '.wasm', '.css', '.html', '.jpg', '.png', '.jpeg', '
 const IMAGE_FORMATS = ['.jpeg', '.jpg', '.png', '.tga', '.dds', '.bmp']
 const AUDIO_FORMATS = ['.wav', '.mp3', '.ogg', '.opus', '.flac']
 
+let DOMAIN = 'http://127.0.0.1:8080'
+
 
 module.exports = {
+  DOMAIN,
   APPLICATIONS,
   EXPORT_DIRECTORY,
   TEMP_DIR,

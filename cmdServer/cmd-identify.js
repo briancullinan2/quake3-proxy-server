@@ -14,21 +14,19 @@ async function opaqueCmd(imagePath, unsupportedFormat, wait) {
     let file = typeof imagePath == 'object' 
         ? imagePath : await fileKey(imagePath, unsupportedFormat)
     if (file) {
-      let passThrough = new PassThrough()
-      isOpaque = (await Promise.all([
-        streamKey(file, passThrough),
-        execCmd('identify', ['-format', '\'%[opaque]\'',
-        path.extname(file.name).substring(1) + ':-'], { 
-            wait: wait,
-            pipe: passThrough,
-            once: path.join(file.file, unsupportedFormat),
-          })
-      ]))[1]
+      isOpaque = await execCmd('identify', ['-format', '\'%[opaque]\'',
+      path.extname(file.name).substring(1) + ':-'], { 
+          shell: true,
+          wait: wait,
+          pipe: await streamKey(file, null),
+          once: path.join(file.file, unsupportedFormat),
+        })
     } else {
       throw new Error('File not found: ' + unsupportedFormat)
     }
   } else {
     isOpaque = await execCmd('identify', ['-format', '\'%[opaque]\'', imagePath], {
+      shell: true,
       wait: wait,
       once: imagePath,
     })

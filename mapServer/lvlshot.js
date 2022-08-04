@@ -308,9 +308,9 @@ async function processQueue() {
         fs.readSync(fd, buffer, { position: task.logPosition })
         fs.close(fd)
         if(SERVER) {
-          SERVER.logs += buffer.toString('utf-8')
+          SERVER.logs += buffer.toString('utf-8').trim()
         } else {
-          task.logs += buffer.toString('utf-8')
+          task.logs += buffer.toString('utf-8').trim()
         }
         //Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
         task.logPosition = stat.size
@@ -383,34 +383,20 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+sets', 'fs_basegame', basegame,
       '+sets', 'fs_game', basegame,
-      '+set', 'sv_pure', '0', 
-      '+set', 'dedicated', '0',
-      '+set', 'developer', '0',
-      '+set', 'r_headless', '1',
-      //'+set', 's_initsound', '0',
-      '+set', 's_muteWhenUnfocused', '1',
-      '+set', 's_muteWhenMinimized', '1',
-      '+set', 'in_mouse', '0',
-      '+set', 'sv_master1', '""',
-      '+set', 'sv_master2', '""',
-      '+set', 'sv_master3', '""',
-      '+set', 'cl_master22', `"127.0.0.1:${MASTER_PORTS[0]}"`,
-      '+set', 'sv_master22', `"127.0.0.1:${MASTER_PORTS[0]}"`,
       '+sets', 'qps_serverId', '"' + challenge + '"',
-      '+sets', 'qps_renderer', '1',
-      '+sets', 'qps_dedicated', '0',
+      //'+set', 's_initsound', '0',
       // snapshot server has low FPS
-      '+set', 'com_yieldCPU', '16',
-      '+set', 'com_maxfps', '3',
-      '+set', 'com_maxfpsUnfocused', '3',
-      '+set', 'snaps', '10',
-      '+set', 'sv_fps', '10',
       '+set', 'rconPassword2', 'password1',
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
+      '+set', 'r_headless', '1', // TODO: SHOULD BE 1
+      '+exec', `".config/levelinfo.cfg"`,
+
+      '+vstr', 'clearedMasters', 
+      '+vstr', 'headlessOptions',
+      '+vstr', 'resetLvlshot',
+
       '+set', 'g_gametype', '0',
       '+devmap', mapname,
-      '+exec', `".config/levelinfo.cfg"`,
-      '+vstr', 'resetLvlshot',
       '+wait', '20', '+heartbeat',
       // TODO: run a few frames to load images before
       //   taking a screen shot and exporting canvas

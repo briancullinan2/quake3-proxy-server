@@ -111,6 +111,7 @@ async function resolveImages(logs, task) {
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
+  console.log(logs)
   if (!imageList) {
     return false
   }
@@ -225,7 +226,8 @@ async function execLevelshot(mapname, waitFor) {
 
   // TODO: this will need to be an API controllable by utilities/watch.js
   let lvlconfig = path.join(FS_GAMEHOME, basegame, '.config/levelinfo.cfg')
-  if (!fs.existsSync(lvlconfig) || fs.statSync(lvlconfig).mtime > fs.statSync(LVLSHOTS).mtime) {
+  if (!fs.existsSync(lvlconfig) 
+    || fs.statSync(LVLSHOTS).mtime.getTime() > fs.statSync(lvlconfig).mtime.getTime()) {
     fs.mkdirSync(path.join(FS_GAMEHOME, basegame, '.config'), { recursive: true })
     fs.writeFileSync(lvlconfig, fs.readFileSync(LVLSHOTS))
   }

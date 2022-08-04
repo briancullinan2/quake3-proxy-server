@@ -53,7 +53,7 @@ function parseAguments(startArgs) {
         break
       case '--add-mod':
       case '--add-game':
-        console.log('Game mod: ', startArgs[i + 1])
+        //console.log('Game mod: ', startArgs[i + 1])
         addGame(startArgs[i + 1])
         i++
         break

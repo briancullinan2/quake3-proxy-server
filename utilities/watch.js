@@ -71,7 +71,7 @@ function contentWatcher() {
     if (fs.existsSync(MONITOR_CHANGES[i])) {
       let localeName = MONITOR_CHANGES[i].toLocaleLowerCase()
       if (typeof CONTENT_WATCHES[localeName] == 'undefined') {
-        console.log('Watching 1: ', MONITOR_CHANGES[i])
+        //console.log('Watching 1: ', MONITOR_CHANGES[i])
         CONTENT_WATCHES[localeName] = fs.watch(MONITOR_CHANGES[i], { recursive: false }, function (type, file) {
           setTimeout(contentWatcher, 1000)
         })
@@ -82,7 +82,7 @@ function contentWatcher() {
       let rootDirectory = MONITOR_CHANGES[i].split('/').slice(0, 2).join('/')
       let rootName = rootDirectory.toLocaleLowerCase()
       if (typeof CONTENT_WATCHES[rootName] == 'undefined') {
-        console.log('Watching 2: ', rootDirectory)
+        //console.log('Watching 2: ', rootDirectory)
         CONTENT_WATCHES[rootName] = fs.watch(rootDirectory, { recursive: false }, function (type, file) {
           setTimeout(contentWatcher, 1000)
         })
@@ -101,7 +101,7 @@ function contentWatcher() {
 
         let localeName = currentPath.toLocaleLowerCase()
         if (typeof CONTENT_WATCHES[localeName] == 'undefined') {
-          console.log('Watching 3: ', currentPath)
+          //console.log('Watching 3: ', currentPath)
           CONTENT_WATCHES[localeName] = fs.watch(currentPath, { recursive: false }, function (type, file) {
             setTimeout(contentWatcher, 1000)
           })
