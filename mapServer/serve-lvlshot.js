@@ -111,7 +111,7 @@ async function resolveImages(logs, task) {
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
-  console.log(logs)
+  //console.log(logs)
   if (!imageList) {
     return false
   }

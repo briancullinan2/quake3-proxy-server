@@ -273,7 +273,7 @@ refreshMods()
 
 const SUPPORTED_FORMATS = [
   '.cfg', '.qvm', '.jts', '.bot',
-  '.txt',
+  '.txt', '.hit',
   '.shader', '.shaderx',
   '.crosshair', '.skin', '.font',
   '.config', '.menu',

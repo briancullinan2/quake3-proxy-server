@@ -58,7 +58,7 @@ function parseCurlys(shaderText) {
   let body = []
   for(let l = 0; l < lines.length; l++) {
     let line = lines[l].replace(/\/\/.*/ig, '')
-    console.log('shader at ', line.match(/\w+/gi), l, line)
+    //console.log('shader at ', line.match(/\w+/gi), l, line)
     if(!skipBlock && line.match(/\w+/gi)) {
       skipBlock = true
       shaderName = line.trim()

@@ -9,7 +9,10 @@ const GAMEDIRS = {}
 
 function gameDirectories(basegame, unexisting) {
   if(!unexisting && typeof GAMEDIRS[basegame] != 'undefined') {
-    return GAMEDIRS[basegame]
+    return GAMEDIRS[basegame]    
+    .filter(g => (!!unexisting || fs.existsSync(g)))
+    .filter((g, i, arr) => arr.indexOf(g) == i)
+
   }
 
   const GAME_MODS = getGames() //.concat(Object.values(MODS_NAMES))
@@ -63,7 +66,7 @@ function gameDirectories(basegame, unexisting) {
   }
   // store for later use, because of live reloading we don't need to update this every time
   GAMEDIRS[basegame] = GAME_DIRECTORIES
-    .filter(g => (unexisting || fs.existsSync(g)))
+    .filter(g => (!!unexisting || fs.existsSync(g)))
     .filter((g, i, arr) => arr.indexOf(g) == i)
   return GAMEDIRS[basegame]
 }
@@ -115,9 +118,9 @@ function findFile(filename, findPk3File) {
     filename = filename.substr(1)
   }
   // TODO: verify all these paths reset the FS-watcher
-  if(typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
-    return CACHY_PATHY[filename.toLocaleLowerCase()]
-  }
+  //if(typeof CACHY_PATHY[filename.toLocaleLowerCase()] != 'undefined') {
+  //  return CACHY_PATHY[filename.toLocaleLowerCase()]
+  //}
 
   let BUILD_ORDER = buildDirectories()
   for(let i = 0; i < BUILD_ORDER.length; i++) {

@@ -55,7 +55,8 @@ async function serveMapInfo(request, response, next) {
   let DEPLOY = START_SERVICES.includes('deploy')
   let MAP_MENU = []
   if (DEPLOY && MAP_DICTIONARY[mapname].match(/pak[0-9]\.pk3/i)
-    && !TRIAL_MAPS.includes(mapname)) {
+    && !TRIAL_MAPS.includes(mapname) 
+    && (basegame == 'baseq3' || basegame == 'demoq3')) {
     MAP_MENU.push({
       title: 'Buy Now',
       link: 'https://store.steampowered.com/app/2200/Quake_III_Arena/',

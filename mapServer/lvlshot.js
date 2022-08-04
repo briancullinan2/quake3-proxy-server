@@ -30,34 +30,44 @@ function listJobs() {
   // sort by if the existing stack has less than <MAX_RENDERERS> commands
   //   and if the time is less than <RENDERER_TIMEOUT> from the request
   let mapNames = Object.keys(EXECUTING_LVLSHOTS)
+  mapNames.sort(function (a, b) {
+    let aLength = EXECUTING_LVLSHOTS[a].length
+    let bLength = EXECUTING_LVLSHOTS[b].length
+    return bLength - aLength
+  })
   let mapNamesFiltered = mapNames.sort(function (a, b) {
     // sort by the average minimum * number of tasks
-    EXECUTING_LVLSHOTS[a].sort((c, d) => d.subscribers.length - c.subscribers.length)
-    EXECUTING_LVLSHOTS[b].sort((c, d) => d.subscribers.length - c.subscribers.length)
-    let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
-    let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
-    let aSum = aTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
-    let bSum = bTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
+    //EXECUTING_LVLSHOTS[a].sort((c, d) => d.subscribers.length - c.subscribers.length)
+    //EXECUTING_LVLSHOTS[b].sort((c, d) => d.subscribers.length - c.subscribers.length)
+    //EXECUTING_LVLSHOTS[a].sort((c, d) => d.started - c.started)
+    //EXECUTING_LVLSHOTS[b].sort((c, d) => d.started - c.started)
+    //let aTasks = EXECUTING_LVLSHOTS[a].slice(0, MAX_RENDERERS)
+    //let bTasks = EXECUTING_LVLSHOTS[b].slice(0, MAX_RENDERERS)
+    //let aSum = aTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
+    //let bSum = bTasks.reduce((sum, task) => (sum + task.created), 0) || Number.MAX_VALUE
     // oldest to newest
-    return aSum / aTasks.length - bSum / bTasks.length
+    let aHasStarted = EXECUTING_LVLSHOTS[a].filter(t => t.started).length
+    let bHasStarted = EXECUTING_LVLSHOTS[b].filter(t => t.started).length
+    return bHasStarted - aHasStarted
+    //return aSum / aTasks.length - bSum / bTasks.length
   }).slice(0, MAX_RENDERERS)
   return mapNamesFiltered.filter(map => EXECUTING_LVLSHOTS[map].length)
 }
 
 
 async function resolveSwitchmap(logs, task) {
-  let working = Object.keys(EXECUTING_MAPS).filter(challenge => 
+  let working = Object.keys(EXECUTING_MAPS).filter(challenge =>
     EXECUTING_MAPS[challenge].working == task)[0]
-  let serverInfo = Object.values(GAME_SERVERS).filter(info => 
+  let serverInfo = Object.values(GAME_SERVERS).filter(info =>
     info.qps_serverId == working)[0]
-  if(!working || !serverInfo) {
+  if (!working || !serverInfo) {
     // CODE REVIEW: this finally helped me get into a bug involving the processes list pid
     return false
     throw new Error('Not working!')
   }
 
-  if(task.outFile.localeCompare(serverInfo.gamename + '/' + serverInfo.mapname, 'en', {sensitivity: 'base'})
-   == 0) {
+  if (task.outFile.localeCompare(serverInfo.gamename + '/' + serverInfo.mapname, 'en', { sensitivity: 'base' })
+    == 0) {
     return true
   }
   return false
@@ -65,33 +75,37 @@ async function resolveSwitchmap(logs, task) {
 
 
 async function getTask(mapname, previousTask) {
-  
+
   let mapNamesFiltered = listJobs()
   let task
-  for(let i = 0; i < mapNamesFiltered.length; ++i) {
-    if(mapNamesFiltered[i] != mapname) {
+  for (let i = 0; i < mapNamesFiltered.length; ++i) {
+    if (mapNamesFiltered[i] != mapname) {
       continue
     }
     // TODO: use RCON interface to control servers and get information
     task = EXECUTING_LVLSHOTS[mapname][0]
-    if(!task) {
+    if (!task) {
       //console.log('No tasks: ' + mapname)
+      task = false
       continue
     }
 
-    if(await updateSubscribers(mapname, '', task)) {
+    if (await updateSubscribers(mapname, '', task)) {
       console.log('Already done: ' + mapname + task.cmd)
       EXECUTING_LVLSHOTS[mapname].shift()
+      task = false
       continue // already done, don't command
     }
 
-    if(task.done) {
+    if (task.done) {
       EXECUTING_LVLSHOTS[mapname].shift()
+      task = false
       continue
     }
 
-    if(task.started && Date.now() - task.started < 1000
+    if (task.started && Date.now() - task.started < 1000
       || (task.started && !task.timedout)) {
+      task = false
       continue // don't duplicate tasks
     }
 
@@ -99,7 +113,7 @@ async function getTask(mapname, previousTask) {
     task = EXECUTING_LVLSHOTS[mapname][0]
   }
 
-  if(task && task != previousTask) {
+  if (task && task != previousTask) {
     return await getTask(mapname, task)
   } else {
     return task
@@ -121,18 +135,18 @@ async function processQueue() {
     }, 1000 / 60)
     return
   }
-  
+
   let mapNamesFiltered = listJobs()
 
-  for(let i = 0; i < mapNamesFiltered.length; ++i) {
+  for (let i = 0; i < mapNamesFiltered.length; ++i) {
 
     // TODO: use RCON interface to control servers and get information
     let mapname = mapNamesFiltered[i]
     let task = await getTask(mapname)
-    if(!task) {
+    if (!task) {
       continue
     }
-    if(!task.game) {
+    if (!task.game) {
       console.log(task)
       throw new Error('No game set!')
     }
@@ -141,22 +155,22 @@ async function processQueue() {
     let renderers = Object.values(EXECUTING_MAPS).filter(map => map.renderer && map.game == task.game)
     let freeRenderers = renderers.filter(map => !map.working)
 
-    if(freeRenderers.length == 0) {
+    if (freeRenderers.length == 0) {
       let notTimedOut = renderers.filter(map => {
         let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0]
         let updateTime = 0
-        if(SERVER && SERVER.sv_maxRate) {
+        if (SERVER && SERVER.sv_maxRate) {
           updateTime = parseInt(SERVER.sv_maxRate)
         }
-        if(updateTime < GAMEINFO_TIMEOUT) {
+        if (updateTime < GAMEINFO_TIMEOUT) {
           updateTime = GAMEINFO_TIMEOUT
-        }        
+        }
         return !SERVER || !SERVER.timedout
           // still include the server in the list unless it has failed a few times
           //   to hit that higher GAMEINFO_TIMEOUT
           || (Date.now() - SERVER.timeUpdated) < Math.max(updateTime)
       })
-      if(notTimedOut.length >= MAX_RENDERERS) {
+      if (notTimedOut.length >= MAX_RENDERERS) {
         continue // can't do anything
       } else { // start another server
         let previousGame = getGame()
@@ -170,42 +184,41 @@ async function processQueue() {
 
     let mapRenderers = renderers.filter(map => map.mapname == mapname)
     let serversAvailable = freeRenderers
-        .sort((a, b) => 
-              (a.mapname == mapname && a.game == task.game ? 0 : 1) 
-            - (b.mapname == mapname && b.game == task.game ? 0 : 1))
-        .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
-        .filter(server => server)
+      .sort((a, b) => (a.game == task.game ? 0 : 1) - (b.game == task.game ? 0 : 1))
+      .sort((a, b) => (a.mapname == mapname ? 0 : 1) - (b.mapname == mapname ? 0 : 1))
+      .map(map => Object.values(GAME_SERVERS).filter(info => info.qps_serverId == map.challenge)[0])
+      .filter(server => server)
     let SERVER
-    if (serversAvailable.length == 0 || 
+    if (serversAvailable.length == 0 ||
       // if there are other renderers of this map name available
       //   and there are other map names to serve, then try not to switch
       (serversAvailable[0].mapname != mapname
         && mapRenderers.length > 0 && mapNamesFiltered.length > 1)
     ) {
-      //console.log('None available: ' + mapname)
+      console.log('None available: ' + mapname)
       continue
     } else {
       SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
     }
     //console.log('Server available: ', mapRenderers, mapname, serversAvailable[0])
-    
+
     // remove tasks that have already completed so we don't waste time switching maps
 
 
     // switch the maps
     let serverGame = serversAvailable[0].fs_game || serversAvailable[0].fs_basegame
       || serversAvailable[0].gamename
-    if(serversAvailable[0].mapname != mapname || serverGame != task.game) {
+    if (serversAvailable[0].mapname != mapname || serverGame != task.game) {
       // this server is no longer needed by the mapserver
       //   this prevents it from switching servers back and forth
       //   continuously and not getting any work done
-      if(!mapNamesFiltered.includes(serversAvailable[0].mapname)
+      if (!mapNamesFiltered.includes(serversAvailable[0].mapname)
         // this prevents it from running devmap commands on 
         //   more than one server at a time?
         && (!task.started || !task.cmd.match('devmap'))
       ) {
-        console.log('Switching game/map: ', serverGame+'/'+serversAvailable[0].mapname, 
-            ' -> ', task.game + '/' + mapname)
+        console.log('Switching game/map: ', serverGame + '/' + serversAvailable[0].mapname,
+          ' -> ', task.game + '/' + mapname)
         //let isRenderer = !!parseInt(serversAvailable[0].qps_renderer)
         // TODO: send map-switch to  <freeRenderer>  command if there is more than 4 tasks
         task = {
@@ -219,7 +232,7 @@ async function processQueue() {
           game: task.game,
           // drag the time average down so this event is sure to stick when using listJobs() to sort
           //   what events to execute next
-          created: Date.now() - RENDERER_TIMEOUT, 
+          created: Date.now() - RENDERER_TIMEOUT,
           subscribers: [],
         }
         // CODE REVIEW: LOL GODDAMNIT, 
@@ -235,7 +248,7 @@ async function processQueue() {
         //   this will be updated by the time the server switches
         SERVER.mapname = mapname
       } else {
-        //console.log('Servers:', serversAvailable)
+        console.log('Servers:', serversAvailable)
         // CODE REVIEW: this was missing, this function is too complicated and leafy
         // skip sending this maps commands to this server, it might be needed elsewhere
         continue
@@ -248,45 +261,49 @@ async function processQueue() {
     task.started = Date.now()
     task.subscribers.push(function () {
       // TODO: add a checkin and a timeout to retry the task
-      if(task.timedout) {
+      if (task.timedout) {
         // TODO: add a retry counter
         console.log('Task timed-out. Retrying.')
       } else {
-        //EXECUTING_LVLSHOTS[mapname].shift()
         console.log('Task completed: took ' + (Date.now() - task.created) / 1000 + ' seconds')
       }
+      Object.values(EXECUTING_MAPS).forEach(map => {
+        if(map.working == task) {
+          map.working = false
+        }
+      })
       SERVER.working = false
     })
 
     // when we get a print response, let waiting clients know about it
-    if(typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
+    if (typeof RESOLVE_LOGS[serversAvailable[0].challenge] == 'undefined') {
       RESOLVE_LOGS[serversAvailable[0].challenge] = []
     }
     RESOLVE_LOGS[serversAvailable[0].challenge].push(function (logs) {
       Promise.resolve(updateSubscribers(mapname, logs, task))
     })
 
-    console.log(RUNCMD, 'Starting renderer task: ', serversAvailable[0].address 
-        + ':' + serversAvailable[0].port, task.cmd)
+    console.log(RUNCMD, 'Starting renderer task: ', serversAvailable[0].address
+      + ':' + serversAvailable[0].port, task.cmd)
     ++RUNCMD
     // TODO: ; set developer 1 ; 
-    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command' 
-        + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
+    sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 set command'
+      + RUNCMD + ' " ' + task.cmd + '"', serversAvailable[0])
     sendOOB(UDP_SOCKETS[MASTER_PORTS[0]], 'rcon password1 vstr command' + RUNCMD, serversAvailable[0])
     //}
   }
 
 
   Object.values(EXECUTING_MAPS).forEach(task => {
-    if(typeof task.working != 'object' || !task.working) {
+    if (typeof task.working != 'object' || !task.working) {
       return
     }
-    if(task.working.updated && Date.now() - task.working.updated < RESOLVE_INTERVAL) {
+    if (task.working.updated && Date.now() - task.working.updated < RESOLVE_INTERVAL) {
       return
     }
     task.working.updated = Date.now()
     let SERVER = Object.values(GAME_SERVERS).filter(info => info.qps_serverId == task.challenge)[0]
-    if(Date.now() - task.working.started > RENDERER_TIMEOUT) {
+    if (Date.now() - task.working.started > RENDERER_TIMEOUT) {
       task.timedout = true
       task.working.timedout = true
     }
@@ -295,30 +312,30 @@ async function processQueue() {
     // TODO: individual logs files for all client
     // TODO: support for other log parsing mechanism like a game stats generator based on logs?
     let consoleLog = path.join(FS_GAMEHOME, task.game, 'qconsole.log')
-    if(fs.existsSync(consoleLog)) {
+    if (fs.existsSync(consoleLog)) {
       let stat = fs.statSync(consoleLog)
-      if(typeof task.logPosition == 'undefined'
-       || stat.size < task.logPosition) {
+      if (typeof task.logPosition == 'undefined'
+        || stat.size < task.logPosition) {
         task.logPosition = stat.size
       } else
-      if(stat.size > task.logPosition
-        || stat.mtime.getTime() > task.logTime) {
-        const fd = fs.openSync(consoleLog)
-        const buffer = Buffer.alloc(stat.size - task.logPosition)
-        fs.readSync(fd, buffer, { position: task.logPosition })
-        fs.close(fd)
-        if(SERVER) {
-          SERVER.logs += buffer.toString('utf-8').trim()
-        } else {
-          task.logs += buffer.toString('utf-8').trim()
+        if (stat.size > task.logPosition
+          || stat.mtime.getTime() > task.logTime) {
+          const fd = fs.openSync(consoleLog)
+          const buffer = Buffer.alloc(stat.size - task.logPosition)
+          fs.readSync(fd, buffer, { position: task.logPosition })
+          fs.close(fd)
+          if (SERVER) {
+            SERVER.logs += buffer.toString('utf-8').trim()
+          } else {
+            task.logs += buffer.toString('utf-8').trim()
+          }
+          //Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
+          task.logPosition = stat.size
+          task.logTime = stat.mtime.getTime()
         }
-        //Promise.resolve(updateSubscribers(task.mapname, SERVER.logs, task.working))
-        task.logPosition = stat.size
-        task.logTime = stat.mtime.getTime()
-      }
     }
 
-    if(SERVER) {
+    if (SERVER) {
       updateSubscribers(task.mapname, SERVER.logs, task.working)
     } else {
       updateSubscribers(task.mapname, task.logs, task.working)
@@ -336,7 +353,7 @@ async function serveLvlshot(mapname, waitFor) {
   // TODO: take the screenshots, run client commands using local dedicate 
   //   connected commands (side-effect, easily switch out client to a real
   //   server using the reconnect command).
-  if(Object.values(EXECUTING_MAPS).filter(map => {
+  if (Object.values(EXECUTING_MAPS).filter(map => {
     return map.renderer && map.game == basegame
   }).length >= MAX_RENDERERS) {
     return
@@ -344,8 +361,8 @@ async function serveLvlshot(mapname, waitFor) {
 
   // only start one dedicated server at a time
   let challenge = Object.keys(RESOLVE_DEDICATED).filter(list => RESOLVE_DEDICATED[list].length > 0)[0]
-  if(challenge) {
-    if(waitFor) {
+  if (challenge) {
+    if (waitFor) {
       return await new Promise(resolve => RESOLVE_DEDICATED[challenge].push(resolve))
     } else {
       return
@@ -353,7 +370,7 @@ async function serveLvlshot(mapname, waitFor) {
   }
 
   try {
-    
+
     let challenge = buildChallenge()
     RESOLVE_DEDICATED[challenge] = []
     RESOLVE_DEDICATED[challenge].push(function () {
@@ -368,7 +385,7 @@ async function serveLvlshot(mapname, waitFor) {
       logs: ''
     }
     let consoleLog = path.join(FS_GAMEHOME, basegame, 'qconsole.log')
-    if(fs.existsSync(consoleLog)) {
+    if (fs.existsSync(consoleLog)) {
       let stat = fs.statSync(consoleLog)
       EXECUTING_MAPS[challenge].logPosition = stat.size
     }
@@ -383,6 +400,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+sets', 'fs_basegame', basegame,
       '+sets', 'fs_game', basegame,
+      '+set', 'com_hunkMegs', '256',
       '+sets', 'qps_serverId', '"' + challenge + '"',
       //'+set', 's_initsound', '0',
       // snapshot server has low FPS
@@ -391,7 +409,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'r_headless', '1', // TODO: SHOULD BE 1
       '+exec', `".config/levelinfo.cfg"`,
 
-      '+vstr', 'clearedMasters', 
+      '+vstr', 'clearedMasters',
       '+vstr', 'headlessOptions',
       '+vstr', 'resetLvlshot',
 
@@ -403,17 +421,17 @@ async function serveLvlshot(mapname, waitFor) {
       //   might also be necessary for aligning animations.
     ], function (lines) {
       EXECUTING_MAPS[challenge].logs += lines + '\n'
-      if(typeof EXECUTING_MAPS[challenge].working == 'object') {
-        updateSubscribers(EXECUTING_MAPS[challenge].mapname, 
-                          EXECUTING_MAPS[challenge].logs,
-                          EXECUTING_MAPS[challenge].working)
+      if (typeof EXECUTING_MAPS[challenge].working == 'object') {
+        updateSubscribers(EXECUTING_MAPS[challenge].mapname,
+          EXECUTING_MAPS[challenge].logs,
+          EXECUTING_MAPS[challenge].working)
       }
     })
     ps.on('close', function () {
       delete EXECUTING_MAPS[challenge]
     })
     EXECUTING_MAPS[challenge].pid = ps.pid
-    if(typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
+    if (typeof EXECUTING_LVLSHOTS[mapname] == 'undefined') {
       EXECUTING_LVLSHOTS[mapname] = []
     }
   } catch (e) {
@@ -426,23 +444,23 @@ async function serveLvlshot(mapname, waitFor) {
 // break up the processing of specific events from the logs
 //   to allow clients to subscribe
 async function updateSubscribers(mapname, logs, cmd) {
-  if(cmd.done) {
+  if (cmd.done) {
     return true
   }
   let result = await cmd.resolve(logs, cmd)
   let isResolved = !!result
-  if(!isResolved && !cmd.timedout) {
+  if (!isResolved && !cmd.timedout) {
     return false
   }
 
-  if(!cmd.timedout) {
+  if (!cmd.timedout) {
     cmd.done = true
   }
-  if(!lvlshotTimer) {
+  if (!lvlshotTimer) {
     throw new Error('Task completed before service started.')
   }
-  if(cmd.subscribers) {
-    for(let j = 0; j < cmd.subscribers.length; ++j) {
+  if (cmd.subscribers) {
+    for (let j = 0; j < cmd.subscribers.length; ++j) {
       cmd.subscribers[j](result, logs, cmd)
     }
     cmd.subscribers.splice(0)

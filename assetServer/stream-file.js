@@ -104,6 +104,7 @@ async function findAlt(filename) {
       return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
     }
   }
+
   // TODO: takes a local / virtual path and traverses both base packs and alternate extensions
   //   similar to a generalized way that the engine does this
 

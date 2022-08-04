@@ -306,11 +306,7 @@ async function exportFile(file, outputDir) {
       return newFile.replace(path.extname(newFile), '.ogg')
     }
   }
-  if(newFile.includes('default.cfg')) {
-    debugger
-  }
   if(newFile.includes('.qvm')) {
-    debugger
     console.log('Developing: ', newFile)
   }
   if (fs.existsSync(newFile)) {
@@ -331,6 +327,8 @@ async function exportFile(file, outputDir) {
     if(altFile) {
       console.log('Re-exporting:', typeof altFile == 'object' 
           ? (altFile.file + '/' + altFile.name) : altFile)
+      delete CONVERTED_FILES[newFile]
+      file = localName
     }
   }
   let passThrough
