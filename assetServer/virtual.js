@@ -11,32 +11,55 @@ function gameDirectories(basegame, unexisting) {
   if(!unexisting && typeof GAMEDIRS[basegame] != 'undefined') {
     return GAMEDIRS[basegame]
   }
-  const GAME_MODS = getGames()
-  if(!GAME_MODS.includes(basegame)
-    // CODE REVIEW: allow other detected directory names to
-    //   be used in development automatically? might make setup easier.
-    && !MODS_NAMES.includes(basegame.toLocaleLowerCase())) {
-    return []
+
+  const GAME_MODS = getGames() //.concat(Object.values(MODS_NAMES))
+  const INCLUDE_DIRS = [
+    'build/linux',
+    'build/win32-qvm',
+    'build/linux/build',
+    'build/win32-qvm/build',
+    'build',
+    'assets',
+  ]
+
+  const BASE_DIRECTORIES = []
+  for(let j = 0; j < GAME_MODS.length; j++) {
+    if(GAME_MODS[j].localeCompare(basegame, 'en', {sensitivity: 'base'}) != 0) {
+      continue
+    }
+
+    const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + GAME_MODS[j])
+    const includes = INCLUDE_DIRS.map(dir => path.join(GAME_DIRECTORY, dir))
+    for(let i = 0; i < includes.length; i++) {
+      BASE_DIRECTORIES.push(includes[i])
+    }
+    BASE_DIRECTORIES.push(GAME_DIRECTORY)
   }
-  const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + basegame)
-  const BUILD_MODES = buildModes()
-  const GAME_DIRECTORIES = [
-    path.join(GAME_DIRECTORY, 'build/linux'),
-    path.join(GAME_DIRECTORY, 'build/win32-qvm'),
-    path.join(GAME_DIRECTORY, 'build/linux/build'),
-    path.join(GAME_DIRECTORY, 'build/win32-qvm/build'),
-    path.join(GAME_DIRECTORY, 'assets'),
-    GAME_DIRECTORY,
-  ].filter(dir => unexisting || fs.existsSync(dir))
-  GAME_DIRECTORIES.push.apply(GAME_DIRECTORIES, GAME_DIRECTORIES.reduce((list, dir) => {
-    list.push.apply(list, BUILD_MODES.map(dir2 => dir + '/' + dir2 + '/' + basegame))
-    list.push.apply(list, BUILD_MODES.map(dir2 => dir + '/' + dir2 + '/' + basegame.toLocaleLowerCase()))
-    return list
-  }, []))
-  GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, basegame))
-  for(let i = 0; i < APPLICATIONS.length; i++) {
-    GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, basegame))
-    GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, basegame.toLocaleLowerCase()))
+
+  const BUILD_MODES = buildModes().concat([
+    'release-darwin-x86', 'release-linux-x86', 
+    'release-mingw-x86', 'release-msys-x86', 'release-qvms-x86',
+    'debug-darwin-x86', 'debug-linux-x86', 
+    'debug-mingw-x86', 'debug-msys-x86', 'debug-qvms-x86'
+  ])
+  const GAME_DIRECTORIES = [].concat(BASE_DIRECTORIES)
+  for(let j = 0; j < GAME_MODS.length; j++) {
+    if(GAME_MODS[j].localeCompare(basegame, 'en', {sensitivity: 'base'}) != 0) {
+      continue
+    }
+
+    for(let i = 0; i < BASE_DIRECTORIES.length; i++) {
+      GAME_DIRECTORIES.push.apply(GAME_DIRECTORIES, 
+          BUILD_MODES.map(dir2 => GAME_DIRECTORIES[i] + '/' + dir2 + '/' + GAME_MODS[j]))
+      GAME_DIRECTORIES.push.apply(GAME_DIRECTORIES, 
+          BUILD_MODES.map(dir2 => GAME_DIRECTORIES[i] + '/' + dir2 + '/' + GAME_MODS[j].toLocaleLowerCase()))
+    }
+
+    GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, GAME_MODS[j]))
+    for(let i = 0; i < APPLICATIONS.length; i++) {
+      GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, GAME_MODS[j]))
+      GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, GAME_MODS[j].toLocaleLowerCase()))
+    }
   }
   // store for later use, because of live reloading we don't need to update this every time
   GAMEDIRS[basegame] = GAME_DIRECTORIES
@@ -44,6 +67,10 @@ function gameDirectories(basegame, unexisting) {
     .filter((g, i, arr) => arr.indexOf(g) == i)
   return GAMEDIRS[basegame]
 }
+
+
+
+
 
 function buildModes() {
   const BUILD_OSES = [
@@ -58,6 +85,9 @@ function buildModes() {
   return BUILD_MODES
 }
 
+
+
+
 // virtual file-system
 function buildDirectories() {
   // This includes a game directory with build/release-os-arch/baseq3a/vm/ui.qvm
@@ -70,6 +100,10 @@ function buildDirectories() {
     ])
   return BUILD_ORDER
 }
+
+
+
+
 
 
 // prevent lots of file-system checks by caching real file's paths here

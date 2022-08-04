@@ -309,13 +309,17 @@ async function exportFile(file, outputDir) {
   if(newFile.includes('default.cfg')) {
     debugger
   }
+  if(newFile.includes('.qvm')) {
+    debugger
+    console.log('Developing: ', newFile)
+  }
   if (fs.existsSync(newFile)) {
     let pk3Name = outputDir.replace(/.*\.pk3.*?\//gi, outputDir + '/')
     let pk3InnerPath = newFile.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
     let localName = path.join(path.relative(path.dirname(path.dirname(pk3Name)), pk3Name), pk3InnerPath)
     let altFile = await findAlt(localName)
-    if(typeof altFile == 'string' && altFile.includes('.qvm')) {
-      console.log('Developing: ', altFile)
+    if(newFile.includes('.qvm')) {
+      //console.log(altFile)
     }
     let stat = fs.statSync( typeof altFile == 'object' 
         ? altFile.file : altFile || newFile)

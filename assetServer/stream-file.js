@@ -8,7 +8,7 @@ const { PassThrough, Readable } = require('stream')
 
 const { fileKey, streamKey } = require('../utilities/zip.js')
 const { CACHY_PATHY, findFile } = require('../assetServer/virtual.js')
-const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
+const { MODS, MODS_NAMES, IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
@@ -46,12 +46,6 @@ async function findAlt(filename) {
     return CACHY_PATHY[filename.toLocaleLowerCase()]
   }
 
-  // TODO: redirect models IQM and MD3 just like audio/image files
-
-  let file = findFile(filename, false)
-  if (file && !file.match(/\.pk3$/gi)) {
-    return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
-  }
 
   pk3InnerPath = filename
   // TODO: lookup modname like in serve-virtual
@@ -71,15 +65,45 @@ async function findAlt(filename) {
     pk3InnerPath = filename.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
   }
 
+
+
+  // BELOW: don't return a pk3 match because we already checked all the pk3 files above
+
+  if (IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
+    for (let i = 0; i < IMAGE_FORMATS.length; i++) {
+      let altPath = findFile(filename.replace(path.extname(filename), IMAGE_FORMATS[i]))
+      if (altPath && !altPath.match(/\.pk3$/gi)) {
+        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
+      }
+    }
+  }
+
+  if (AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
+    for (let i = 0; i < AUDIO_FORMATS.length; i++) {
+      let altPath = findFile(filename.replace(path.extname(filename), AUDIO_FORMATS[i]))
+      if (altPath && !altPath.match(/\.pk3$/gi)) {
+        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
+      }
+    }
+  }
+
+  // TODO: redirect models IQM and MD3 just like audio/image files
+  let file = findFile(filename, false)
+  if (file && !file.match(/\.pk3$/gi)) {
+    return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
+  }
   // TODO: extend this function singularly to handle all repackedCache() calls
   if(pk3File) {
     file = findFile(path.join(path.dirname(pk3File), pk3InnerPath), false)
+    if(!file) {
+      file = findFile(path.join(modname, pk3InnerPath), false)
+    }
+
     // try path without pk3 in name like engine does
     if (file && !file.match(/\.pk3$/gi)) {
       return (CACHY_PATHY[filename.toLocaleLowerCase()] = file)
     }
   }
-
   // TODO: takes a local / virtual path and traverses both base packs and alternate extensions
   //   similar to a generalized way that the engine does this
 
@@ -114,27 +138,7 @@ async function findAlt(filename) {
   }
 
 
-
-  // BELOW: don't return a pk3 match because we already checked all the pk3 files above
-
-  if (IMAGE_FORMATS.includes(path.extname(pk3InnerPath))) {
-    for (let i = 0; i < IMAGE_FORMATS.length; i++) {
-      let altPath = findFile(filename.replace(path.extname(filename), IMAGE_FORMATS[i]))
-      if (altPath && !altPath.match(/\.pk3$/gi)) {
-        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
-      }
-    }
-  }
-
-  if (AUDIO_FORMATS.includes(path.extname(pk3InnerPath))) {
-    for (let i = 0; i < AUDIO_FORMATS.length; i++) {
-      let altPath = findFile(filename.replace(path.extname(filename), AUDIO_FORMATS[i]))
-      if (altPath && !altPath.match(/\.pk3$/gi)) {
-        return (CACHY_PATHY[filename.toLocaleLowerCase()] = altPath) // can be sent directly to convert
-      }
-    }
-  }
-
+  
 }
 
 
