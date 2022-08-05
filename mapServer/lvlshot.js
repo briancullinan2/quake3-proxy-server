@@ -408,6 +408,7 @@ async function serveLvlshot(mapname, waitFor) {
       '+set', 'sv_dlURL', '"//maps/repacked/%1"',
       '+set', 'r_headless', '1', // TODO: SHOULD BE 1
       '+exec', `".config/levelinfo.cfg"`,
+      '+set', 'vm_rtChecks', '0',
 
       '+vstr', 'clearedMasters',
       '+vstr', 'headlessOptions',

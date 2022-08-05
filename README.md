@@ -49,6 +49,8 @@ available for the masses to download. CDN-sourcing support?
 
 ![content](./screenshot5.png?raw=true)
 
+![content](./screenshot6.png?raw=true)
+
 - proxyServer - WebSocket and SOCKSv5 proxy server and reverse proxy 
 for creating game servers within a corporate network.
 
