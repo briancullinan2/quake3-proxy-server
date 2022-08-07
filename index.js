@@ -12,11 +12,12 @@ const path = require('path')
 const { createWebServers } = require('./contentServer/express.js')
 const { createMasters } = require('./gameServer/serve-master.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
-const { projectWatcher, contentWatcher } = require('./utilities/watch.js')
+const { contentWatcher } = require('./utilities/watch.js')
 const { EXECUTING_MAPS, GAME_SERVERS } = require('./gameServer/processes.js')
 const { log: previousLog, error: previousError } = require('console')
 const { EXECUTING_LVLSHOTS, listJobs } = require('./mapServer/lvlshot.js')
 const { parseAguments } = require('./utilities/parse-args.js')
+const { PROJECTS } = require('./utilities/env.js')
 
 const REDIRECTED_LOGS = []
 const REDIRECTED_ERRORS = []
@@ -123,7 +124,6 @@ function addCommands(features) {
 
 function main() {
 
-
   if (!START_SERVICES.includes('holdup')
     && (START_SERVICES.includes('all')
       || START_SERVICES.includes('live'))) {
@@ -135,15 +135,11 @@ function main() {
       && (!START_SERVICES.includes('deploy')
       || START_SERVICES.includes('live'))
     ) {
-      return projectWatcher()
+      contentWatcher()
+      return
     }
   }
 
-  parseAguments(process.argv)
-
-  if (fs.existsSync(path.join(__dirname, 'settings.json'))) {
-    parseAguments(require(path.join(__dirname, 'settings.json')))
-  }
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
@@ -191,8 +187,20 @@ if (START_SERVICES.length == 0) {
 
 if (runServer) {
   if (START_SERVICES.includes('holdup')) {
+
+    parseAguments(process.argv)
+    PROJECTS.push(__dirname)
+
+    if (fs.existsSync(path.join(__dirname, 'settings.json'))) {
+      parseAguments(require(path.join(__dirname, 'settings.json')))
+    }
+
     setTimeout(main, 2000)
   } else {
     main()
+  }
+} else {
+  module.exports = {
+    main
   }
 }

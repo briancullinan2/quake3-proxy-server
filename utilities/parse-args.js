@@ -1,17 +1,24 @@
 const fs = require('fs')
+const path = require('path')
 
 const { HTTP_PORTS } = require('../contentServer/express.js')
 const { MASTER_PORTS } = require('../gameServer/master.js')
 const {
   setDownload, setRepack, downloadCache, repackedCache, setGame,
-  addDownload, setWatcherPID, addRepacked, addGame,
+  addDownload, setWatcherPID, addRepacked, addGame, addProject,
+  addRoute,
 } = require('../utilities/env.js')
 
 let forwardIP = ''
 let noFS = false
 
 function parseAguments(startArgs) {
-
+  let relative = path.resolve(__dirname)
+  if(typeof startArgs == 'string'
+    && fs.existsSync(startArgs)) {
+    relative = path.resolve(path.dirname(startArgs))
+    startArgs = require(startArgs)
+  }
   for (let i = 0; i < startArgs.length; i++) {
     let a = startArgs[i]
     switch (a) {
@@ -51,10 +58,20 @@ function parseAguments(startArgs) {
         setGame(startArgs[i + 1])
         i++
         break
+      case '--add-project':
+        console.log('Project / Engine: ', startArgs[i + 1])
+        addProject(startArgs[i + 1])
+        i++
+        break
       case '--add-mod':
       case '--add-game':
         //console.log('Game mod: ', startArgs[i + 1])
         addGame(startArgs[i + 1])
+        i++
+        break
+      case '--add-route':
+        //console.log('Game mod: ', startArgs[i + 1])
+        addRoute(startArgs[i + 1].concat([relative]))
         i++
         break
       case '--repack-cache':

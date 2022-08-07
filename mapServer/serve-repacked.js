@@ -3,12 +3,11 @@ const path = require('path')
 
 const { streamFile, findAlt } = require('../assetServer/stream-file.js')
 const { gameDirectories } = require('../assetServer/virtual.js')
-const { IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS, getGames } = require('../utilities/env.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
-const { filteredGames, filteredPk3Directory, filteredPk3List } = require('../mapServer/list-filtered.js')
 
 
 const REPACKED_DESCRIPTION = `
@@ -61,7 +60,7 @@ async function serveRepacked(request, response, next) {
   let modname = filename.split('/')[0]
 
   if (!modname || modname.length == 0) {
-    let allGames = await filteredGames()
+    let allGames = getGames()
     return response.send(renderIndex(`
     ${renderMenu(ASSET_FEATURES, 'asset-menu')}
     <div class="info-layout">${REPACKED_DESCRIPTION}

@@ -4,7 +4,7 @@ const fs = require('fs')
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
-const { MODS_NAMES, FS_GAMEHOME, setGame, getGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, setGame, getGame } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { CONVERTED_FILES, streamFile } = require('../assetServer/stream-file.js')
 const { START_SERVICES } = require('../contentServer/features.js')
@@ -19,7 +19,8 @@ async function serveLevelshot(request, response, next) {
     filename = filename.substr(1)
   }
   let modname = filename.split('/')[0].toLocaleLowerCase()
-  if(modname && MODS_NAMES.includes(modname)) {
+  let gameNames = getGames()
+  if(modname && gameNames.includes(modname)) {
     basegame = modname
   }
 
@@ -105,13 +106,11 @@ const MATCH_FILELIST = /(Rcon from[^\n]*?command[0-9]+|name-------)\n([\s\S]*?)T
 
 async function resolveImages(logs, task) {
   if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
-    // TODO: also check repackedCache() / tmp?
     return CONVERTED_FILES[task.outFile]
   }
 
   let IMAGE_LIST = /-name-------\n([\s\S]*?)total images/gi
   let imageList = IMAGE_LIST.exec(logs)
-  //console.log(logs)
   if (!imageList) {
     return false
   }
@@ -129,7 +128,6 @@ async function resolveImages(logs, task) {
 
 async function resolveModels(logs, task) {
   if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
-    // TODO: also check repackedCache() / tmp?
     return CONVERTED_FILES[task.outFile]
   }
 
@@ -158,7 +156,6 @@ async function resolveModels(logs, task) {
 
 async function resolveSounds(logs, task) {
   if (typeof CONVERTED_FILES[task.outFile] != 'undefined') {
-    // TODO: also check repackedCache() / tmp?
     return CONVERTED_FILES[task.outFile]
   }
 

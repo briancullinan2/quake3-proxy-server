@@ -65,12 +65,12 @@ async function serveLive(request, response, next) {
   }
 
   let modname = filename.split('/')[0]
-  let GAME_MODS = getGames()
+  let gameNames = getGames()
   let GAME_ORDER = []
 
   // TODO: add game development directories
   if(modname.length > 1
-    && GAME_MODS.includes(modname.toLocaleLowerCase())) {
+    && gameNames.includes(modname.toLocaleLowerCase())) {
     GAME_ORDER = gameDirectories(modname).map(dir => path.join(dir, filename.substring(modname.length)))
   }
 
@@ -103,7 +103,7 @@ async function serveLive(request, response, next) {
     link: path.join('/build', filename, path.basename(file)) + (file.isDirectory ? '/' : '')
   }))
   if(modname.length <= 1) {
-    directoryFiltered.unshift.apply(directoryFiltered, GAME_MODS.map(game => ({
+    directoryFiltered.unshift.apply(directoryFiltered, gameNames.map(game => ({
       isDirectory: true,
       name: game,
       absolute: '(virtual)/.',

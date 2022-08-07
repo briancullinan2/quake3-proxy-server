@@ -124,9 +124,6 @@ async function statusResponse(socket, message, rinfo) {
     }
   }
 
-  updatePageViewers('/games')
-  updatePageViewers('/rcon')
-
   return GAME_SERVERS[rinfo.address + ':' + rinfo.port]
 }
 
@@ -273,8 +270,6 @@ async function serveMaster(socket, message, rinfo) {
     ) {
       continue;
     }
-
-    //console.log(request)
 
     buffer = buffer.slice(MASTER_SERVICE[i].length)
     if (i == 0) {

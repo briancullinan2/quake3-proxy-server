@@ -1,10 +1,7 @@
 
 const fs = require('fs')
 const path = require('path')
-const {
-  BUILD_DIRECTORY, WEB_DIRECTORY, FS_GAMEHOME, MODS_NAMES, APPLICATIONS,
-  ASSETS_DIRECTORY, getGames, 
-} = require('../utilities/env.js')
+const { PROJECTS, FS_HOMEPATH, FS_GAMEHOME, getGames } = require('../utilities/env.js')
 const GAMEDIRS = {}
 
 function gameDirectories(basegame, unexisting) {
@@ -12,10 +9,9 @@ function gameDirectories(basegame, unexisting) {
     return GAMEDIRS[basegame]    
     .filter(g => (!!unexisting || fs.existsSync(g)))
     .filter((g, i, arr) => arr.indexOf(g) == i)
-
   }
 
-  const GAME_MODS = getGames() //.concat(Object.values(MODS_NAMES))
+  const GAME_MODS = getGames()
   const INCLUDE_DIRS = [
     'build/linux',
     'build/win32-qvm',
@@ -30,7 +26,6 @@ function gameDirectories(basegame, unexisting) {
     if(GAME_MODS[j].localeCompare(basegame, 'en', {sensitivity: 'base'}) != 0) {
       continue
     }
-
     const GAME_DIRECTORY = path.resolve(__dirname + '/../../' + GAME_MODS[j])
     const includes = INCLUDE_DIRS.map(dir => path.join(GAME_DIRECTORY, dir))
     for(let i = 0; i < includes.length; i++) {
@@ -57,12 +52,7 @@ function gameDirectories(basegame, unexisting) {
       GAME_DIRECTORIES.push.apply(GAME_DIRECTORIES, 
           BUILD_MODES.map(dir2 => GAME_DIRECTORIES[i] + '/' + dir2 + '/' + GAME_MODS[j].toLocaleLowerCase()))
     }
-
     GAME_DIRECTORIES.push(path.join(FS_GAMEHOME, GAME_MODS[j]))
-    for(let i = 0; i < APPLICATIONS.length; i++) {
-      GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, GAME_MODS[j]))
-      GAME_DIRECTORIES.push(path.join(APPLICATIONS[i].basepath, GAME_MODS[j].toLocaleLowerCase()))
-    }
   }
   // store for later use, because of live reloading we don't need to update this every time
   GAMEDIRS[basegame] = GAME_DIRECTORIES
@@ -96,11 +86,17 @@ function buildDirectories() {
   // This includes a game directory with build/release-os-arch/baseq3a/vm/ui.qvm
   const BUILD_MODES = buildModes()
   const BUILD_ORDER = BUILD_MODES
-    .map(mode => path.join(BUILD_DIRECTORY, mode))
-    .concat([
-      ASSETS_DIRECTORY,
-      WEB_DIRECTORY, // last because least reliable
-    ])
+    .reduce(function (list, mode) {
+      list.push.apply(list, PROJECTS.map(project => path.join(project, 'build', mode)))
+      return list
+    }, [])
+    .concat(PROJECTS.reduce(function (list, project) {
+      list.push(path.join(project, 'docs'))
+      list.push(path.resolve(project)) // last because least reliable
+      list.push(path.resolve(path.join(__dirname, '/../../', project)))
+      list.push(path.join(FS_HOMEPATH, project))
+      return list
+    }, []))
   return BUILD_ORDER
 }
 

@@ -4,15 +4,13 @@ const path = require('path')
 const { streamFile } = require('../assetServer/stream-file.js')
 const { findFile } = require('../assetServer/virtual.js')
 const { layeredDir } = require('../assetServer/layered.js')
-const { filteredPk3Directory } = require('../mapServer/list-filtered.js')
 const { renderIndex, renderEngine, renderMenu } = require('../utilities/render.js')
 const { ASSET_FEATURES } = require('../contentServer/serve-settings.js')
 const { renderDirectory } = require('../contentServer/serve-live.js')
-const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS } = require('../utilities/env.js')
+const { WEB_FORMATS, IMAGE_FORMATS, AUDIO_FORMATS, SUPPORTED_FORMATS, getGames } = require('../utilities/env.js')
 const { calculateSize } = require('../utilities/async-size.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { listMaps } = require('../assetServer/list-maps.js')
-const { filteredGames } = require('../gameServer/list-games.js')
 const { MAP_DICTIONARY } = require('../mapServer/bsp.js')
 
 
@@ -256,15 +254,7 @@ async function serveVirtual(request, response, next) {
   }
 
   let modname = filename.split('/')[0]
-  let directory = []
-  let modNames = []
-  let games = await filteredGames()
-  for (let i = games.length - 1; i >= 0; --i) {
-    modNames.push(games[i].name.toLocaleLowerCase())
-    if (modname.length <= 1) {
-      directory.unshift(games[i])
-    }
-  }
+  let modNames = getGames()
   if (modname && modNames.includes(modname.toLocaleLowerCase())) {
     filename = filename.substring(modname.length + 1)
   } else {
@@ -365,6 +355,7 @@ async function serveVirtual(request, response, next) {
   } else {
     virtual = await listVirtual(pk3InnerPath, pk3Name, modname)
   }
+  let directory = [].concat(modNames)
   for (let i = 0; i < virtual.length; i++) {
     directory.push(virtual[i])
   }

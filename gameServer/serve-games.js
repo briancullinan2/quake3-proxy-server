@@ -89,6 +89,7 @@ async function serveGamesReal(start, end, isJson, response, next) {
   }
   let total = Object.values(GAME_SERVERS).length
   let index = renderIndex(renderList('/games/', games, total, 'game-list'))
+  response.setHeader('content-type', 'text/html')
   return response.send(index)
 }
 

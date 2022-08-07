@@ -4,7 +4,6 @@ const { lookupDNS } = require('../utilities/dns.js')
 const { UDP_SOCKETS, MASTER_PORTS, serveMaster, sendOOB } = require('./master.js')
 const { createRedirect } = require('../contentServer/express.js')
 const { serveDedicated } = require('../gameServer/serve-process.js')
-const { updatePageViewers } = require('../contentServer/session.js')
 const { EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
 const { HTTP_LISTENERS, HTTP_PORTS } = require('../contentServer/session.js')
 
@@ -63,7 +62,6 @@ function forceCheckin() {
       delete GAME_SERVERS[keys[i]]
       console.log('Removing stale server: ' + keys[i])
     }
-    updatePageViewers('\/games')
   }
 }
 

@@ -1,8 +1,8 @@
 const path = require('path')
 
-const { MODS_DESCRIPTIONS, MODS_NAMES, getGames } = require('../utilities/env.js')
+const { GAME_NAMES, getGames } = require('../utilities/env.js')
 const { renderIndex, renderList, renderFeature } = require('../utilities/render.js')
-const { START_SERVICES } = require('../contentServer/features.js')
+
 
 /*
   if (rangeString && rangeString.includes(':')) {
@@ -37,18 +37,13 @@ async function serveModsRange(request, response, next) {
 
 async function serveModsReal(start, end, isJson, response, next) {
   // TODO: filter games by game type
-  let games
-  if (START_SERVICES.includes('deploy')) {
-    games = getGames()
-  } else {
-    games = Object.values(MODS_NAMES).concat(getGames())
-  }
-  let gamesFiltered = games
+  let gamesNames = getGames()
+  let gamesFiltered = gamesNames
     .filter((mod, i, arr) => arr.indexOf(mod) == i)
     .slice(start, end).map(game => {
       let levelshot
       return {
-        title: MODS_DESCRIPTIONS[game] || game,
+        title: GAME_NAMES[game] || game,
         subtitle: game,
         levelshot: levelshot,
         link: `mods/${game}`,
@@ -72,7 +67,7 @@ async function serveModInfo(request, response, next) {
 
   return response.send(renderIndex(
     `<div id="mod-info" class="info-layout">
-    <h2>${MODS_DESCRIPTIONS[modname] || modname}</h2>
+    <h2>${GAME_NAMES[modname] || modname}</h2>
     <h3>Screenshots</h3>
     <h3>Links</h3>
     <ol class="menu-list">

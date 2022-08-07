@@ -8,13 +8,12 @@ const { PassThrough, Readable } = require('stream')
 
 const { fileKey, streamKey } = require('../utilities/zip.js')
 const { CACHY_PATHY, findFile } = require('../assetServer/virtual.js')
-const { MODS, MODS_NAMES, IMAGE_FORMATS, AUDIO_FORMATS } = require('../utilities/env.js')
+const { IMAGE_FORMATS, AUDIO_FORMATS, getGames } = require('../utilities/env.js')
 const { CONVERTED_IMAGES, convertCmd } = require('../cmdServer/cmd-convert.js')
 const { opaqueCmd } = require('../cmdServer/cmd-identify.js')
 const { CONVERTED_SOUNDS, encodeCmd } = require('../cmdServer/cmd-encode.js')
 const { listPk3s } = require('../assetServer/layered.js')
 const { unsupportedImage, unsupportedAudio } = require('../contentServer/unsupported.js')
-const { listGameNames } = require('../gameServer/list-games.js')
 
 
 // TODO: replace about 300 lines of code with 50 LoC
@@ -39,6 +38,12 @@ const CONVERTED_TIMES = {}
 
 async function findAlt(filename) {
   let pk3InnerPath
+  if(!filename) {
+    return
+  }
+  if(typeof filename == 'object') {
+    filename = filename.file + '/' + filename.name
+  }
   if (filename.startsWith('/'))
     filename = filename.substring(1)
 
@@ -52,7 +57,7 @@ async function findAlt(filename) {
   let pk3s = []
   let modname = filename.split('/')[0]
   if (modname) {
-    let gameNames = listGameNames()
+    let gameNames = getGames()
     if (gameNames.includes(modname.toLocaleLowerCase())) {
       pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
       pk3InnerPath = filename.substr(modname.length + 1)

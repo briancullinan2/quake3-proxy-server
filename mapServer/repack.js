@@ -314,9 +314,6 @@ async function exportFile(file, outputDir) {
     let pk3InnerPath = newFile.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
     let localName = path.join(path.relative(path.dirname(path.dirname(pk3Name)), pk3Name), pk3InnerPath)
     let altFile = await findAlt(localName)
-    if(newFile.includes('.qvm')) {
-      //console.log(altFile)
-    }
     let stat = fs.statSync( typeof altFile == 'object' 
         ? altFile.file : altFile || newFile)
     if(stat.size > 1 && 
@@ -478,7 +475,6 @@ async function repackBasepack(modname) {
       console.error(err)
     }
   }
-  //console.log('Exporting:', newImages)
 
   // TODO: inject cl_dlURL to correct game configured on game server
   //let defaultPath = await findAlt(modname + '/default.cfg')
@@ -491,8 +487,7 @@ async function repackBasepack(modname) {
   await exportFile(modname + '/pak0.pk3dir/vm/qagame.qvm', outputDir)
   await exportFile(modname + '/pak0.pk3dir/vm/ui.qvm', outputDir)
 
-  //console.log(defaultCfg)
-  defaultCfg = defaultCfg.replace(/^.*cl_dlUrl.*$/gi, '')
+  defaultCfg = defaultCfg.replace(/^.*cl_dlUrl.*$/gmi, '')
   defaultCfg += '\nseta cl_dlURL "' + DOMAIN + '/maps/' + modname + '/%1"\n'
   fs.writeFileSync(path.join(outputDir, 'default.cfg'), defaultCfg)
   includedDates[path.join(outputDir, 'default.cfg')] = Date.now()

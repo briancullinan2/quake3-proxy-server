@@ -347,7 +347,7 @@ async function sendPageRequest(location) {
     sock = NET.socket2
   }
   if(sock && sock.fresh >= 1) { // don't clog up game networking
-    sock.send(window.location.origin + window.location.pathname + '?json', { binary: false })
+    sock.send(location, { binary: false })
   } else {
     if (AbortController && !NET.controller) {
       NET.controller = new AbortController()
@@ -473,7 +473,8 @@ function socketProxyControl(evt) {
       if(!debounceTimer) {
         debounceTimer = setTimeout(function () {
           debounceTimer = null
-          if (typeof window.sessionCallback != 'undefined') {
+          if (typeof window.sessionCallback != 'undefined'
+            && !!window.sessionCallback) {
             sendPageRequest(window.location.origin + window.sessionCallback + '?json')
           } else {
             sendPageRequest(window.location + '')
@@ -507,8 +508,8 @@ function updatePage(pageData) {
   }
   let loaderDiv = document.createElement('div')
   loaderDiv.style.display = 'none'
-  let innerContent = (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi)
-      .exec(pageData)[1].replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
+  let innerContent = (/<body[\s\S]*?>([\s\S]*?)<\/body>/gi).exec(pageData)[1]
+    //.replace(/<ol[\s\S]*?main-menu[\s\S]*?<\/ol>/i, '')
   loaderDiv.innerHTML = innerContent
   document.body.appendChild(loaderDiv)
   let previous = null

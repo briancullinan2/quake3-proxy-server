@@ -5,6 +5,8 @@ const path = require('path')
 const os = require('os')
 const process = require('process')
 
+const { START_SERVICES } = require('../contentServer/features.js')
+
 const EXE_NAME = 'quake3e' + (os.platform() == 'win32' ? '.exe' : '')
 const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 
@@ -12,10 +14,11 @@ const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 let FS_BASEGAME = 'baseq3'
 
 const TEMP_DIR = os.tmpdir()
-const WEB_DIRECTORY = path.resolve(__dirname)
-const ASSETS_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/docs/')
-const BUILD_DIRECTORY = path.resolve(__dirname + '/../../Quake3e/build/')
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
+const PROJECTS = [
+  path.join(FS_HOMEPATH, 'Quake3e'), 
+  path.resolve(__dirname) // /utilities/ not /root/ of project
+] 
 const FS_GAMEHOME = path.join(FS_HOMEPATH, '.q3a')
 const LVLWORLD_DB = process.env.LVLWORLD || path.join(FS_HOMEPATH, '/quake3-discord-bot/lvlworldDB')
 const PROGRAMPATH = process.env['PROGRAMFILES(X86)'] || process.env['PROGRAMFILES']
@@ -23,8 +26,8 @@ const STYLES = path.resolve(__dirname + '/../utilities/index.css')
 const SCRIPTS = path.resolve(__dirname + '/../utilities/frontend.js')
 const UNKNOWN = path.resolve(__dirname + '/../utilities/unknownmap.jpg')
 const INDEX = fs.readFileSync(path.resolve(__dirname + '/../utilities/index.html')).toString('utf-8')
-const REPACK_CACHE = [path.join(BUILD_DIRECTORY, FS_BASEGAME + '-converted')]
-const DOWNLOAD_CACHE = [path.join(BUILD_DIRECTORY)]
+const REPACK_CACHE = []
+const DOWNLOAD_CACHE = []
 const EXPORT_DIRECTORY = path.join(__dirname, '/../docs/')
 
 function setRepack(directory) {
@@ -55,14 +58,116 @@ function getGame() {
   return FS_BASEGAME
 }
 
-const GAME_MODS = []
+const GAME_FORMATS = [
+  '.pk3', '.z64' // TODO: dlls and isos and roms
+]
 
-function getGames() {
-  return [FS_BASEGAME].concat(GAME_MODS)
+function filterGame(modDir) {
+  if (!fs.existsSync(modDir) || !fs.statSync(modDir).isDirectory()) {
+    return
+  }
+  if (fs.existsSync(path.join(modDir, 'description.txt'))) {
+    return fs.readFileSync(path.join(modDir, 'description.txt'))
+      .toString('utf-8').trim()
+  }
+  if (fs.readdirSync(modDir).filter(file => GAME_FORMATS.includes(
+      path.extname(file.toLocaleLowerCase()))).length > 0) {
+    return path.basename(modDir)
+  }
 }
 
+function getBasepath(gamename) {
+  for (let j = 0; j < PROJECTS.length; j++) {
+    if (!fs.existsSync(PROJECTS[j]) 
+        || !fs.statSync(PROJECTS[j]).isDirectory()) {
+      continue
+    }
+    let appDirectory = fs.readdirSync(PROJECTS[j])
+    for (let i = 0; i < appDirectory.length; i++) {
+      if(gamename.localeCompare(appDirectory[i], 'en', {sensitivity: 'base'})) {
+        continue
+      }
+      let modName = filterGame(path.join(PROJECTS[j], appDirectory[i]))
+      if(modName) {
+        return path.join(PROJECTS[j], appDirectory[i])
+      }
+    }
+  }
+}
+
+
+const GAME_NAMES = {}
+
 function addGame(game) {
-  GAME_MODS.push(game)
+  // just has to load after the rest of the system
+  //   if it changes then watch.js will restart
+  GAME_NAMES[game.toLocaleLowerCase()] = game
+}
+
+function getGames() {
+  let gameNames = [FS_BASEGAME].concat(Object.keys(GAME_NAMES))
+  //if(START_SERVICES.includes('deploy')) {
+    gameNames.sort()
+    return gameNames
+  //}
+  for (let j = 0; j < PROJECTS.length; j++) {
+    if (!fs.existsSync(PROJECTS[j]) 
+        || !fs.statSync(PROJECTS[j]).isDirectory()) {
+      continue
+    }
+    let appDirectory = fs.readdirSync(PROJECTS[j])
+    for (let i = 0; i < appDirectory.length; i++) {
+      let basename = path.basename(appDirectory[i]).toLocaleLowerCase()
+      let modName = filterGame(path.join(PROJECTS[j], appDirectory[i]))
+      if(!modName) {
+        continue
+      }
+      GAME_NAMES[basename] = modName
+      if(!gameNames.includes(basename)) {
+        gameNames.push(basename)
+      }
+    }
+  }
+  gameNames.sort()
+  return gameNames
+}
+
+function addProject(project) {
+  let addProjects = []
+
+  PROJECTS.push(path.resolve(project))
+  PROJECTS.push(path.join(FS_HOMEPATH, project))
+  PROJECTS.push(path.resolve(path.join(__dirname, '/../../', project)))
+  if (os.platform == 'win32') {
+    PROJECTS.push(path.join('C:/Program\ Files', project))
+    PROJECTS.push(path.join(PROGRAMPATH, '\/Steam\/steamapps\/common', project))
+  } else
+    if (os.platform == 'darwin') {
+      PROJECTS.push(path.join('/Applications', project))
+      PROJECTS.push(path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common', project))
+    } else {
+      PROJECTS.push(path.join('/usr/local/games', project))
+      PROJECTS.push(path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common', project))
+    }
+
+  let newProjects = addProjects.filter(fs.existsSync)
+  if(!newProjects.length) {
+    console.log('WARNING: directory does not exist, unexpected behavior.')
+  }
+  PROJECTS.push.apply(PROJECTS, newProjects)
+}
+
+
+addProject('Quake\ III\ Arena')
+addProject('quake3')
+addProject('ioquake3')
+addProject('UrbanTerror')
+addProject('Urban\ Terror')
+
+
+const ROUTES = []
+function addRoute(plugin) {
+  ROUTES.push(plugin)
 }
 
 function repackedCache() {
@@ -82,7 +187,6 @@ function watcherPID() {
   return WATCHER_PID
 }
 
-
 let PUBLIC_REDIRECT = 'http://locahost:8080'
 
 function setRedirect(redirect) {
@@ -93,183 +197,7 @@ function redirectAddress() {
   return PUBLIC_REDIRECT
 }
 
-const APPLICATIONS = []
 
-
-function addCommon(application) {
-  if (os.platform == 'win32') {
-    APPLICATIONS.push.apply(APPLICATIONS, [{
-      basepath: path.join('C:/Program\ Files', application),
-    }, {
-      basepath: path.join(PROGRAMPATH, '\/Steam\/steamapps\/common', application),
-      steam: true,
-    }])
-  } else
-    if (os.platform == 'darwin') {
-      APPLICATIONS.push.apply(APPLICATIONS, [{
-        basepath: path.join('/Applications', application)
-      }, {
-        basepath: path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common', application),
-        steam: true,
-      }])
-    } else
-      APPLICATIONS.push.apply(APPLICATIONS, [{
-        basepath: path.join('/usr/local/games', application)
-      }, {
-        basepath: path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common', application),
-        steam: true,
-      }])
-}
-
-addCommon('Quake\ III\ Arena')
-addCommon('quake3')
-addCommon('ioquake3')
-addCommon('UrbanTerror')
-addCommon('Urban\ Terror')
-
-const MODS = []
-const MODS_NAMES = []
-const MODS_DESCRIPTIONS = {}
-
-
-/*
-
-
-baseq3
-Quake III Arena
-(players|player)\/(sarge|major)
-missionpack
-0 Choice: Team Arena
-(players|player)\/(sarge|james)
-defrag
-1 Choice: Defrag
-baseq3r
-2 Choice: Q3Rally
-(players|player)\/(sidepipe)
-basemod
-3 Choice: Monkeys of Doom
-generations
-4 Choice: Generations Arena
-q3f2
-5 Choice: Q3 Fortress 2
-cpma
-6 Choice: Challenge ProMode
-(players|player)\/(sarge|mynx)
-q3ut4
-7 Choice: Urban Terror 4
-(players|player)\/(athena|orion)
-freezetag
-8 Choice: Freeze Tag
-corkscrew
-9 Choice: Corkscrew
-freon
-Excessive Plus: Freon
-baseoa
-Open Arena
-(players|player)\/(sarge|gi)
-bfpq3
-Bid For Power
-excessive
-Excessive+
-q3ut3
-Urban Terror 3
-edawn
-eDawn
-geoball
-Geoball
-neverball
-Neverball
-omissionpack
-OpenArena Mission Pack
-platformer
-Platformer
-legoc
-Lego Carnage
-osp
-Orange Smoothie Productions
-quake2arena
-Quake 2 Arena
-smokin
-Smokin\' Guns
-wfa
-Weapons Factory Arena
-uberarena
-Uber Arena
-demoq3
-Quake III Demo
-mfdata
-Military Forces
-conjunction
-Dark Conjunction
-chili
-Chili Quake XXL
-hqq
-High Quality Quake
-entityplus
-Engine Of Creation: Entity Plus
-wop
-World of Padman
-truecombat
-True Combat 1.3
-(tc_players|player)\/(sarge|alpha)
-rocketarena
-Coming Soon: Rocket Arena
-gpp
-Coming Soon: Tremulous
-gppl
-Coming Soon: Unvanquished
-iortcw
-Coming Soon: Return to Castle Wolfenstien
-baset
-Coming Soom: Wolfenstien: Enemy Territory
-openjk
-Coming Soon: Jedi Knights: Jedi Academy
-baseef
-Coming Soon: Star Trek: Elite Force
-*/
-
-const GAME_FORMATS = [
-  '.pk3' // TODO: dlls and isos and roms
-]
-
-function refreshMods() {
-  MODS.splice(0)
-  MODS_NAMES.splice(0)
-  Object.keys(MODS_DESCRIPTIONS).forEach(key => {
-    delete MODS_DESCRIPTIONS[key]
-  })
-  for (let j = 0; j < APPLICATIONS.length; j++) {
-    APPLICATIONS[j].mods = []
-    if (!fs.existsSync(APPLICATIONS[j].basepath)
-        || !fs.statSync(APPLICATIONS[j].basepath).isDirectory()) {
-      continue
-    }
-    let appDirectory = fs.readdirSync(APPLICATIONS[j].basepath)
-    for (let i = 0; i < appDirectory.length; i++) {
-      let modDir = path.join(APPLICATIONS[j].basepath, appDirectory[i])
-      let description = appDirectory[i]
-      if (!fs.existsSync(modDir) || !fs.statSync(modDir).isDirectory()) {
-        continue
-      }
-      let hasDescription = false
-      if (fs.existsSync(path.join(modDir, 'description.txt'))) {
-        hasDescription = true
-        description = fs.readFileSync(path.join(modDir, 'description.txt'))
-          .toString('utf-8').trim()
-      }
-      if (description
-        || fs.readdirSync(modDir).filter(file => GAME_FORMATS.includes(
-          path.extname(file.toLocaleLowerCase()))).length > 0) {
-        MODS.push(appDirectory[i])
-        APPLICATIONS[j].mods.push(appDirectory[i].toLocaleLowerCase())
-        MODS_NAMES.push(appDirectory[i].toLocaleLowerCase())
-        MODS_DESCRIPTIONS[appDirectory[i].toLocaleLowerCase()] = description
-      }
-    }
-  }
-}
-
-refreshMods()
 
 const SUPPORTED_FORMATS = [
   '.cfg', '.qvm', '.jts', '.bot',
@@ -295,8 +223,9 @@ let DOMAIN = 'http://127.0.0.1:8080'
 
 
 module.exports = {
+  GAME_NAMES,
+  ROUTES,
   DOMAIN,
-  APPLICATIONS,
   EXPORT_DIRECTORY,
   TEMP_DIR,
   WEB_FORMATS,
@@ -305,10 +234,7 @@ module.exports = {
   AUDIO_FORMATS,
   EXE_NAME,
   DED_NAME,
-  GAME_MODS,
-  WEB_DIRECTORY,
-  ASSETS_DIRECTORY,
-  BUILD_DIRECTORY,
+  PROJECTS,
   LVLWORLD_DB,
   FS_HOMEPATH,
   FS_GAMEHOME,
@@ -316,15 +242,15 @@ module.exports = {
   SCRIPTS,
   UNKNOWN,
   INDEX,
-  MODS,
-  MODS_NAMES,
-  MODS_DESCRIPTIONS,
+  addRoute,
+  addProject,
   setGame,
   addGame,
   getGame,
   getGames,
   repackedCache,
   downloadCache,
+  getBasepath,
   setRepack,
   setDownload,
   redirectAddress,

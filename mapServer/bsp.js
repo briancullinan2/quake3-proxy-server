@@ -4,8 +4,6 @@ const fs = require('fs')
 const { findFile } = require('../assetServer/virtual.js')
 const { FS_GAMEHOME, getGame } = require('../utilities/env.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
-const { repackedCache } = require('../utilities/env.js')
-const { streamFileKey } = require('../utilities/zip.js')
 const { layeredDir } = require('../assetServer/layered.js')
 const { execLevelshot } = require('../mapServer/serve-lvlshot.js')
 const { ScanAndLoadShaderFiles } = require('../assetServer/shaders.js')
@@ -27,30 +25,11 @@ const MAP_ENTITIES = {}
 // TODO: rewrite this completely use read BSP files directly or use WASM functionally
 async function getMapInfo(mapname) {
   let basegame = getGame()
-  let caches = repackedCache()
   // TODO: make sure BSP file is available synchronously first
   let newFile = await sourcePk3Download(mapname)
   await ScanAndLoadShaderFiles()
 
   let pk3Path = `/${basegame}/${path.basename(newFile)}dir`
-  let foundBsp = false
-  for(let i = 0; i < caches.length; i++) {
-    let newZip = path.join(caches[i], path.basename(newFile))
-    let bspFile = path.join(newZip + 'dir', `/maps/${mapname}.bsp`)
-    if(fs.existsSync(bspFile)) {
-      foundBsp = true
-    }
-  }
-  // extract the BSP because we might change it anyways
-  /*
-  if (!foundBsp) {
-    let bspFile = path.join(caches[0], path.basename(newFile) + 'dir', `/maps/${mapname}.bsp`)
-    fs.mkdirSync(path.dirname(bspFile), { recursive: true })
-    const file = fs.createWriteStream(bspFile)
-    await streamFileKey(newFile, `maps/${mapname}.bsp`, file)
-    file.close()
-  }
-  */
 
   let levelshotPath = path.join(pk3Path, '/levelshots/', mapname + '.jpg')
   let levelshot = findFile(levelshotPath)

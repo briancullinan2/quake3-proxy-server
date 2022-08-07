@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { APPLICATIONS, FS_GAMEHOME, watcherPID, getGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, watcherPID, getGame, getBasepath } = require('../utilities/env.js')
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { EXTRACTING_ZIPS } = require('../utilities/zip.js')
 const { CHILD_PROCESS } = require('../utilities/exec.js')
@@ -39,7 +39,7 @@ async function serveDedicated() {
       challenge: challenge,
       mapname: 'lsdm3_v1',
     }
-    let basepath = APPLICATIONS.filter(app => app.mods.includes(basegame))[0].basepath
+    let basepath = getBasepath(basegame)
     let ps = await dedicatedCmd([
       '+set', 'fs_basepath', basepath,
       '+set', 'fs_homepath', FS_GAMEHOME,

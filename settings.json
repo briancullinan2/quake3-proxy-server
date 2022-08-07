@@ -1,4 +1,6 @@
 [
+  "--add-project",
+  "Quake3e",
   "--add-downloads",
   "/Volumes/ExtBackup/Personal/planet_quake_data/bestmaps-c",
   "--add-repacked",

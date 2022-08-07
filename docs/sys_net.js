@@ -241,7 +241,6 @@ function socketMessage(evt) {
     return
   }
   let message = new Uint8Array(evt.data)
-  //console.log(message)
   switch (evt.target.fresh) {
     case 1:
       if (message.length != 2) {

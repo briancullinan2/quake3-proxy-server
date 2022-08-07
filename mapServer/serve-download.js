@@ -224,7 +224,6 @@ async function serveDownloadList(request, response, next) {
       name: map || '',
       absolute: ''
     }))
-    console.log(pk3sFiltered)
   } else {
     pk3sFiltered = await Promise.all(pk3sPaths.slice(0, 100).map(describePk3))
   }

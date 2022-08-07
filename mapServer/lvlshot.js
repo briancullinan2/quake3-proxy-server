@@ -7,8 +7,7 @@ const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
 const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { APPLICATIONS, FS_GAMEHOME, getGame, setGame } = require('../utilities/env.js')
-const { START_SERVICES } = require('../contentServer/features.js')
+const { FS_GAMEHOME, getGame, setGame } = require('../utilities/env.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -85,7 +84,6 @@ async function getTask(mapname, previousTask) {
     // TODO: use RCON interface to control servers and get information
     task = EXECUTING_LVLSHOTS[mapname][0]
     if (!task) {
-      //console.log('No tasks: ' + mapname)
       task = false
       continue
     }
@@ -147,7 +145,6 @@ async function processQueue() {
       continue
     }
     if (!task.game) {
-      console.log(task)
       throw new Error('No game set!')
     }
     // out of these <MAX_RENDERERS> maps, queue up to <MAX_RENDERERS> tasks for each
@@ -200,7 +197,6 @@ async function processQueue() {
     } else {
       SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]
     }
-    //console.log('Server available: ', mapRenderers, mapname, serversAvailable[0])
 
     // remove tasks that have already completed so we don't waste time switching maps
 
@@ -394,9 +390,8 @@ async function serveLvlshot(mapname, waitFor) {
     //   quantity, not performance or usability, we'll fill up
     //   all CPUs 100% when the time comes so make sure they 
     //   are evenly spread out.
-    let basepath = APPLICATIONS.filter(app => app.mods.includes(basegame))[0].basepath
     let ps = await dedicatedCmd([
-      '+set', 'fs_basepath', basepath,
+      '+set', 'fs_basepath', getBasepath(basegame),
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+sets', 'fs_basegame', basegame,
       '+sets', 'fs_game', basegame,

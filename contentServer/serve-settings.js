@@ -5,7 +5,6 @@ const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories } = require('../assetServer/virtual.js')
 const { getGame, repackedCache, downloadCache } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
-const { listGames } = require('../gameServer/list-games.js')
 
 let ASSET_FEATURES = [{
   title: 'Shaders',
@@ -153,8 +152,20 @@ async function serveSettings(request, response, next) {
     }
   }
 
-  let allGames = await listGames(true)
-
+  let GAME_MODS = getGames()
+  let gamesFiltered = []
+  for(let j = 0; j < GAME_MODS.length; j++) {
+    let GAME_ORDER = gameDirectories(GAME_MODS[j], false)
+    for(let i = 0; i < GAME_ORDER.length; i++) {
+      let exists = fs.existsSync(GAME_ORDER[i])
+      gamesFiltered.push({
+        name: (exists === false ? '(missing) ' : '') + dir,
+        absolute: GAME_ORDER[i],
+        exists: exists,
+        mtime: exists ? fs.statSync(GAME_ORDER[i]).mtime : void 0,
+      })
+    }
+  }
 
   return response.send(renderIndex(
   renderMenu(ASSET_FEATURES, 'asset-menu')
@@ -170,7 +181,7 @@ async function serveSettings(request, response, next) {
   <p>Various game directories can be added, and accessed in game using the directory name 
   as thegame setting. These paths can be modified to support multiple games on the same 
   system, at the same time; through this web interface. Game directories are generally not added automatically, and must be configured. Built VMs from building the game files are  automatically included, for your convenience.
-  <ol class="directory-list">${allGames.map(renderFilelist).join('\n')}
+  <ol class="directory-list">${gamesFiltered.map(renderFilelist).join('\n')}
   </ol>
   <h3>Content Caching</h3>
   <p>Some files require conversion in order to use on the web. If caching is turned on, 
@@ -228,6 +239,5 @@ module.exports = {
   ASSET_MENU,
   serveSettings,
   renderFilelist,
-  listGames,
 }
 

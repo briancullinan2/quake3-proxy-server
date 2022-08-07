@@ -1,8 +1,7 @@
 const path = require('path')
 const fs = require('fs')
-const { APPLICATIONS, MODS_NAMES, MODS } = require('../utilities/env.js')
 const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
-
+const { getGames } = require('../utilities/env.js')
 
 // virtual directory
 //  TODO: use in /home/ path for async game assets
@@ -15,18 +14,6 @@ function layeredDir(filepath, includeBuild) {
   // TODO: add full paths and leave non-unique, only used in a few places now
 
   let result = []
-  if (filepath.length == 0) {
-    // list available mods
-    for (let i = 0; i < APPLICATIONS.length; i++) {
-      if (fs.existsSync(APPLICATIONS[i].basepath)
-        && fs.statSync(APPLICATIONS[i].basepath).isDirectory()) {
-        result.push.apply(result, fs.readdirSync(APPLICATIONS[i].basepath)
-          .map(r => path.join(APPLICATIONS[i].basepath, r))
-          .filter(r => fs.existsSync(r)))
-      }
-    }
-  }
-
   if (includeBuild) {
     let BUILD_ORDER = buildDirectories()
     for (let i = 0; i < BUILD_ORDER.length; i++) {
@@ -38,11 +25,12 @@ function layeredDir(filepath, includeBuild) {
     }
   }
 
-  let basename = MODS_NAMES.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
+  let gameNames = getGames()
+  let basename = gameNames.indexOf(filepath.split('\/')[0].toLocaleLowerCase())
   if (basename > -1) {
-    let GAME_ORDER = gameDirectories(MODS[basename])
+    let GAME_ORDER = gameDirectories(basename)
     for (let i = 0; i < GAME_ORDER.length; i++) {
-      let newPath = path.join(GAME_ORDER[i], filepath.substr(MODS[basename].length))
+      let newPath = path.join(GAME_ORDER[i], filepath.substr(basename.length))
       if (fs.existsSync(newPath) && fs.statSync(newPath).isDirectory()) {
         result.push.apply(result, fs.readdirSync(newPath)
           .map(r => path.join(newPath, r)).filter(r => fs.existsSync(r)))

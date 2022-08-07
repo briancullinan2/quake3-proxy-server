@@ -49,7 +49,7 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('maps')) {
     app.use(/\/maps\/[0-9]+\/[0-9]+$/i, serveMapsRange)
-    app.use(/\/maps\/[^\/]+$/i, serveMapInfo)
+    app.use(/\/maps\/[^\/]+\/?$/i, serveMapInfo)
     app.use(/\/maps\/?$/i, serveMaps)
     app.use('/maps/reload', downloadAllMeta)
   }
@@ -57,7 +57,7 @@ function setupExtensions(features, app) {
   if (features.includes('all')
     || features.includes('mods')) {
     app.use(/\/mods\/[0-9]+\/[0-9]+/i, serveModsRange)
-    app.use(/\/mods\/[^\/]+$/i, serveModInfo)
+    app.use(/\/mods\/[^\/]+\/?$/i, serveModInfo)
     app.use(/\/mods\/?$/i, serveMods)
   }
 

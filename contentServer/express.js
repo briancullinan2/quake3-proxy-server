@@ -1,4 +1,7 @@
-const { STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
+const fs = require('fs')
+const path = require('path')
+
+const { ROUTES, STYLES, UNKNOWN, SCRIPTS, redirectAddress } = require('../utilities/env.js')
 const { setupExtensions, serveFeatures } = require('../contentServer/serve-http.js')
 const { renderIndex } = require('../utilities/render.js')
 const { createSOCKS } = require('../proxyServer/socks5.js')
@@ -11,6 +14,7 @@ express.static.mime.types['wasm'] = 'application/wasm'
 express.static.mime.types['pk3'] = 'application/octet-stream'
 express.static.mime.types['bsp'] = 'application/octet-stream'
 
+
 // basic application with a default function to share index files
 // TODO: list included features in it's own index
 function createApplication(features) {
@@ -18,7 +22,7 @@ function createApplication(features) {
   app.enable('etag')
   app.set('etag', 'strong')
 
-  app.use(express.json());
+  app.use(express.json())
 
   app.use(function serveIndex(req, res, next) {
     let isIndex = req.url.match(/\?index/)
@@ -45,6 +49,23 @@ function createApplication(features) {
     }
     next()
   })
+
+  for(let i = 0; i < ROUTES.length; i++) {
+    let newModule
+    if(fs.existsSync(path.join(ROUTES[i][1], ROUTES[i][3]))) {
+      newModule = require(path.join(ROUTES[i][1], ROUTES[i][3]))
+    } else 
+    if(fs.existsSync(path.resolve(ROUTES[i][1]))) {
+      newModule = require(path.resolve(ROUTES[i][1]))
+    } else {
+      throw new Error('Module not found: ' + ROUTES[i][1])
+    }
+    if(typeof newModule[ROUTES[i][2]] != 'function') {
+      console.error(new Error('Route not a function:' + ROUTES[i][2]))
+    } else {
+      app.use(new RegExp(ROUTES[i][0], 'gi'), newModule[ROUTES[i][2]])
+    }
+  }
 
   app.use(/\/sitemap\/?$/i, function (req, res, next) {
     return serveFeatures(features, res)

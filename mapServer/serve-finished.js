@@ -5,7 +5,7 @@
 const path = require('path')
 const fs = require('fs')
 
-const { MODS_NAMES, getGame } = require('../utilities/env.js')
+const { getGame, getGames } = require('../utilities/env.js')
 const { sourcePk3Download } = require('../mapServer/download.js')
 const { repackBasemap, repackBasepack } = require('../mapServer/repack.js')
 const { listMaps } = require('../assetServer/list-maps.js')
@@ -46,7 +46,8 @@ async function serveFinished(request, response, next) {
     }
 
   let previousGame = getGame()
-  if (!MODS_NAMES.includes(modname.toLocaleLowerCase())) {
+  let gameNames = getGames()
+  if (!gameNames.includes(modname.toLocaleLowerCase())) {
     modname = previousGame
   }
 
