@@ -4,16 +4,20 @@ const { spawn } = require('child_process')
 const { START_SERVICES } = require('../contentServer/features.js')
 const { gameDirectories, buildDirectories } = require('../assetServer/virtual.js')
 const { getGames, downloadCache, repackedCache } = require('../utilities/env.js')
-const { updatePageViewers } = require('../contentServer/session.js')
 const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
 
 
 let childProcess
+let debounceProject
 
 function projectWatcher(type, file) {
   if (file && !file.match(/\.js/i)) {
     return
   }
+  if(debounceProject) {
+    return
+  }
+  debugger
   console.log('File changed:', file)
   let startArgs = [process.argv[1]]
   .concat(process.argv.slice(2))
@@ -22,10 +26,14 @@ function projectWatcher(type, file) {
   if (childProcess) {
     childProcess.kill()
   }
-  childProcess = spawn('node', startArgs, { stdio: 'inherit' })
-  childProcess.unref()
-  childProcess.on('close', projectWatcher)
-  childProcess.on('error', projectWatcher)
+  debounceProject = setTimeout(function () {
+    debounceProject = null
+    childProcess = spawn('node', startArgs, { stdio: 'inherit' })
+    //childProcess.unref()
+    // TODO: add debounce because it restarts annoyingly quick here
+    childProcess.on('close', projectWatcher)
+    childProcess.on('error', projectWatcher)
+  }, 2000)
 }
 
 
@@ -43,7 +51,7 @@ function debounceKey(key, callback, type, file) {
   DEBOUNCE[key] = setTimeout(function () {
     delete DEBOUNCE[key + '_' + callbackI]
     callback(type, file)
-  }, 1500)
+  }, 2000)
 
 }
 
@@ -109,8 +117,10 @@ function contentWatcher() {
   lastRun = Date.now()
 
   let BUILD_ORDER = buildDirectories()
-  //for (let i = 0; i < BUILD_ORDER.length; i++) {
-  //  watchDirectory(BUILD_ORDER[i], projectWatcher, true)
+  //if(!START_SERVICES.includes('debug')) {
+  //  for (let i = 0; i < BUILD_ORDER.length; i++) {
+  //    watchDirectory(BUILD_ORDER[i], projectWatcher, true)
+  //  }
   //}
 
   let gameNames = getGames()
@@ -142,5 +152,7 @@ function contentWatcher() {
 module.exports = {
   FILESYSTEM_WATCHERS,
   contentWatcher,
+  projectWatcher,
+  watchDirectory,
 }
 

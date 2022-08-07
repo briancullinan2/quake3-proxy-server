@@ -39,9 +39,8 @@ async function serveDedicated() {
       challenge: challenge,
       mapname: 'lsdm3_v1',
     }
-    let basepath = getBasepath(basegame)
     let ps = await dedicatedCmd([
-      '+set', 'fs_basepath', basepath,
+      '+set', 'fs_basepath', getBasepath(basegame),
       '+set', 'fs_homepath', FS_GAMEHOME,
       '+sets', 'fs_basegame', basegame,
       '+sets', 'fs_game', basegame,

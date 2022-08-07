@@ -479,7 +479,6 @@ function socketProxyControl(evt) {
           } else {
             sendPageRequest(window.location + '')
           }
-      
         }, 1000)
       }
     }

@@ -89,7 +89,7 @@ function getBasepath(gamename) {
       }
       let modName = filterGame(path.join(PROJECTS[j], appDirectory[i]))
       if(modName) {
-        return path.join(PROJECTS[j], appDirectory[i])
+        return PROJECTS[j]
       }
     }
   }
@@ -163,6 +163,7 @@ addProject('quake3')
 addProject('ioquake3')
 addProject('UrbanTerror')
 addProject('Urban\ Terror')
+addProject(path.join(FS_HOMEPATH, 'Documents/Roms/N64 Roms'))
 
 
 const ROUTES = []

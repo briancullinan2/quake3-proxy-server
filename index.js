@@ -12,12 +12,13 @@ const path = require('path')
 const { createWebServers } = require('./contentServer/express.js')
 const { createMasters } = require('./gameServer/serve-master.js')
 const { SUPPORTED_SERVICES, START_SERVICES } = require('./contentServer/features.js')
-const { contentWatcher } = require('./utilities/watch.js')
+const { contentWatcher, projectWatcher, watchDirectory } = require('./utilities/watch.js')
 const { EXECUTING_MAPS, GAME_SERVERS } = require('./gameServer/processes.js')
 const { log: previousLog, error: previousError } = require('console')
 const { EXECUTING_LVLSHOTS, listJobs } = require('./mapServer/lvlshot.js')
 const { parseAguments } = require('./utilities/parse-args.js')
 const { PROJECTS } = require('./utilities/env.js')
+const { buildDirectories } = require('./assetServer/virtual.js')
 
 const REDIRECTED_LOGS = []
 const REDIRECTED_ERRORS = []
@@ -135,7 +136,11 @@ function main() {
       && (!START_SERVICES.includes('deploy')
       || START_SERVICES.includes('live'))
     ) {
-      contentWatcher()
+      let BUILD_ORDER = buildDirectories()
+      for (let i = 0; i < BUILD_ORDER.length; i++) {
+        watchDirectory(BUILD_ORDER[i], projectWatcher, true)
+      }
+      projectWatcher()
       return
     }
   }

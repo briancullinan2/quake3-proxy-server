@@ -4,7 +4,7 @@ const fs = require('fs')
 // use WASM renderer to screenshot uploaded maps
 const { findFile } = require('../assetServer/virtual.js')
 const { EXECUTING_LVLSHOTS, processQueue } = require('../mapServer/lvlshot.js')
-const { FS_GAMEHOME, setGame, getGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, setGame, getGame, getGames } = require('../utilities/env.js')
 const { updatePageViewers } = require('../contentServer/session.js')
 const { CONVERTED_FILES, streamFile } = require('../assetServer/stream-file.js')
 const { START_SERVICES } = require('../contentServer/features.js')
