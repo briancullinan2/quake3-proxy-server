@@ -63,7 +63,13 @@ const GAME_FORMATS = [
 ]
 
 function filterGame(modDir) {
-  if (!fs.existsSync(modDir) || !fs.statSync(modDir).isDirectory()) {
+  if (!fs.existsSync(modDir)) {
+    return
+  }
+  if(!fs.statSync(modDir).isDirectory()) {
+    if(GAME_FORMATS.includes(path.extname(modDir.toLocaleLowerCase()))) {
+      return path.basename(modDir).replace(path.extname(modDir), '')
+    }
     return
   }
   if (fs.existsSync(path.join(modDir, 'description.txt'))) {
@@ -104,12 +110,37 @@ function addGame(game) {
   GAME_NAMES[game.toLocaleLowerCase()] = game
 }
 
+
+// TODO: CODE REVIEW: every time the program forks, it reloads this list at least once
+//   from current data. Because of live-reloading, I can make better decisions in my 
+//   design. For example, the other way to prevent this function from being called
+//   hundreds of times is with parameter passing, and adding a bunch of references
+//   to data inside every "class". This is lame because who cares where the memory 
+//   reference comes from? Not me the programmer. Why should I add an extra parameter
+//   to pass around a bunch of references to "static" data. What makes it static?
+// Live reloading means every time the data is refreshed the entire program state
+//   is also refreshed. Then, I am forced to cache what is frequently used in memory
+//   and cache what is infrequently "refreshed" or reloaded on disk for loading at 
+//   program start.
+// I've philosophically drawn the line between what parts of my program are speedy and
+//   indexed and which parts are redundant. Now discovering this redundancy with the 
+//   performance recording tool makes reducing the number of calls to this procedure 
+//   a piece of cake. I've verified through programming the API that this is redundant.
+
 function getGames() {
-  let gameNames = [FS_BASEGAME].concat(Object.keys(GAME_NAMES))
-  //if(START_SERVICES.includes('deploy')) {
+  if(START_SERVICES.includes('deploy')) {
+    let gameNames = [].concat(Object.keys(GAME_NAMES))
     gameNames.sort()
     return gameNames
-  //}
+  }
+
+  // DUCK OUT EARLY WITH CACHE
+  let gameNames = Object.keys(GAME_NAMES)
+  if(gameNames.length > 0) {
+    return gameNames
+  }
+
+  // recompute list from disk
   for (let j = 0; j < PROJECTS.length; j++) {
     if (!fs.existsSync(PROJECTS[j]) 
         || !fs.statSync(PROJECTS[j]).isDirectory()) {
@@ -117,12 +148,12 @@ function getGames() {
     }
     let appDirectory = fs.readdirSync(PROJECTS[j])
     for (let i = 0; i < appDirectory.length; i++) {
-      let basename = path.basename(appDirectory[i]).toLocaleLowerCase()
+      let basename = appDirectory[i].toLocaleLowerCase()
       let modName = filterGame(path.join(PROJECTS[j], appDirectory[i]))
       if(!modName) {
         continue
       }
-      GAME_NAMES[basename] = modName
+      GAME_NAMES[basename] = modName.replace(/\[\!\]/gi, '').replace(/\(U\)/gi, '')
       if(!gameNames.includes(basename)) {
         gameNames.push(basename)
       }
@@ -158,11 +189,11 @@ function addProject(project) {
 }
 
 
-addProject('Quake\ III\ Arena')
-addProject('quake3')
-addProject('ioquake3')
-addProject('UrbanTerror')
-addProject('Urban\ Terror')
+//addProject('Quake\ III\ Arena')
+//addProject('quake3')
+//addProject('ioquake3')
+//addProject('UrbanTerror')
+//addProject('Urban\ Terror')
 addProject(path.join(FS_HOMEPATH, 'Documents/Roms/N64 Roms'))
 
 

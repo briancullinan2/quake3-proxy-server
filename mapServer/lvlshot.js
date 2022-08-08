@@ -7,7 +7,7 @@ const { dedicatedCmd } = require('../cmdServer/cmd-dedicated.js')
 const { RESOLVE_DEDICATED, EXECUTING_MAPS, GAME_SERVERS } = require('../gameServer/processes.js')
 const { RESOLVE_LOGS, UDP_SOCKETS, MASTER_PORTS, sendOOB } = require('../gameServer/master.js')
 const buildChallenge = require('../quake3Utils/generate-challenge.js')
-const { FS_GAMEHOME, getGame, setGame } = require('../utilities/env.js')
+const { FS_GAMEHOME, getGame, setGame, getBasepath } = require('../utilities/env.js')
 
 
 // TODO: this is pretty lame, tried to make a screenshot, and a
@@ -192,7 +192,7 @@ async function processQueue() {
       (serversAvailable[0].mapname != mapname
         && mapRenderers.length > 0 && mapNamesFiltered.length > 1)
     ) {
-      console.log('None available: ' + mapname)
+      //console.log('None available: ' + mapname)
       continue
     } else {
       SERVER = EXECUTING_MAPS[serversAvailable[0].qps_serverId]

@@ -24,7 +24,7 @@ function createApplication(features) {
 
   app.use(express.json())
 
-  app.use(function serveIndex(req, res, next) {
+  app.use('/*', function serveIndex(req, res, next) {
     let isIndex = req.url.match(/\?index/)
     let filename = req.originalUrl.replace(/\?.*$/, '')
     if (filename.match('/index.css')) {
@@ -50,6 +50,9 @@ function createApplication(features) {
     next()
   })
 
+//app.use(/\/[^\/]+\/.*/, require('../../elastic-game-server/engines/serve-engines.js').serveEngineFiles)
+
+
   for(let i = 0; i < ROUTES.length; i++) {
     let newModule
     if(fs.existsSync(path.join(ROUTES[i][1], ROUTES[i][3]))) {
@@ -63,10 +66,13 @@ function createApplication(features) {
     if(typeof newModule[ROUTES[i][2]] != 'function') {
       console.error(new Error('Route not a function:' + ROUTES[i][2]))
     } else {
-      app.use(new RegExp(ROUTES[i][0], 'gi'), newModule[ROUTES[i][2]])
+      app.use(new RegExp(ROUTES[i][0]), newModule[ROUTES[i][2]])
     }
   }
 
+
+
+  /*
   app.use(/\/sitemap\/?$/i, function (req, res, next) {
     return serveFeatures(features, res)
   })
@@ -80,6 +86,7 @@ function createApplication(features) {
       return unhandledResponse(void 0, req, res, next)
     })
   }
+  */
 
   return app
 }

@@ -100,7 +100,8 @@ function renderIndex(body, bodyClass) {
 
 
 
-function renderEngine() {
+function renderEngine(engine) {
+  if(!engine || engine == 'quake3e')
   return `
   <div id="viewport-frame">
 		<div id="dialog"><h4 class="title"></h4><p class="description"></p></div>
@@ -115,6 +116,18 @@ function renderEngine() {
 		<div id="left-joystick"></div><div id="right-joystick"></div>
 		<canvas></canvas>
 	</div>`
+  if(engine == 'nintendo64')
+  return `
+  <div id="canvasDiv" style="display: none;">
+    <canvas id="canvas" style="width: 640px;"></canvas>
+  </div>
+  
+  <script async defer src="/nintendo64/jquery-3.3.1.min.js"></script>
+  <script async defer src="/nintendo64/rivets.bundled.min.js"></script>
+  <script async defer src="/nintendo64/input_controller.js"></script>
+  <script async defer src="/nintendo64/settings.js"></script>
+  <script async defer src="/nintendo64/script.js"></script>
+  `
 }
 
 

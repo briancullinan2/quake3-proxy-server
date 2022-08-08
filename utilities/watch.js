@@ -17,7 +17,6 @@ function projectWatcher(type, file) {
   if(debounceProject) {
     return
   }
-  debugger
   console.log('File changed:', file)
   let startArgs = [process.argv[1]]
   .concat(process.argv.slice(2))
@@ -79,7 +78,7 @@ function watchDirectory(directory, callback, recursive) {
     }
     localeList.push(rootName)
 
-  } else {
+  } else if (!recursive) {
     // find the top-most existing path, refresh the page when someone
     //   plugs in a /Volumes/
     let currentPath = path.dirname(directory)

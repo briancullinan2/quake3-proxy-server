@@ -788,7 +788,8 @@ ol li.unused-path a,
 }
 
 
-#viewport-frame {
+#viewport-frame,
+#canvasDiv {
   position: fixed;
   top: 0;
   left: 0;
@@ -805,6 +806,7 @@ ol li.unused-path a,
   /* user-select: none; */
 }
 
+#canvasDiv canvas,
 #viewport-frame canvas {
   background-color: rgba(0, 0, 0, 0.0);
   width: 0;

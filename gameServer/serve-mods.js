@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { GAME_NAMES, getGames } = require('../utilities/env.js')
+const { GAME_NAMES, getGames, getBasepath } = require('../utilities/env.js')
 const { renderIndex, renderList, renderFeature } = require('../utilities/render.js')
 
 
@@ -63,11 +63,13 @@ async function serveModsReal(start, end, isJson, response, next) {
 async function serveModInfo(request, response, next) {
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let isJson = request.originalUrl.match(/\?json/)
-  let modname = path.basename(filename).toLocaleLowerCase()
+  let modname = decodeURI(path.basename(filename).toLocaleLowerCase())
+  let basepath = getBasepath(modname)
 
   return response.send(renderIndex(
     `<div id="mod-info" class="info-layout">
     <h2>${GAME_NAMES[modname] || modname}</h2>
+    ${basepath}
     <h3>Screenshots</h3>
     <h3>Links</h3>
     <ol class="menu-list">

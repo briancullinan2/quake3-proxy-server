@@ -2,11 +2,13 @@
 const fs = require('fs')
 const path = require('path')
 const { PROJECTS, FS_HOMEPATH, FS_GAMEHOME, getGames } = require('../utilities/env.js')
+
 const GAMEDIRS = {}
 
 function gameDirectories(basegame, unexisting) {
+  // TODO: CODE REVIEW: CACHE, (memcache? persistance between reloads might have benefits for void-zero also)
   if(!unexisting && typeof GAMEDIRS[basegame] != 'undefined') {
-    return GAMEDIRS[basegame]    
+    return GAMEDIRS[basegame]
     .filter(g => (!!unexisting || fs.existsSync(g)))
     .filter((g, i, arr) => arr.indexOf(g) == i)
   }
