@@ -17,7 +17,6 @@ function projectWatcher(type, file) {
   if(debounceProject) {
     return
   }
-  console.log('File changed:', file)
   let startArgs = [process.argv[1]]
   .concat(process.argv.slice(2))
   .concat(START_SERVICES)
@@ -40,6 +39,9 @@ function projectWatcher(type, file) {
 const DEBOUNCE = {}
 const CALLBACKS = []
 function debounceKey(key, callback, type, file) {
+  if(file.match(/^\.|\/\./g)) {
+    return
+  }
   if(CALLBACKS.indexOf(callback) == -1) {
     CALLBACKS.push(callback)
   }
@@ -49,6 +51,7 @@ function debounceKey(key, callback, type, file) {
   }
   DEBOUNCE[key] = setTimeout(function () {
     delete DEBOUNCE[key + '_' + callbackI]
+    console.log('File changed:', file)
     callback(type, file)
   }, 2000)
 
