@@ -21,7 +21,7 @@ const { MAP_DICTIONARY } = require('../mapServer/download.js')
 // TODO: generate a GitHub redirect file from routes
 
 // TODO: including yellow banner warning message like "This is a cached page, reconnecting..."
-const DEPLOY_GAMES = [getGame()]
+const DEPLOY_GAMES = []
 
 async function exportGame(game) {
   if (!game) {
@@ -32,14 +32,14 @@ async function exportGame(game) {
 
   fs.mkdirSync(EXPORT_DIRECTORY, { recursive: true })
   fs.mkdirSync(path.join(EXPORT_DIRECTORY, 'maps/repacked'), { recursive: true })
-  await listMaps('baseq3')
+  await listMaps(game)
 
   // loop through every detectable route and export it to /docs/
   let ROUTES = ['/index.css', '/', '/?alt', '/index.html',
     '/quake3e.wasm', '/sys_net.js', '/nipplejs.js', '/sys_emgl.js',
     '/sys_fs.js', '/sys_idbfs.js', '/sys_in.js', '/sys_std.js',
     '/sys_web.js', '/sys_snd.js', '/sys_wasm.js', '/frontend.js',
-    '/unknownmap.jpg', `/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg`
+    '/unknownmap.jpg', `/${game}/pak0.pk3dir/levelshots/q3dm0.jpg`
   ]
   ROUTES = ROUTES.concat(Object.values(CONTENT_FEATURES).filter(feature =>
     !feature.link.includes('://')).map(feature => '/' + feature.link))
@@ -48,9 +48,9 @@ async function exportGame(game) {
   ROUTES = ROUTES.concat(Object.values(STATUS_MENU).filter(feature =>
     !feature.link.includes('://')).map(feature => '/' + feature.link))
   ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/maps/' + map))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0001.jpg?alt'))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/screenshots/' + map + '_screenshot0002.jpg?alt'))
-  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/baseq3/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/' + game + '/screenshots/' + map + '_screenshot0001.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/' + game + '/screenshots/' + map + '_screenshot0002.jpg?alt'))
+  ROUTES = ROUTES.concat(Object.keys(MAP_DICTIONARY).map(map => '/' + game + '/' + MAP_DICTIONARY[map] + 'dir/levelshots/' + map + '.jpg?alt'))
 
   // export HTML content with a cache banner message
   for (let i = 0; i < ROUTES.length; i++) {
@@ -76,7 +76,7 @@ async function exportGame(game) {
 
   // TODO: put the vm in the right place in the output path so the new VM is picked up
   //   and packaged into the pk3
-  let outputDir = path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3dir')
+  let outputDir = path.join(EXPORT_DIRECTORY, '/' + game + '/pak0.pk3dir')
   //let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
   //let files2 = layeredDir('multigame/vm', true).map(file => path.basename(file))
   //await exportFiles(files, outputDir)
@@ -90,7 +90,7 @@ async function exportGame(game) {
   await repackBasepack('demoq3')
   // TODO: INSTALL
   fs.renameSync(
-    path.join(EXPORT_DIRECTORY, 'baseq3/pak0.pk3'),
+    path.join(EXPORT_DIRECTORY, '/' + game + '/pak0.pk3'),
     path.join(EXPORT_DIRECTORY, 'maps/repacked/pak0.pk3'))
 
   // TODO: include the other BSPs for background display but no PLAY NOW 
@@ -99,7 +99,7 @@ async function exportGame(game) {
     await repackBasemap('demoq3', TRIAL_MAPS[i].toLocaleLowerCase())
     // TODO: INSTALL
     fs.renameSync(
-      path.join(EXPORT_DIRECTORY, 'baseq3/' + TRIAL_MAPS[i].toLocaleLowerCase() + '.pk3'),
+      path.join(EXPORT_DIRECTORY, game + '/' + TRIAL_MAPS[i].toLocaleLowerCase() + '.pk3'),
       path.join(EXPORT_DIRECTORY, 'maps/repacked/' + TRIAL_MAPS[i].toLocaleLowerCase() + '.pk3'))
   }
 
@@ -123,11 +123,10 @@ if (runDeploy) {
 
   Promise.resolve()
     .then(async () => {
-
       if (fs.existsSync(path.join(__dirname, '/../settings.json'))) {
         parseAguments(require(path.join(__dirname, '/../settings.json')))
       }
-    
+      DEPLOY_GAMES.push(getGame())
       START_SERVICES.push('all')
       START_SERVICES.push('deploy')
       await createMasters(false)

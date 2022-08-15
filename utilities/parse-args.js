@@ -78,7 +78,7 @@ function parseAguments(startArgs) {
         console.log('Repack cache: ', startArgs[i + 1])
         setRepack(startArgs[i + 1])
         if (!fs.existsSync(repackedCache()[0])) {
-          console.log('WARNING: directory does not exist, unexpected behavior.')
+          console.log('WARNING: directory does not exist, unexpected behavior: ' + startArgs[i + 1])
         }
         i++
         break
@@ -86,7 +86,7 @@ function parseAguments(startArgs) {
         console.log('Download cache: ', startArgs[i + 1])
         setDownload(startArgs[i + 1])
         if (!fs.existsSync(downloadCache()[0])) {
-          console.log('WARNING: directory does not exist, unexpect behavior.')
+          console.log('WARNING: directory does not exist, unexpect behavior: ' + startArgs[i + 1])
         }
         i++
         break
@@ -99,7 +99,7 @@ function parseAguments(startArgs) {
         console.log('Download cache: ', startArgs[i + 1])
         addDownload(startArgs[i + 1])
         if (!fs.existsSync(startArgs[i + 1])) {
-          console.log('WARNING: directory does not exist, unexpect behavior.')
+          console.log('WARNING: directory does not exist, unexpect behavior: ' + startArgs[i + 1])
         }
         i++
         break
@@ -107,7 +107,7 @@ function parseAguments(startArgs) {
         console.log('Repacked cache: ', startArgs[i + 1])
         addRepacked(startArgs[i + 1])
         if (!fs.existsSync(startArgs[i + 1])) {
-          console.log('WARNING: directory does not exist, unexpect behavior.')
+          console.log('WARNING: directory does not exist, unexpect behavior: ' + startArgs[i + 1])
         }
         i++
         break

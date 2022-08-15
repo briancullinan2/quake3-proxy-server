@@ -59,7 +59,7 @@ function getGame() {
 }
 
 const GAME_FORMATS = [
-  '.pk3', '.z64' // TODO: dlls and isos and roms
+  '.pk3', '.z64', '.he0', '.he1', '.he2', '.dmu', '.gba', // TODO: dlls and isos and roms
 ]
 
 function filterGame(modDir) {
@@ -153,7 +153,10 @@ function getGames() {
       if(!modName) {
         continue
       }
-      GAME_NAMES[basename] = modName.replace(/\[\!\]/gi, '').replace(/\(U\)/gi, '')
+      GAME_NAMES[basename] = modName.replace(/\s*\[\!\]\s*/gi, '').replace(/\s*\(U\)\s*/gi, '')
+        // TODO: make API?
+          .replace(/\s*\(3DO\)\s*/gi, '').replace(/\s*\(cd dos\)\s*/gi, '')
+          .replace(/\s*\(cd windows\)\s*/gi, '')
       if(!gameNames.includes(basename)) {
         gameNames.push(basename)
       }
@@ -166,24 +169,24 @@ function getGames() {
 function addProject(project) {
   let addProjects = []
 
-  PROJECTS.push(path.resolve(project))
-  PROJECTS.push(path.join(FS_HOMEPATH, project))
-  PROJECTS.push(path.resolve(path.join(__dirname, '/../../', project)))
+  addProjects.push(path.resolve(project))
+  addProjects.push(path.join(FS_HOMEPATH, project))
+  addProjects.push(path.resolve(path.join(__dirname, '/../../', project)))
   if (os.platform == 'win32') {
-    PROJECTS.push(path.join('C:/Program\ Files', project))
-    PROJECTS.push(path.join(PROGRAMPATH, '\/Steam\/steamapps\/common', project))
+    addProjects.push(path.join('C:/Program\ Files', project))
+    addProjects.push(path.join(PROGRAMPATH, '\/Steam\/steamapps\/common', project))
   } else
     if (os.platform == 'darwin') {
-      PROJECTS.push(path.join('/Applications', project))
-      PROJECTS.push(path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common', project))
+      addProjects.push(path.join('/Applications', project))
+      addProjects.push(path.join(FS_HOMEPATH, '/Library/Application\ Support/Steam/steamapps/common', project))
     } else {
-      PROJECTS.push(path.join('/usr/local/games', project))
-      PROJECTS.push(path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common', project))
+      addProjects.push(path.join('/usr/local/games', project))
+      addProjects.push(path.join(FS_HOMEPATH, '/.steam/steam/SteamApps/common', project))
     }
 
   let newProjects = addProjects.filter(fs.existsSync)
   if(!newProjects.length) {
-    console.log('WARNING: directory does not exist, unexpected behavior.')
+    console.log('WARNING: directory does not exist, unexpected behavior: ' + project)
   }
   PROJECTS.push.apply(PROJECTS, newProjects)
 }
@@ -194,8 +197,9 @@ function addProject(project) {
 //addProject('ioquake3')
 //addProject('UrbanTerror')
 //addProject('Urban\ Terror')
-addProject(path.join(FS_HOMEPATH, 'Documents/Roms/N64 Roms'))
-
+//addProject(path.join(FS_HOMEPATH, '/Documents/Roms/N64 Roms'))
+//addProject(path.join(FS_HOMEPATH, '/Downloads/Putt-Putt for ScummVM'))
+//addProject(path.join(FS_HOMEPATH, '/Downloads/Coin Ops Gameboy Advance/GBA Roms'))
 
 const ROUTES = []
 function addRoute(plugin) {

@@ -47,7 +47,7 @@ function pageBindings() {
     const promises = []
     for(let i = 0; i < ENGINE_SCRIPTS.length; i++) {
       let tag = document.createElement('script');
-      tag.src = window.location.origin + '/' + ENGINE_SCRIPTS[i]
+      tag.src = window.location.origin + '/build/' + ENGINE_SCRIPTS[i]
       promises.push(new Promise(resolve => tag.addEventListener('load', resolve, false)))
       document.getElementsByTagName('head')[0].appendChild(tag);
     }

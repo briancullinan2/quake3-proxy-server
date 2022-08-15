@@ -125,7 +125,7 @@ function contentWatcher() {
   let gameNames = getGames()
   let GAME_ORDER = []
   for (let i = 0; i < gameNames.length; i++) {
-    GAME_ORDER.push.apply(GAME_ORDER, gameDirectories(gameNames[i], true))
+    GAME_ORDER.push.apply(GAME_ORDER, gameDirectories(gameNames[i], false))
   }
   let CONTENT_ORDER = repackedCache().concat(downloadCache())
   let MONITOR_CHANGES = BUILD_ORDER.concat(GAME_ORDER).concat(CONTENT_ORDER)

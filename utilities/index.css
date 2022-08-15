@@ -787,6 +787,7 @@ ol li.unused-path a,
   color: #666;
 }
 
+.emscripten_border,
 #canvasDiv,
 #viewport-frame {
   position: fixed;
@@ -805,6 +806,7 @@ ol li.unused-path a,
   /* user-select: none; */
 }
 
+.emscripten_border canvas,
 #canvasDiv canvas,
 #viewport-frame canvas {
   background-color: rgba(0, 0, 0, 0.0);

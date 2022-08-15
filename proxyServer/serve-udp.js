@@ -75,7 +75,13 @@ async function serveUDP(socket, address, port, redirectApp, sessionId) {
   }
   UDP_CLIENTS[port].push(socket)
 
-  let bindIP = await lookupDNS(socket._socket.localAddress)
+  let bindIP
+  if(!socket._socket.localAddress) {
+    bindIP = await lookupDNS(socket._socket.localAddress)
+  } else {
+    debugger
+    bindIP = '127.0.0.1'
+  }
   let IPsegments = bindIP.split('.').map(seg => parseInt(seg))
 
   return [

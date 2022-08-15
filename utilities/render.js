@@ -92,7 +92,7 @@ function renderIndex(body, bodyClass) {
         Reconnecting to proxy server...</div>` : '')
     + (!body.includes('loading-blur') 
     ? `<div class="loading-blur">
-      <img src="/baseq3/pak0.pk3dir/levelshots/q3dm0.jpg">
+      <img src="/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg">
     </div>` : '')
     + body + INDEX.substring(offset, INDEX.length)
   return index
@@ -127,6 +127,26 @@ function renderEngine(engine) {
   <script async defer src="/nintendo64/input_controller.js"></script>
   <script async defer src="/nintendo64/settings.js"></script>
   <script async defer src="/nintendo64/script.js"></script>
+  `
+  if(engine == 'skyemu')
+  return `
+  <script>window.indexedDB</script>
+  <figure id="spinner" style="overflow:visible" hidden="">
+    <div class="spinner"></div>
+    <center style="margin-top:.5em"><strong>emscripten</strong></center>
+  </figure>
+  <div class="emscripten" id="status"></div>
+  <div class="emscripten"><progress id="progress" max="1" value="0" hidden=""></progress></div>
+  <div class="emscripten_border" id="container">
+  <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1">
+  </canvas></div>
+
+  <input id="fileInput" value="" type="file">
+  <input id="fileStaging" value="">
+  <input id="fileStagingName" value="">
+
+  <script async defer src="/skyemu/script.js"></script>
+  <script async defer src="/skyemu/SkyEmu.js"></script>
   `
 }
 

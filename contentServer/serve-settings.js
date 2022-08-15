@@ -3,7 +3,7 @@ const path = require('path')
 
 const { renderIndex, renderMenu } = require('../utilities/render.js')
 const { buildDirectories } = require('../assetServer/virtual.js')
-const { getGame, repackedCache, downloadCache } = require('../utilities/env.js')
+const { getGame, repackedCache, downloadCache, getGames } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
 
 let ASSET_FEATURES = [{

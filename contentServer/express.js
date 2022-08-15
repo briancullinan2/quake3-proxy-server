@@ -71,8 +71,6 @@ function createApplication(features) {
   }
 
 
-
-  /*
   app.use(/\/sitemap\/?$/i, function (req, res, next) {
     return serveFeatures(features, res)
   })
@@ -86,7 +84,6 @@ function createApplication(features) {
       return unhandledResponse(void 0, req, res, next)
     })
   }
-  */
 
   return app
 }

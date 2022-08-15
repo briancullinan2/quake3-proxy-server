@@ -8,7 +8,7 @@
     "start:test": "live-server docs/ ",
     "deploy": "node contentServer/deploy.js",
     "debug": "node --inspect-brk ./index.js all debug",
-    "palette": "node -e \"require('./mapServer/repack.js').rebuildPalette()\""
+    "palette": "node -e \"require('./assetServer/make-palette.js').rebuildPalette()\""
   },
   "bin": {
     "quakejs-content": "bin/content.js",
