@@ -101,7 +101,7 @@ function renderIndex(body, bodyClass) {
 
 
 function renderEngine(engine) {
-  if(!engine || engine == 'quake3e')
+  if(!engine || engine == 'quake3e' || engine == 'tremulous')
   return `
   <div id="viewport-frame">
 		<div id="dialog"><h4 class="title"></h4><p class="description"></p></div>
@@ -148,6 +148,7 @@ function renderEngine(engine) {
   <script async defer src="/skyemu/script.js"></script>
   <script async defer src="/skyemu/SkyEmu.js"></script>
   `
+
 }
 
 

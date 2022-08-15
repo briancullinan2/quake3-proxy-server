@@ -56,8 +56,15 @@ async function getMapInfo(mapname) {
     //      .replace(path.extname(img), ''))
     //}
   }
-  let entities = await getEntities(basegame, mapname)
-  let worldspawn = parseWorldspawn(entities)
+  let entities
+  let worldspawn = await Promise.any([
+    Promise.resolve(getEntities(basegame, mapname)).then(
+    function (ents) {
+      entities = ents
+      return parseWorldspawn(entities)
+    }),
+    new Promise(resolve => setTimeout(resolve.bind(null, []), 200))
+  ])
 
   return {
     bsp: mapname,
@@ -114,8 +121,10 @@ async function parseWorldspawn(entities) {
 
 
 async function findMapname(basegame, mapname) {
-  let entities = await getEntities(basegame, mapname)
-  let worldspawn = await parseWorldspawn(entities)
+  let worldspawn = await Promise.any([
+    Promise.resolve(getEntities(basegame, mapname)).then(parseWorldspawn),
+    new Promise(resolve => setTimeout(resolve.bind(null, []), 200))
+  ])
   return (worldspawn[0] || {}).message || mapname
 }
 

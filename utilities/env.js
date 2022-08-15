@@ -7,6 +7,7 @@ const process = require('process')
 
 const { START_SERVICES } = require('../contentServer/features.js')
 
+// TODO: swap out engines
 const EXE_NAME = 'quake3e' + (os.platform() == 'win32' ? '.exe' : '')
 const DED_NAME = 'quake3e.ded' + (os.platform() == 'win32' ? '.exe' : '')
 

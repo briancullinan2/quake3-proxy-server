@@ -137,8 +137,18 @@ function main() {
       || START_SERVICES.includes('live'))
     ) {
       let BUILD_ORDER = buildDirectories()
+      console.log(BUILD_ORDER)
       for (let i = 0; i < BUILD_ORDER.length; i++) {
-        watchDirectory(BUILD_ORDER[i], projectWatcher, true)
+        watchDirectory(BUILD_ORDER[i], projectWatcher, false)
+        if(fs.existsSync(BUILD_ORDER[i]) && fs.statSync(BUILD_ORDER[i]).isDirectory()) {
+          let directory = fs.readdirSync(BUILD_ORDER[i])
+          for(let j = 0; j < directory.length; j++) {
+            let fullPath = path.join(BUILD_ORDER[i], directory[j])
+            if(fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+              watchDirectory(fullPath, projectWatcher, false)
+            }
+          }
+        }
       }
       projectWatcher()
       return
