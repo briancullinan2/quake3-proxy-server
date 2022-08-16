@@ -17,7 +17,6 @@ let FS_BASEGAME = 'baseq3'
 const TEMP_DIR = os.tmpdir()
 const FS_HOMEPATH = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE
 const PROJECTS = [
-  path.join(FS_HOMEPATH, 'Quake3e'), 
   path.resolve(__dirname) // /utilities/ not /root/ of project
 ] 
 const FS_GAMEHOME = path.join(FS_HOMEPATH, '.q3a')

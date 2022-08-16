@@ -402,6 +402,7 @@ async function repackBasepack(modname) {
   let maxMtime = 0
 
   let pk3Files = await listGameFiles(modname)
+  console.log('deploy', modname, pk3Files)
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
@@ -475,6 +476,7 @@ async function repackBasepack(modname) {
       console.error(err)
     }
   }
+  console.log('hit 1')
 
   // TODO: inject cl_dlURL to correct game configured on game server
   //let defaultPath = await findAlt(modname + '/default.cfg')
@@ -493,6 +495,7 @@ async function repackBasepack(modname) {
   includedDates[path.join(outputDir, 'default.cfg')] = Date.now()
   // TODO: replace .cfg font files with .png images
 
+  console.log('hit 2')
 
 
   // TODO: write current pak palette file

@@ -2,8 +2,9 @@ const fs = require('fs')
 const path = require('path')
 
 const { renderIndex, renderMenu } = require('../utilities/render.js')
-const { buildDirectories } = require('../assetServer/virtual.js')
-const { getGame, repackedCache, downloadCache, getGames } = require('../utilities/env.js')
+const { buildDirectories, gameDirectories } = require('../assetServer/virtual.js')
+const { getGame, repackedCache, downloadCache, 
+  getGames } = require('../utilities/env.js')
 const { FILESYSTEM_WATCHERS } = require('../gameServer/processes.js')
 
 let ASSET_FEATURES = [{
@@ -157,6 +158,7 @@ async function serveSettings(request, response, next) {
   for(let j = 0; j < GAME_MODS.length; j++) {
     let GAME_ORDER = gameDirectories(GAME_MODS[j], false)
     for(let i = 0; i < GAME_ORDER.length; i++) {
+      let dir = path.basename(path.dirname(GAME_ORDER[i])) + '/' + path.basename(GAME_ORDER[i])
       let exists = fs.existsSync(GAME_ORDER[i])
       gamesFiltered.push({
         name: (exists === false ? '(missing) ' : '') + dir,

@@ -77,17 +77,15 @@ async function exportGame(game) {
   // TODO: put the vm in the right place in the output path so the new VM is picked up
   //   and packaged into the pk3
   let outputDir = path.join(EXPORT_DIRECTORY, '/' + game + '/pak0.pk3dir')
+  // TODO: export all images and maps from TRIAL DEMO ONLY
+  setOutput(outputDir)
+  await repackBasepack('base')
   //let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
   //let files2 = layeredDir('multigame/vm', true).map(file => path.basename(file))
   //await exportFiles(files, outputDir)
   //await exportFiles(files2, outputDir)
 
   return
-  // TODO: export all images and maps from TRIAL DEMO ONLY
-  const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
-  setOutput(outputDir)
-
-  await repackBasepack('demoq3')
   // TODO: INSTALL
   fs.renameSync(
     path.join(EXPORT_DIRECTORY, '/' + game + '/pak0.pk3'),
@@ -95,6 +93,7 @@ async function exportGame(game) {
 
   // TODO: include the other BSPs for background display but no PLAY NOW 
   //   button and no copyrighted content generated images will be okay, 
+  const TRIAL_MAPS = ['Q3DM1', 'Q3DM7', 'Q3DM17', 'Q3TOURNEY2']
   for (let i = 0; i < TRIAL_MAPS.length; i++) {
     await repackBasemap('demoq3', TRIAL_MAPS[i].toLocaleLowerCase())
     // TODO: INSTALL
