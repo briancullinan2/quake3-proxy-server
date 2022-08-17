@@ -37,7 +37,6 @@ function pageBindings() {
 
   let engineView = document.getElementById('viewport-frame')
   if(engineView && typeof DB_STORE_NAME == 'undefined') {
-    debugger
     const ENGINE_SCRIPTS = [
       'nipplejs.js', 'sys_emgl.js', 'sys_fs.js', 'sys_idbfs.js', 'sys_in.js',
       // TODO: override sys_net with changes for frontend, then override engine index to add frontend

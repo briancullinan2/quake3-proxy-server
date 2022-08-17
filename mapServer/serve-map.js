@@ -25,7 +25,8 @@ async function serveMapInfo(request, response, next) {
   if(request.cookies && SESSION_GAMES[request.cookies['__planet_quake_sess']]) {
     basegame = SESSION_GAMES[request.cookies['__planet_quake_sess']]
   }
-  console.log(request.cookies, SESSION_GAMES)
+  
+  //console.log(request.cookies, SESSION_GAMES)
   let mapsAvailable = await filteredMaps(basegame)
   let filename = request.originalUrl.replace(/\?.*$/, '')
   let mapname = path.basename(filename).replace(/\.pk3/ig, '').toLocaleLowerCase()

@@ -89,7 +89,7 @@ async function listPk3s(modname) {
     //   it is showing what will become, but in "Virtual" mode
     //   only what is currently built is listed with all of the
     //   alternative overrides.
-    .map(pk3 => path.join(modname,
+    .map(pk3 => path.join(modname, 
       path.basename(pk3).replace(path.extname(pk3), '.pk3')))
 }
 

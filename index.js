@@ -137,7 +137,6 @@ function main() {
       || START_SERVICES.includes('live'))
     ) {
       let BUILD_ORDER = buildDirectories()
-      console.log(BUILD_ORDER)
       for (let i = 0; i < BUILD_ORDER.length; i++) {
         watchDirectory(BUILD_ORDER[i], projectWatcher, false)
         if(fs.existsSync(BUILD_ORDER[i]) && fs.statSync(BUILD_ORDER[i]).isDirectory()) {
@@ -154,7 +153,6 @@ function main() {
       return
     }
   }
-
 
   if (START_SERVICES.includes('all')
     || START_SERVICES.includes('master')) {
@@ -174,7 +172,6 @@ function main() {
     || START_SERVICES.includes('live')) {
     contentWatcher()
   }
-
 
 }
 

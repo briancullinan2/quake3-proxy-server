@@ -63,6 +63,14 @@ function parseAguments(startArgs) {
         addProject(startArgs[i + 1])
         i++
         break
+      case '--settings': 
+        console.log('Settings: ' + startArgs[i + 1])
+        if (fs.existsSync(startArgs[i + 1])) {
+          let setting = fs.readFileSync(startArgs[i + 1]).toString('utf-8')
+          parseAguments(JSON.parse(setting))
+        }
+        i++
+        break
       case '--add-mod':
       case '--add-game':
         //console.log('Game mod: ', startArgs[i + 1])
@@ -70,7 +78,7 @@ function parseAguments(startArgs) {
         i++
         break
       case '--add-route':
-        //console.log('Game mod: ', startArgs[i + 1])
+        console.log('Route: ', startArgs[i + 1])
         addRoute(startArgs[i + 1].concat([relative]))
         i++
         break

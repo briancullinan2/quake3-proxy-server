@@ -122,9 +122,7 @@ if (runDeploy) {
 
   Promise.resolve()
     .then(async () => {
-      if (fs.existsSync(path.join(__dirname, '/../settings.json'))) {
-        parseAguments(require(path.join(__dirname, '/../settings.json')))
-      }
+      parseAguments(process.argv)
       DEPLOY_GAMES.push(getGame())
       START_SERVICES.push('all')
       START_SERVICES.push('deploy')

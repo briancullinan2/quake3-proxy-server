@@ -42,12 +42,12 @@ function gameDirectories(basegame, unexisting) {
     'debug-darwin-x86', 'debug-linux-x86', 
     'debug-mingw-x86', 'debug-msys-x86', 'debug-qvms-x86'
   ])
+
   const GAME_DIRECTORIES = [].concat(BASE_DIRECTORIES)
   for(let j = 0; j < GAME_MODS.length; j++) {
     if(GAME_MODS[j].localeCompare(basegame, 'en', {sensitivity: 'base'}) != 0) {
       continue
     }
-
     for(let i = 0; i < BASE_DIRECTORIES.length; i++) {
       GAME_DIRECTORIES.push.apply(GAME_DIRECTORIES, 
           BUILD_MODES.map(dir2 => GAME_DIRECTORIES[i] + '/' + dir2 + '/' + GAME_MODS[j]))

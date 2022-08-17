@@ -309,6 +309,8 @@ async function exportFile(file, outputDir) {
   if(newFile.includes('.qvm')) {
     console.log('Developing: ', newFile)
   }
+
+
   if (fs.existsSync(newFile)) {
     let pk3Name = outputDir.replace(/.*\.pk3.*?\//gi, outputDir + '/')
     let pk3InnerPath = newFile.replace(/^.*?\.pk3[^\/]*?(\/|$)/gi, '').toLocaleLowerCase()
@@ -328,14 +330,19 @@ async function exportFile(file, outputDir) {
       file = localName
     }
   }
+
+
   let passThrough
   let writeStream
   if(typeof CONVERTED_FILES[newFile] == 'undefined') {
     passThrough = streamAndCache(newFile, CONVERTED_FILES, null)
     let fileName = await streamFile(file, passThrough)
     newFile = typeof fileName == 'string'
-    ? fileName.toLocaleLowerCase().replace(/.*\.pk3.*?\//gi, outputDir + '/')
-    : newFile
+      ? fileName.toLocaleLowerCase().replace(/.*\.pk3.*?\//gi, outputDir + '/')
+      : newFile
+    if(!fileName && !fs.existsSync(file)) {
+      return
+    }
     writeStream = fs.createWriteStream(newFile)
     passThrough.pipe(writeStream)
     await new Promise(resolve => passThrough.on('end', resolve))
@@ -356,7 +363,6 @@ async function listGameFiles(modname, pk3Name) {
   }
 
   let pk3s = (await listPk3s(modname)).sort().reverse().map(findFile).filter(f => f)
-  console.log('games', pk3s)
   // TODO: add to pk3Files the mapname file specified, pk3name from MAP_DICTIONARY above
   if (pk3Name && !pk3s.includes(pk3Name)) {
     pk3s.push(pk3Name)
@@ -402,7 +408,6 @@ async function repackBasepack(modname) {
   let maxMtime = 0
 
   let pk3Files = await listGameFiles(modname)
-  console.log('deploy', modname, pk3Files)
   for (let i = 0; i < pk3Files.length; i++) {
     let file = pk3Files[i]
     let newFile = path.join(outputDir, file.name.toLocaleLowerCase())
@@ -452,11 +457,11 @@ async function repackBasepack(modname) {
     if (file.time > maxMtime) {
       maxMtime = file.time
     }
-
     if (typeof includedDates[newFile] == 'undefined') {
       includedDates[newFile] = Math.max(newTime, file.time)
     }
   }
+
 
   // new stream functions
   // TODO: for loop instead
@@ -476,7 +481,8 @@ async function repackBasepack(modname) {
       console.error(err)
     }
   }
-  console.log('hit 1')
+
+  //console.log(allExports)
 
   // TODO: inject cl_dlURL to correct game configured on game server
   //let defaultPath = await findAlt(modname + '/default.cfg')
@@ -495,7 +501,7 @@ async function repackBasepack(modname) {
   includedDates[path.join(outputDir, 'default.cfg')] = Date.now()
   // TODO: replace .cfg font files with .png images
 
-  console.log('hit 2')
+  debugger
 
 
   // TODO: write current pak palette file
