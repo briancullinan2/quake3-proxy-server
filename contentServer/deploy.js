@@ -79,7 +79,7 @@ async function exportGame(game) {
   let outputDir = path.join(EXPORT_DIRECTORY, '/' + game + '/pak0.pk3dir')
   // TODO: export all images and maps from TRIAL DEMO ONLY
   setOutput(outputDir)
-  await repackBasepack('base')
+  await repackBasepack(getGame())
   //let files = layeredDir('multigame/xxx-multigame.pk3dir', true).map(file => path.basename(file))
   //let files2 = layeredDir('multigame/vm', true).map(file => path.basename(file))
   //await exportFiles(files, outputDir)

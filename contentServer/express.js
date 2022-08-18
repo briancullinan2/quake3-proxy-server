@@ -52,7 +52,7 @@ function createApplication(features) {
 
 //app.use(/\/[^\/]+\/.*/, require('../../elastic-game-server/engines/serve-engines.js').serveEngineFiles)
 
-
+debugger
   for(let i = 0; i < ROUTES.length; i++) {
     let newModule
     if(fs.existsSync(path.join(ROUTES[i][1], ROUTES[i][3]))) {

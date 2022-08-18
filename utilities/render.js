@@ -89,7 +89,7 @@ function renderIndex(body, bodyClass) {
     + renderFeatureMenu() 
     + (START_SERVICES.includes('deploy') 
     ? `<div class="cache-notify">This page was loaded from cache. 
-        Reconnecting to proxy server...</div>` : '')
+      Reconnecting to proxy server...</div>` : '')
     + (!body.includes('loading-blur') 
     ? `<div class="loading-blur">
       <img src="/${getGame()}/pak0.pk3dir/levelshots/q3dm0.jpg">
@@ -116,18 +116,18 @@ function renderEngine(engine) {
 		<div id="left-joystick"></div><div id="right-joystick"></div>
 		<canvas></canvas>
 	</div>`
+  
   if(engine == 'nintendo64')
   return `
   <div id="canvasDiv" style="display: none;">
     <canvas id="canvas" style="width: 640px;"></canvas>
   </div>
-  
   <script async defer src="/nintendo64/jquery-3.3.1.min.js"></script>
   <script async defer src="/nintendo64/rivets.bundled.min.js"></script>
   <script async defer src="/nintendo64/input_controller.js"></script>
   <script async defer src="/nintendo64/settings.js"></script>
-  <script async defer src="/nintendo64/script.js"></script>
-  `
+  <script async defer src="/nintendo64/script.js"></script>`
+  
   if(engine == 'skyemu')
   return `
   <script>window.indexedDB</script>
@@ -146,8 +146,7 @@ function renderEngine(engine) {
   <input id="fileStagingName" value="">
 
   <script async defer src="/skyemu/script.js"></script>
-  <script async defer src="/skyemu/SkyEmu.js"></script>
-  `
+  <script async defer src="/skyemu/SkyEmu.js"></script>`
 
 }
 
